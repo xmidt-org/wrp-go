@@ -29,7 +29,8 @@ install:
   - cd ..
 
 script:
-  - if [ -n "$(gofmt -s -l . | grep -v "vendor")" ]; then diff -u <(echo -n) <(gofmt -d $(gofmt -s -l . | grep -v "vendor")); fi
+  # Don't enforce format yet.
+  # - if [ -n "$(gofmt -s -l . | grep -v "vendor")" ]; then diff -u <(echo -n) <(gofmt -d $(gofmt -s -l . | grep -v "vendor")); fi
   - go test -v -race $(go list ./... | grep -v "/vendor/")
   - go get github.com/haya14busa/goverage
   - goverage -coverprofile=coverage.txt ./...
