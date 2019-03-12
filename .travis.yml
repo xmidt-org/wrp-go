@@ -3,6 +3,7 @@ language: go
 go:
   - 1.12.x
   - 1.11.x
+  - tip
 
 os:
   - linux
@@ -25,17 +26,17 @@ before_install:
   - chmod +x $GOPATH/bin/dep
 
 install:
-  - cd wrp
+  - pushd wrp
   - dep ensure
-  - cd ..
+  - popd
 
 script:
   # Don't enforce format yet.
   # - if [ -n "$(gofmt -s -l . | grep -v "vendor")" ]; then diff -u <(echo -n) <(gofmt -d $(gofmt -s -l . | grep -v "vendor")); fi
-  - go test -v -race $(go list ./... | grep -v "/vendor/")
-  - go get github.com/haya14busa/goverage
-  - goverage -coverprofile=coverage.txt ./...
+  - pushd wrp
+  - go test -v -race -coverprofile=coverage.txt
   - bash <(curl -s https://codecov.io/bash) -t d4217c9f-8ea5-4b1e-bc00-19c7714bbe61
+  - popd
 
 jobs:
   include:
