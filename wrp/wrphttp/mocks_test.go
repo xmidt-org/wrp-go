@@ -3,9 +3,9 @@ package wrphttp
 import (
 	"io"
 
-	"github.com/Comcast/webpa-common/tracing"
-	"github.com/Comcast/webpa-common/wrp"
-	"github.com/Comcast/webpa-common/wrp/wrpendpoint"
+	"github.com/Comcast/wrp-go/tracing"
+	"github.com/Comcast/wrp-go/wrp"
+	"github.com/Comcast/wrp-go/wrp/wrpendpoint"
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/mock"
 )
