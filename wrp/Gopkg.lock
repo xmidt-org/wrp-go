@@ -3,13 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:87437e5e246bbec7beee2bbba6da0282beab40ddb4e77825d26b51b5ea95306a"
+  digest = "1:74160b81aa211a1d1fa014df55a60c5c90b14e83162d2da029281872f409edcc"
   name = "github.com/Comcast/webpa-common"
   packages = [
     "logging",
     "tracing",
-    "wrp",
-    "wrp/wrpendpoint",
     "xhttp/xhttptest",
   ]
   pruneopts = "UT"
@@ -234,8 +232,6 @@
   input-imports = [
     "github.com/Comcast/webpa-common/logging",
     "github.com/Comcast/webpa-common/tracing",
-    "github.com/Comcast/webpa-common/wrp",
-    "github.com/Comcast/webpa-common/wrp/wrpendpoint",
     "github.com/Comcast/webpa-common/xhttp/xhttptest",
     "github.com/go-kit/kit/endpoint",
     "github.com/go-kit/kit/log",
