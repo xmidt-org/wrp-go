@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Comcast/webpa-common/tracing"
-	"github.com/Comcast/wrp-go"
+	"github.com/Comcast/webpa-common/wrp"
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

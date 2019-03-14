@@ -234,6 +234,8 @@
   input-imports = [
     "github.com/Comcast/webpa-common/logging",
     "github.com/Comcast/webpa-common/tracing",
+    "github.com/Comcast/webpa-common/wrp",
+    "github.com/Comcast/webpa-common/wrp/wrpendpoint",
     "github.com/Comcast/webpa-common/xhttp/xhttptest",
     "github.com/go-kit/kit/endpoint",
     "github.com/go-kit/kit/log",
