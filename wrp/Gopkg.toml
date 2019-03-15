@@ -39,8 +39,8 @@
 
 [[constraint]]
   name = "github.com/ugorji/go"
-  #version = "1.1.2"
-  revision = "e5e69e061d4f7ee3a69b793cf9c1b41afe21918e"
+  # version = "1.1"
+  revision = "9831f2c3ac1068a78f50999a30db84270f647af6"
 
 [prune]
   go-tests = true
