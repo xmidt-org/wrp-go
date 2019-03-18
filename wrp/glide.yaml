@@ -4,3 +4,13 @@ import:
   version: e5e69e061d4f7ee3a69b793cf9c1b41afe21918e
   subpackages:
   - codec
+- package: github.com/go-kit/kit
+  version: 0.8.0
+- package: github.com/stretchr/testify
+  version: v1.2.1
+  subpackages:
+  - assert
+  - require
+  - mock
+  - linux
+
