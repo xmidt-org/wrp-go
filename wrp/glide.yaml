@@ -1,0 +1,6 @@
+package: .
+import:
+- package: github.com/ugorji/go
+  version: e5e69e061d4f7ee3a69b793cf9c1b41afe21918e
+  subpackages:
+  - codec

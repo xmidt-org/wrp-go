@@ -1,0 +1,87 @@
+hash: ebdd7c45b4d0959a99481bad4f43cf343edbbf98da4b13361a4a85c1589af770
+updated: 2019-03-18T11:25:00.01879-06:00
+imports:
+- name: github.com/Comcast/webpa-common
+  version: ee36b7e7561c779aa65a66fbef35b46720486987
+  subpackages:
+  - logging
+  - tracing
+  - xhttp/xhttptest
+- name: github.com/davecgh/go-spew
+  version: d8f796af33cc11cb798c1aaeb27a4ebc5099927d
+  subpackages:
+  - spew
+- name: github.com/fsnotify/fsnotify
+  version: 1485a34d5d5723fea214f5710708e19a831720e4
+- name: github.com/go-kit/kit
+  version: 12210fb6ace19e0496167bb3e667dcd91fa9f69b
+  subpackages:
+  - endpoint
+  - log
+  - log/level
+  - transport/http
+- name: github.com/go-logfmt/logfmt
+  version: 390ab7935ee28ec6b286364bba9b4dd6410cb3d5
+- name: github.com/hashicorp/hcl
+  version: 65a6292f0157eff210d03ed1bf6c59b190b8b906
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/printer
+  - hcl/scanner
+  - hcl/strconv
+  - hcl/token
+  - json/parser
+  - json/scanner
+  - json/token
+- name: github.com/kr/logfmt
+  version: b84e30acd515aadc4b783ad4ff83aff3299bdfe0
+- name: github.com/magiconair/properties
+  version: 7757cc9fdb852f7579b24170bcacda2c7471bb6a
+- name: github.com/mitchellh/mapstructure
+  version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
+- name: github.com/pelletier/go-toml
+  version: 690ec00a4b7e125266cf1c4725ae24af22564f8f
+- name: github.com/pmezard/go-difflib
+  version: 5d4384ee4fb2527b0a1256a821ebfc92f91efefc
+  subpackages:
+  - difflib
+- name: github.com/spf13/afero
+  version: f4711e4db9e9a1d3887343acb72b2bbfc2f686f5
+  subpackages:
+  - mem
+- name: github.com/spf13/cast
+  version: 8c9545af88b134710ab1cd196795e7f2388358d7
+- name: github.com/spf13/jwalterweatherman
+  version: 94f6ae3ed3bceceafa716478c5fbf8d29ca601a1
+- name: github.com/spf13/pflag
+  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+- name: github.com/spf13/viper
+  version: 6d33b5a963d922d182c91e8a1c88d81fd150cfd4
+- name: github.com/stretchr/objx
+  version: c61a9dfcced1815e7d40e214d00d1a8669a9f58c
+- name: github.com/stretchr/testify
+  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
+  subpackages:
+  - assert
+  - linux
+  - mock
+  - require
+- name: github.com/ugorji/go
+  version: e5e69e061d4f7ee3a69b793cf9c1b41afe21918e
+  subpackages:
+  - codec
+- name: golang.org/x/sys
+  version: a2f829d7f35f2ed1c3520c553a6226495455cae0
+  subpackages:
+  - unix
+- name: golang.org/x/text
+  version: 5d731a35f4867878fc89f7744f7b6debb3beded6
+  subpackages:
+  - transform
+  - unicode/norm
+- name: gopkg.in/natefinch/lumberjack.v2
+  version: a96e63847dc3c67d17befa69c303767e2f84e54f
+- name: gopkg.in/yaml.v2
+  version: 51d6538a90f86fe93ac480b35f37b2be17fef232
+testImports: []
