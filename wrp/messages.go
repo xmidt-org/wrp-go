@@ -1,6 +1,14 @@
 package wrp
 
+import "regexp"
+
 //go:generate codecgen -st "wrp" -o messages_codec.go messages.go
+
+var (
+	// eventPattern is the precompiled regex that selects the top level event
+	// classifier
+	eventPattern = regexp.MustCompile(`^event:(?P<event>[^/]+)`)
+)
 
 // Typed is implemented by any WRP type which is associated with a MessageType.  All
 // message types implement this interface.
@@ -82,6 +90,10 @@ type Message struct {
 	PartnerIDs              []string          `wrp:"partner_ids,omitempty"`
 }
 
+func (msg *Message) FindEventStringSubMatch() string {
+	return findEventStringSubMatch(msg.Destination)
+}
+
 func (msg *Message) MessageType() MessageType {
 	return msg.Type
 }
@@ -150,6 +162,10 @@ type SimpleRequestResponse struct {
 	IncludeSpans            *bool             `wrp:"include_spans,omitempty"`
 	Payload                 []byte            `wrp:"payload,omitempty"`
 	PartnerIDs              []string          `wrp:"partner_ids,omitempty"`
+}
+
+func (msg *SimpleRequestResponse) FindEventStringSubMatch() string {
+	return findEventStringSubMatch(msg.Destination)
 }
 
 // SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
@@ -356,4 +372,15 @@ type ServiceAlive struct {
 func (msg *ServiceAlive) BeforeEncode() error {
 	msg.Type = ServiceAliveMessageType
 	return nil
+}
+
+func findEventStringSubMatch(s string) string {
+	var match = eventPattern.FindStringSubmatch(s)
+
+	event := "unknown"
+	if match != nil {
+		event = match[1]
+	}
+
+	return event
 }

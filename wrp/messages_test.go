@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,6 +14,32 @@ var (
 	// allFormats enumerates all of the supported formats to use in testing
 	allFormats = []Format{JSON, Msgpack}
 )
+
+func TestFindStringSubMatch(t *testing.T) {
+	events := []string{
+		"event:iot",
+		"mac:112233445566/event/iot",
+		"event:unknown",
+		"mac:112233445566/event/test/extra-stuff",
+		"event:wrp",
+	}
+
+	expected := []string{
+		"iot",
+		"unknown",
+		"unknown",
+		"unknown",
+		"wrp",
+	}
+
+	var result string
+	for i := 0; i < len(events); i++ {
+		result = findEventStringSubMatch(events[i])
+		if result != expected[i] {
+			t.Errorf("\ntesting %v:\ninput: %v\nexpected: %v\ngot: %v\n\n", i, spew.Sprintf(events[i]), spew.Sprintf(expected[i]), spew.Sprintf(result))
+		}
+	}
+}
 
 func testMessageSetStatus(t *testing.T) {
 	var (
