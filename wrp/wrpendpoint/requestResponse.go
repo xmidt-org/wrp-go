@@ -3,12 +3,14 @@ package wrpendpoint
 import (
 	"io"
 	"io/ioutil"
+	"os"
 
-	"github.com/Comcast/webpa-common/logging"
 	"github.com/Comcast/webpa-common/tracing"
 	"github.com/Comcast/wrp-go/wrp"
 	"github.com/go-kit/kit/log"
 )
+
+var defaultLogger = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 
 // Note is the core type implemented by any entity which carries a WRP message.
 type Note interface {
@@ -102,7 +104,7 @@ func (r *request) Logger() log.Logger {
 		return r.logger
 	}
 
-	return logging.DefaultLogger()
+	return defaultLogger
 }
 
 func (r *request) WithLogger(logger log.Logger) Request {
