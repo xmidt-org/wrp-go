@@ -71,23 +71,23 @@ type Routable interface {
 // For server code that needs to read one format and emit another, use this struct as it allows
 // client code to transcode without knowledge of the exact type of message.
 type Message struct {
-	Type                    MessageType       `wrp:"msg_type"`
-	Source                  string            `wrp:"source,omitempty"`
-	Destination             string            `wrp:"dest,omitempty"`
-	TransactionUUID         string            `wrp:"transaction_uuid,omitempty"`
-	ContentType             string            `wrp:"content_type,omitempty"`
-	Accept                  string            `wrp:"accept,omitempty"`
-	Status                  *int64            `wrp:"status,omitempty"`
-	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty"`
-	Headers                 []string          `wrp:"headers,omitempty"`
-	Metadata                map[string]string `wrp:"metadata,omitempty"`
-	Spans                   [][]string        `wrp:"spans,omitempty"`
-	IncludeSpans            *bool             `wrp:"include_spans,omitempty"`
-	Path                    string            `wrp:"path,omitempty"`
-	Payload                 []byte            `wrp:"payload,omitempty"`
-	ServiceName             string            `wrp:"service_name,omitempty"`
-	URL                     string            `wrp:"url,omitempty"`
-	PartnerIDs              []string          `wrp:"partner_ids,omitempty"`
+	Type                    MessageType       `wrp:"msg_type",json:"msg_type"`
+	Source                  string            `wrp:"source,omitempty",json:"source,omitempty"`
+	Destination             string            `wrp:"dest,omitempty",json:"dest,omitempty"`
+	TransactionUUID         string            `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
+	ContentType             string            `wrp:"content_type,omitempty",json:"content_type,omitempty"`
+	Accept                  string            `wrp:"accept,omitempty",json:"accept,omitempty"`
+	Status                  *int64            `wrp:"status,omitempty",json:"status,omitempty"`
+	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty",json:"rdr,omitempty"`
+	Headers                 []string          `wrp:"headers,omitempty",json:"headers,omitempty"`
+	Metadata                map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
+	Spans                   [][]string        `wrp:"spans,omitempty",json:"spans,omitempty"`
+	IncludeSpans            *bool             `wrp:"include_spans,omitempty",json:"include_spans,omitempty"`
+	Path                    string            `wrp:"path,omitempty",json:"path,omitempty"`
+	Payload                 []byte            `wrp:"payload,omitempty",json:"payload,omitempty"`
+	ServiceName             string            `wrp:"service_name,omitempty",json:"service_name,omitempty"`
+	URL                     string            `wrp:"url,omitempty",json:"url,omitempty"`
+	PartnerIDs              []string          `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
@@ -148,20 +148,20 @@ func (msg *Message) SetIncludeSpans(value bool) *Message {
 type SimpleRequestResponse struct {
 	// Type is exposed principally for encoding.  This field *must* be set to SimpleRequestResponseMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type                    MessageType       `wrp:"msg_type"`
-	Source                  string            `wrp:"source"`
-	Destination             string            `wrp:"dest"`
-	ContentType             string            `wrp:"content_type,omitempty"`
-	Accept                  string            `wrp:"accept,omitempty"`
-	TransactionUUID         string            `wrp:"transaction_uuid,omitempty"`
-	Status                  *int64            `wrp:"status,omitempty"`
-	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty"`
-	Headers                 []string          `wrp:"headers,omitempty"`
-	Metadata                map[string]string `wrp:"metadata,omitempty"`
-	Spans                   [][]string        `wrp:"spans,omitempty"`
-	IncludeSpans            *bool             `wrp:"include_spans,omitempty"`
-	Payload                 []byte            `wrp:"payload,omitempty"`
-	PartnerIDs              []string          `wrp:"partner_ids,omitempty"`
+	Type                    MessageType       `wrp:"msg_type",json:"msg_type"`
+	Source                  string            `wrp:"source",json:"source"`
+	Destination             string            `wrp:"dest",json:"dest"`
+	ContentType             string            `wrp:"content_type,omitempty",json:"content_type,omitempty"`
+	Accept                  string            `wrp:"accept,omitempty",json:"accept,omitempty"`
+	TransactionUUID         string            `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
+	Status                  *int64            `wrp:"status,omitempty",json:"status,omitempty"`
+	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty",json:"rdr,omitempty"`
+	Headers                 []string          `wrp:"headers,omitempty",json:"headers,omitempty"`
+	Metadata                map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
+	Spans                   [][]string        `wrp:"spans,omitempty",json:"spans,omitempty"`
+	IncludeSpans            *bool             `wrp:"include_spans,omitempty",json:"include_spans,omitempty"`
+	Payload                 []byte            `wrp:"payload,omitempty",json:"payload,omitempty"`
+	PartnerIDs              []string          `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
 }
 
 func (msg *SimpleRequestResponse) FindEventStringSubMatch() string {
@@ -231,14 +231,14 @@ func (msg *SimpleRequestResponse) Response(newSource string, requestDeliveryResp
 type SimpleEvent struct {
 	// Type is exposed principally for encoding.  This field *must* be set to SimpleEventMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type        MessageType       `wrp:"msg_type"`
-	Source      string            `wrp:"source"`
-	Destination string            `wrp:"dest"`
-	ContentType string            `wrp:"content_type,omitempty"`
-	Headers     []string          `wrp:"headers,omitempty"`
-	Metadata    map[string]string `wrp:"metadata,omitempty"`
-	Payload     []byte            `wrp:"payload,omitempty"`
-	PartnerIDs  []string          `wrp:"partner_ids,omitempty"`
+	Type        MessageType       `wrp:"msg_type",json:"msg_type"`
+	Source      string            `wrp:"source",json:"source"`
+	Destination string            `wrp:"dest",json:"dest"`
+	ContentType string            `wrp:"content_type,omitempty",json:"content_type,omitempty"`
+	Headers     []string          `wrp:"headers,omitempty",json:"headers,omitempty"`
+	Metadata    map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
+	Payload     []byte            `wrp:"payload,omitempty",json:"payload,omitempty"`
+	PartnerIDs  []string          `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
 }
 
 func (msg *SimpleEvent) BeforeEncode() error {
@@ -281,20 +281,20 @@ func (msg *SimpleEvent) Response(newSource string, requestDeliveryResponse int64
 //
 // https://github.com/Comcast/wrp-c/wiki/Web-Routing-Protocol#crud-message-definition
 type CRUD struct {
-	Type                    MessageType       `wrp:"msg_type"`
-	Source                  string            `wrp:"source"`
-	Destination             string            `wrp:"dest"`
-	TransactionUUID         string            `wrp:"transaction_uuid,omitempty"`
-	ContentType             string            `wrp:"content_type,omitempty"`
-	Headers                 []string          `wrp:"headers,omitempty"`
-	Metadata                map[string]string `wrp:"metadata,omitempty"`
-	Spans                   [][]string        `wrp:"spans,omitempty"`
-	IncludeSpans            *bool             `wrp:"include_spans,omitempty"`
-	Status                  *int64            `wrp:"status,omitempty"`
-	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty"`
-	Path                    string            `wrp:"path"`
-	Payload                 []byte            `wrp:"payload,omitempty"`
-	PartnerIDs              []string          `wrp:"partner_ids,omitempty"`
+	Type                    MessageType       `wrp:"msg_type",json:"msg_type"`
+	Source                  string            `wrp:"source",json:"source"`
+	Destination             string            `wrp:"dest",json:"dest"`
+	TransactionUUID         string            `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
+	ContentType             string            `wrp:"content_type,omitempty",json:"content_type,omitempty"`
+	Headers                 []string          `wrp:"headers,omitempty",json:"headers,omitempty"`
+	Metadata                map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
+	Spans                   [][]string        `wrp:"spans,omitempty",json:"spans,omitempty"`
+	IncludeSpans            *bool             `wrp:"include_spans,omitempty",json:"include_spans,omitempty"`
+	Status                  *int64            `wrp:"status,omitempty",json:"status,omitempty"`
+	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty",json:"rdr,omitempty"`
+	Path                    string            `wrp:"path",json:"path"`
+	Payload                 []byte            `wrp:"payload,omitempty",json:"payload,omitempty"`
+	PartnerIDs              []string          `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
 }
 
 // SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
@@ -350,9 +350,9 @@ func (msg *CRUD) Response(newSource string, requestDeliveryResponse int64) Routa
 type ServiceRegistration struct {
 	// Type is exposed principally for encoding.  This field *must* be set to ServiceRegistrationMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type        MessageType `wrp:"msg_type"`
-	ServiceName string      `wrp:"service_name"`
-	URL         string      `wrp:"url"`
+	Type        MessageType `wrp:"msg_type",json:"msg_type"`
+	ServiceName string      `wrp:"service_name",json:"service_name"`
+	URL         string      `wrp:"url",json:"url"`
 }
 
 func (msg *ServiceRegistration) BeforeEncode() error {
@@ -366,7 +366,7 @@ func (msg *ServiceRegistration) BeforeEncode() error {
 type ServiceAlive struct {
 	// Type is exposed principally for encoding.  This field *must* be set to ServiceAliveMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type MessageType `wrp:"msg_type"`
+	Type MessageType `wrp:"msg_type",json:"msg_type"`
 }
 
 func (msg *ServiceAlive) BeforeEncode() error {
