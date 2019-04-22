@@ -70,24 +70,96 @@ type Routable interface {
 //
 // For server code that needs to read one format and emit another, use this struct as it allows
 // client code to transcode without knowledge of the exact type of message.
+//
+// swagger:response Message
 type Message struct {
-	Type                    MessageType       `wrp:"msg_type",json:"msg_type"`
-	Source                  string            `wrp:"source,omitempty",json:"source,omitempty"`
-	Destination             string            `wrp:"dest,omitempty",json:"dest,omitempty"`
-	TransactionUUID         string            `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
-	ContentType             string            `wrp:"content_type,omitempty",json:"content_type,omitempty"`
-	Accept                  string            `wrp:"accept,omitempty",json:"accept,omitempty"`
-	Status                  *int64            `wrp:"status,omitempty",json:"status,omitempty"`
-	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty",json:"rdr,omitempty"`
-	Headers                 []string          `wrp:"headers,omitempty",json:"headers,omitempty"`
-	Metadata                map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
-	Spans                   [][]string        `wrp:"spans,omitempty",json:"spans,omitempty"`
-	IncludeSpans            *bool             `wrp:"include_spans,omitempty",json:"include_spans,omitempty"`
-	Path                    string            `wrp:"path,omitempty",json:"path,omitempty"`
-	Payload                 []byte            `wrp:"payload,omitempty",json:"payload,omitempty"`
-	ServiceName             string            `wrp:"service_name,omitempty",json:"service_name,omitempty"`
-	URL                     string            `wrp:"url,omitempty",json:"url,omitempty"`
-	PartnerIDs              []string          `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
+	// Type The message type for the message
+	//
+	// required: true
+	// example: 4
+	Type MessageType `wrp:"msg_type",json:"msg_type"`
+
+	// Source The device_id name of the device originating the request or response.
+	//
+	// required: false
+	Source string `wrp:"source,omitempty",json:"source,omitempty"`
+
+	// Destination The device_id name of the target device of the request or response.
+	//
+	// required: false
+	Destination string `wrp:"dest,omitempty",json:"dest,omitempty"`
+
+	// TransactionUUID The transaction key for the message
+	//
+	// required: false
+	TransactionUUID string `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
+
+	// ContentType The media type of the payload.
+	//
+	// required: false
+	ContentType string `wrp:"content_type,omitempty",json:"content_type,omitempty"`
+
+	// Accept  The media type accepted in the response.
+	//
+	// required: false
+	Accept string `wrp:"accept,omitempty",json:"accept,omitempty"`
+
+	// Status The response status from the originating service.
+	//
+	// required: false
+	Status *int64 `wrp:"status,omitempty",json:"status,omitempty"`
+
+	// RequestDeliveryResponse The request delivery response is the delivery result of the previous (implied request)
+	// message with a matching transaction_uuid
+	//
+	// required: false
+	RequestDeliveryResponse *int64 `wrp:"rdr,omitempty",json:"rdr,omitempty"`
+
+	// Headers The headers associated with the payload.
+	//
+	// required: false
+	Headers []string `wrp:"headers,omitempty",json:"headers,omitempty"`
+
+	// Metadata The map of name/value pairs used by consumers of WRP messages for filtering & other purposes.
+	//
+	// required: false
+	Metadata map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
+
+	// Spans An array of arrays of timing values as a list in the format: "parent" (string), "name" (string),
+	// "start time" (int), "duration" (int), "status" (int)
+	//
+	// required: false
+	Spans [][]string `wrp:"spans,omitempty",json:"spans,omitempty"`
+
+	// IncludeSpans (Deprecated) If the timing values should be included in the response.
+	//
+	// required: false
+	IncludeSpans *bool `wrp:"include_spans,omitempty",json:"include_spans,omitempty"`
+
+	// Path The path to which to apply the payload.
+	//
+	// required: false
+	Path string `wrp:"path,omitempty",json:"path,omitempty"`
+
+	// Payload The string encoded of the ContentType
+	//
+	// required: false
+	Payload []byte `wrp:"payload,omitempty",json:"payload,omitempty"`
+
+	// ServiceName The originating point of the request or response
+	//
+	// required: false
+	ServiceName string `wrp:"service_name,omitempty",json:"service_name,omitempty"`
+
+	// URL The url to use when connecting to the nanomsg pipeline
+	//
+	// required: false
+	URL string `wrp:"url,omitempty",json:"url,omitempty"`
+
+	// PartnerIDs The list of partner ids the message is meant to target.
+	//
+	// required: false
+	PartnerIDs []string `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
