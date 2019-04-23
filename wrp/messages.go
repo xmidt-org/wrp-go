@@ -77,96 +77,96 @@ type Message struct {
 	//
 	// required: true
 	// example: 4
-	Type MessageType `wrp:"msg_type",json:"msg_type"`
+	Type MessageType `wrp:"msg_type" json:"msg_type"`
 
 	// Source The device_id name of the device originating the request or response.
 	//
 	// required: false
 	// example: dns:talaria.xmidt.example.com
-	Source string `wrp:"source,omitempty",json:"source,omitempty"`
+	Source string `wrp:"source,omitempty" json:"source,omitempty"`
 
 	// Destination The device_id name of the target device of the request or response.
 	//
 	// required: false
 	// example: event:device-status/mac:ffffffffdae4/online
-	Destination string `wrp:"dest,omitempty",json:"dest,omitempty"`
+	Destination string `wrp:"dest,omitempty" json:"dest,omitempty"`
 
 	// TransactionUUID The transaction key for the message
 	//
 	// required: false
 	// example: 546514d4-9cb6-41c9-88ca-ccd4c130c525
-	TransactionUUID string `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
+	TransactionUUID string `wrp:"transaction_uuid,omitempty" json:"transaction_uuid,omitempty"`
 
 	// ContentType The media type of the payload.
 	//
 	// required: false
 	// example: json
-	ContentType string `wrp:"content_type,omitempty",json:"content_type,omitempty"`
+	ContentType string `wrp:"content_type,omitempty" json:"content_type,omitempty"`
 
 	// Accept  The media type accepted in the response.
 	//
 	// required: false
-	Accept string `wrp:"accept,omitempty",json:"accept,omitempty"`
+	Accept string `wrp:"accept,omitempty" json:"accept,omitempty"`
 
 	// Status The response status from the originating service.
 	//
 	// required: false
-	Status *int64 `wrp:"status,omitempty",json:"status,omitempty"`
+	Status *int64 `wrp:"status,omitempty" json:"status,omitempty"`
 
 	// RequestDeliveryResponse The request delivery response is the delivery result of the previous (implied request)
 	// message with a matching transaction_uuid
 	//
 	// required: false
-	RequestDeliveryResponse *int64 `wrp:"rdr,omitempty",json:"rdr,omitempty"`
+	RequestDeliveryResponse *int64 `wrp:"rdr,omitempty" json:"rdr,omitempty"`
 
 	// Headers The headers associated with the payload.
 	//
 	// required: false
-	Headers []string `wrp:"headers,omitempty",json:"headers,omitempty"`
+	Headers []string `wrp:"headers,omitempty" json:"headers,omitempty"`
 
 	// Metadata The map of name/value pairs used by consumers of WRP messages for filtering & other purposes.
 	//
 	// required: false
 	// example: {"/boot-time":1542834188,"/last-reconnect-reason":"spanish inquisition"}
-	Metadata map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
+	Metadata map[string]string `wrp:"metadata,omitempty" json:"metadata,omitempty"`
 
 	// Spans An array of arrays of timing values as a list in the format: "parent" (string), "name" (string),
 	// "start time" (int), "duration" (int), "status" (int)
 	//
 	// required: false
-	Spans [][]string `wrp:"spans,omitempty",json:"spans,omitempty"`
+	Spans [][]string `wrp:"spans,omitempty" json:"spans,omitempty"`
 
 	// IncludeSpans (Deprecated) If the timing values should be included in the response.
 	//
 	// required: false
-	IncludeSpans *bool `wrp:"include_spans,omitempty",json:"include_spans,omitempty"`
+	IncludeSpans *bool `wrp:"include_spans,omitempty" json:"include_spans,omitempty"`
 
 	// Path The path to which to apply the payload.
 	//
 	// required: false
-	Path string `wrp:"path,omitempty",json:"path,omitempty"`
+	Path string `wrp:"path,omitempty" json:"path,omitempty"`
 
 	// Payload The string encoded of the ContentType
 	//
 	// required: false
 	// example: eyJpZCI6IjUiLCJ0cyI6IjIwMTktMDItMTJUMTE6MTA6MDIuNjE0MTkxNzM1WiIsImJ5dGVzLXNlbnQiOjAsIm1lc3NhZ2VzLXNlbnQiOjEsImJ5dGVzLXJlY2VpdmVkIjowLCJtZXNzYWdlcy1yZWNlaXZlZCI6MH0=
-	Payload []byte `wrp:"payload,omitempty",json:"payload,omitempty"`
+	Payload []byte `wrp:"payload,omitempty" json:"payload,omitempty"`
 
 	// ServiceName The originating point of the request or response
 	//
 	// required: false
-	ServiceName string `wrp:"service_name,omitempty",json:"service_name,omitempty"`
+	ServiceName string `wrp:"service_name,omitempty" json:"service_name,omitempty"`
 
 	// URL The url to use when connecting to the nanomsg pipeline
 	//
 	// required: false
-	URL string `wrp:"url,omitempty",json:"url,omitempty"`
+	URL string `wrp:"url,omitempty" json:"url,omitempty"`
 
 	// PartnerIDs The list of partner ids the message is meant to target.
 	//
 	// required: false
 	// example: ["hello","world"]
-	PartnerIDs []string `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
+	PartnerIDs []string `wrp:"partner_ids,omitempty" json:"partner_ids,omitempty"`
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
@@ -227,20 +227,20 @@ func (msg *Message) SetIncludeSpans(value bool) *Message {
 type SimpleRequestResponse struct {
 	// Type is exposed principally for encoding.  This field *must* be set to SimpleRequestResponseMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type                    MessageType       `wrp:"msg_type",json:"msg_type"`
-	Source                  string            `wrp:"source",json:"source"`
-	Destination             string            `wrp:"dest",json:"dest"`
-	ContentType             string            `wrp:"content_type,omitempty",json:"content_type,omitempty"`
-	Accept                  string            `wrp:"accept,omitempty",json:"accept,omitempty"`
-	TransactionUUID         string            `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
-	Status                  *int64            `wrp:"status,omitempty",json:"status,omitempty"`
-	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty",json:"rdr,omitempty"`
-	Headers                 []string          `wrp:"headers,omitempty",json:"headers,omitempty"`
-	Metadata                map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
-	Spans                   [][]string        `wrp:"spans,omitempty",json:"spans,omitempty"`
-	IncludeSpans            *bool             `wrp:"include_spans,omitempty",json:"include_spans,omitempty"`
-	Payload                 []byte            `wrp:"payload,omitempty",json:"payload,omitempty"`
-	PartnerIDs              []string          `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
+	Type                    MessageType       `wrp:"msg_type" json:"msg_type"`
+	Source                  string            `wrp:"source" json:"source"`
+	Destination             string            `wrp:"dest" json:"dest"`
+	ContentType             string            `wrp:"content_type,omitempty" json:"content_type,omitempty"`
+	Accept                  string            `wrp:"accept,omitempty" json:"accept,omitempty"`
+	TransactionUUID         string            `wrp:"transaction_uuid,omitempty" json:"transaction_uuid,omitempty"`
+	Status                  *int64            `wrp:"status,omitempty" json:"status,omitempty"`
+	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty" json:"rdr,omitempty"`
+	Headers                 []string          `wrp:"headers,omitempty" json:"headers,omitempty"`
+	Metadata                map[string]string `wrp:"metadata,omitempty" json:"metadata,omitempty"`
+	Spans                   [][]string        `wrp:"spans,omitempty" json:"spans,omitempty"`
+	IncludeSpans            *bool             `wrp:"include_spans,omitempty" json:"include_spans,omitempty"`
+	Payload                 []byte            `wrp:"payload,omitempty" json:"payload,omitempty"`
+	PartnerIDs              []string          `wrp:"partner_ids,omitempty" json:"partner_ids,omitempty"`
 }
 
 func (msg *SimpleRequestResponse) FindEventStringSubMatch() string {
@@ -310,14 +310,14 @@ func (msg *SimpleRequestResponse) Response(newSource string, requestDeliveryResp
 type SimpleEvent struct {
 	// Type is exposed principally for encoding.  This field *must* be set to SimpleEventMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type        MessageType       `wrp:"msg_type",json:"msg_type"`
-	Source      string            `wrp:"source",json:"source"`
-	Destination string            `wrp:"dest",json:"dest"`
-	ContentType string            `wrp:"content_type,omitempty",json:"content_type,omitempty"`
-	Headers     []string          `wrp:"headers,omitempty",json:"headers,omitempty"`
-	Metadata    map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
-	Payload     []byte            `wrp:"payload,omitempty",json:"payload,omitempty"`
-	PartnerIDs  []string          `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
+	Type        MessageType       `wrp:"msg_type" json:"msg_type"`
+	Source      string            `wrp:"source" json:"source"`
+	Destination string            `wrp:"dest" json:"dest"`
+	ContentType string            `wrp:"content_type,omitempty" json:"content_type,omitempty"`
+	Headers     []string          `wrp:"headers,omitempty" json:"headers,omitempty"`
+	Metadata    map[string]string `wrp:"metadata,omitempty" json:"metadata,omitempty"`
+	Payload     []byte            `wrp:"payload,omitempty" json:"payload,omitempty"`
+	PartnerIDs  []string          `wrp:"partner_ids,omitempty" json:"partner_ids,omitempty"`
 }
 
 func (msg *SimpleEvent) BeforeEncode() error {
@@ -360,20 +360,20 @@ func (msg *SimpleEvent) Response(newSource string, requestDeliveryResponse int64
 //
 // https://github.com/Comcast/wrp-c/wiki/Web-Routing-Protocol#crud-message-definition
 type CRUD struct {
-	Type                    MessageType       `wrp:"msg_type",json:"msg_type"`
-	Source                  string            `wrp:"source",json:"source"`
-	Destination             string            `wrp:"dest",json:"dest"`
-	TransactionUUID         string            `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
-	ContentType             string            `wrp:"content_type,omitempty",json:"content_type,omitempty"`
-	Headers                 []string          `wrp:"headers,omitempty",json:"headers,omitempty"`
-	Metadata                map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
-	Spans                   [][]string        `wrp:"spans,omitempty",json:"spans,omitempty"`
-	IncludeSpans            *bool             `wrp:"include_spans,omitempty",json:"include_spans,omitempty"`
-	Status                  *int64            `wrp:"status,omitempty",json:"status,omitempty"`
-	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty",json:"rdr,omitempty"`
-	Path                    string            `wrp:"path",json:"path"`
-	Payload                 []byte            `wrp:"payload,omitempty",json:"payload,omitempty"`
-	PartnerIDs              []string          `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
+	Type                    MessageType       `wrp:"msg_type" json:"msg_type"`
+	Source                  string            `wrp:"source" json:"source"`
+	Destination             string            `wrp:"dest" json:"dest"`
+	TransactionUUID         string            `wrp:"transaction_uuid,omitempty" json:"transaction_uuid,omitempty"`
+	ContentType             string            `wrp:"content_type,omitempty" json:"content_type,omitempty"`
+	Headers                 []string          `wrp:"headers,omitempty" json:"headers,omitempty"`
+	Metadata                map[string]string `wrp:"metadata,omitempty" json:"metadata,omitempty"`
+	Spans                   [][]string        `wrp:"spans,omitempty" json:"spans,omitempty"`
+	IncludeSpans            *bool             `wrp:"include_spans,omitempty" json:"include_spans,omitempty"`
+	Status                  *int64            `wrp:"status,omitempty" json:"status,omitempty"`
+	RequestDeliveryResponse *int64            `wrp:"rdr,omitempty" json:"rdr,omitempty"`
+	Path                    string            `wrp:"path" json:"path"`
+	Payload                 []byte            `wrp:"payload,omitempty" json:"payload,omitempty"`
+	PartnerIDs              []string          `wrp:"partner_ids,omitempty" json:"partner_ids,omitempty"`
 }
 
 // SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
@@ -429,9 +429,9 @@ func (msg *CRUD) Response(newSource string, requestDeliveryResponse int64) Routa
 type ServiceRegistration struct {
 	// Type is exposed principally for encoding.  This field *must* be set to ServiceRegistrationMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type        MessageType `wrp:"msg_type",json:"msg_type"`
-	ServiceName string      `wrp:"service_name",json:"service_name"`
-	URL         string      `wrp:"url",json:"url"`
+	Type        MessageType `wrp:"msg_type" json:"msg_type"`
+	ServiceName string      `wrp:"service_name" json:"service_name"`
+	URL         string      `wrp:"url" json:"url"`
 }
 
 func (msg *ServiceRegistration) BeforeEncode() error {
@@ -445,7 +445,7 @@ func (msg *ServiceRegistration) BeforeEncode() error {
 type ServiceAlive struct {
 	// Type is exposed principally for encoding.  This field *must* be set to ServiceAliveMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type MessageType `wrp:"msg_type",json:"msg_type"`
+	Type MessageType `wrp:"msg_type" json:"msg_type"`
 }
 
 func (msg *ServiceAlive) BeforeEncode() error {
