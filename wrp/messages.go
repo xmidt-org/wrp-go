@@ -82,21 +82,25 @@ type Message struct {
 	// Source The device_id name of the device originating the request or response.
 	//
 	// required: false
+	// example: dns:talaria.xmidt.example.com
 	Source string `wrp:"source,omitempty",json:"source,omitempty"`
 
 	// Destination The device_id name of the target device of the request or response.
 	//
 	// required: false
+	// example: event:device-status/mac:ffffffffdae4/online
 	Destination string `wrp:"dest,omitempty",json:"dest,omitempty"`
 
 	// TransactionUUID The transaction key for the message
 	//
 	// required: false
+	// example: 546514d4-9cb6-41c9-88ca-ccd4c130c525
 	TransactionUUID string `wrp:"transaction_uuid,omitempty",json:"transaction_uuid,omitempty"`
 
 	// ContentType The media type of the payload.
 	//
 	// required: false
+	// example: json
 	ContentType string `wrp:"content_type,omitempty",json:"content_type,omitempty"`
 
 	// Accept  The media type accepted in the response.
@@ -123,6 +127,7 @@ type Message struct {
 	// Metadata The map of name/value pairs used by consumers of WRP messages for filtering & other purposes.
 	//
 	// required: false
+	// example: {"/boot-time":1542834188,"/last-reconnect-reason":"spanish inquisition"}
 	Metadata map[string]string `wrp:"metadata,omitempty",json:"metadata,omitempty"`
 
 	// Spans An array of arrays of timing values as a list in the format: "parent" (string), "name" (string),
@@ -144,6 +149,7 @@ type Message struct {
 	// Payload The string encoded of the ContentType
 	//
 	// required: false
+	// example: eyJpZCI6IjUiLCJ0cyI6IjIwMTktMDItMTJUMTE6MTA6MDIuNjE0MTkxNzM1WiIsImJ5dGVzLXNlbnQiOjAsIm1lc3NhZ2VzLXNlbnQiOjEsImJ5dGVzLXJlY2VpdmVkIjowLCJtZXNzYWdlcy1yZWNlaXZlZCI6MH0=
 	Payload []byte `wrp:"payload,omitempty",json:"payload,omitempty"`
 
 	// ServiceName The originating point of the request or response
@@ -159,6 +165,7 @@ type Message struct {
 	// PartnerIDs The list of partner ids the message is meant to target.
 	//
 	// required: false
+	// example: ["hello","world"]
 	PartnerIDs []string `wrp:"partner_ids,omitempty",json:"partner_ids,omitempty"`
 }
 
