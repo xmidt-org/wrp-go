@@ -453,6 +453,20 @@ func (msg *ServiceAlive) BeforeEncode() error {
 	return nil
 }
 
+// Unknown represents a WRP message of type UnknownMessageType.
+//
+// https://github.com/Comcast/wrp-c/wiki/Web-Routing-Protocol#unknown-message-definition
+type Unknown struct {
+	// Type is exposed principally for encoding.  This field *must* be set to UnknownMessageType,
+	// and is automatically set by the BeforeEncode method.
+	Type MessageType `wrp:"msg_type" json:"msg_type"`
+}
+
+func (msg *Unknown) BeforeEncode() error {
+	msg.Type = UnknownMessageType
+	return nil
+}
+
 func findEventStringSubMatch(s string) string {
 	var match = eventPattern.FindStringSubmatch(s)
 

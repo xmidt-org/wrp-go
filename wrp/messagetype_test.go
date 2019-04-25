@@ -19,6 +19,7 @@ func TestMessageTypeString(t *testing.T) {
 			DeleteMessageType,
 			ServiceRegistrationMessageType,
 			ServiceAliveMessageType,
+			UnknownMessageType,
 			MessageType(-1),
 		}
 
@@ -48,6 +49,7 @@ func TestMessageTypeSupportsTransaction(t *testing.T) {
 			DeleteMessageType:                true,
 			ServiceRegistrationMessageType:   false,
 			ServiceAliveMessageType:          false,
+			UnknownMessageType:               false,
 		}
 	)
 

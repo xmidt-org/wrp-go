@@ -623,3 +623,30 @@ func TestServiceAlive(t *testing.T) {
 		})
 	}
 }
+
+func testUnknownEncode(t *testing.T, f Format) {
+	var (
+		assert   = assert.New(t)
+		original = Unknown{}
+
+		decoded Unknown
+
+		buffer  bytes.Buffer
+		encoder = NewEncoder(&buffer, f)
+		decoder = NewDecoder(&buffer, f)
+	)
+
+	assert.NoError(encoder.Encode(&original))
+	assert.True(buffer.Len() > 0)
+	assert.Equal(UnknownMessageType, original.Type)
+	assert.NoError(decoder.Decode(&decoded))
+	assert.Equal(original, decoded)
+}
+
+func TestUnknown(t *testing.T) {
+	for _, format := range allFormats {
+		t.Run(fmt.Sprintf("Encode%s", format), func(t *testing.T) {
+			testUnknownEncode(t, format)
+		})
+	}
+}

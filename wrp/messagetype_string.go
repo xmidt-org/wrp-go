@@ -4,9 +4,9 @@ package wrp
 
 import "strconv"
 
-const _MessageType_name = "SimpleRequestResponseMessageTypeSimpleEventMessageTypeCreateMessageTypeRetrieveMessageTypeUpdateMessageTypeDeleteMessageTypeServiceRegistrationMessageTypeServiceAliveMessageTypelastMessageType"
+const _MessageType_name = "SimpleRequestResponseMessageTypeSimpleEventMessageTypeCreateMessageTypeRetrieveMessageTypeUpdateMessageTypeDeleteMessageTypeServiceRegistrationMessageTypeServiceAliveMessageTypeUnknownMessageTypelastMessageType"
 
-var _MessageType_index = [...]uint8{0, 32, 54, 71, 90, 107, 124, 154, 177, 192}
+var _MessageType_index = [...]uint8{0, 32, 54, 71, 90, 107, 124, 154, 177, 195, 210}
 
 func (i MessageType) String() string {
 	i -= 3
