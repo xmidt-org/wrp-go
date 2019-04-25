@@ -11,7 +11,7 @@ import (
 type MessageType int64
 
 const (
-	SimpleRequestResponseMessageType  MessageType = iota + 3
+	SimpleRequestResponseMessageType MessageType = iota + 3
 	SimpleEventMessageType
 	CreateMessageType
 	RetrieveMessageType
@@ -19,6 +19,7 @@ const (
 	DeleteMessageType
 	ServiceRegistrationMessageType
 	ServiceAliveMessageType
+	UnknownMessageType
 	lastMessageType
 )
 
@@ -32,6 +33,8 @@ func (mt MessageType) SupportsTransaction() bool {
 	case ServiceRegistrationMessageType:
 		return false
 	case ServiceAliveMessageType:
+		return false
+	case UnknownMessageType:
 		return false
 	default:
 		return true
