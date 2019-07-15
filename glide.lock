@@ -1,5 +1,5 @@
-hash: 164c7f634555eb8a58e59130f1b630a4bc0c9885eab09af369bb5eb530f633b9
-updated: 2019-07-15T14:00:39.467544-07:00
+hash: c1057fa26f381ccc955873875abd2a2f6a707716c27a50fa24ac6ffe2e368efd
+updated: 2019-07-15T15:49:45.469931-07:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 346938d642f2ec3594ed81d874461961cd0faa76
@@ -29,7 +29,7 @@ imports:
   - mock
   - require
 - name: github.com/ugorji/go
-  version: 23ab95ef5dc3b70286760af84ce2327a2b64ed62
+  version: 2adff0894ba3bc2eeb9f9aea45fefd49802e1a13
   subpackages:
   - codec
 - name: github.com/xmidt-org/webpa-common
