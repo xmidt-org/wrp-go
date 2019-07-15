@@ -1,7 +1,7 @@
 hash: a7623d44f2e15b69abb74d80e6b0b4cca1ba07808d2ea8a65c1737b88c58c312
 updated: 2019-04-25T09:31:09.618363-07:00
 imports:
-- name: github.com/Comcast/webpa-common
+- name: github.com/xmidt-org/webpa-common
   version: 139aa5d0c3f28555a14848d710d92813585a5a41
   subpackages:
   - tracing

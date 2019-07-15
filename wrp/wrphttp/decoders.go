@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/Comcast/wrp-go/wrp"
+	"github.com/xmidt-org/wrp-go/wrp"
 )
 
 // Entity represents a decoded WRP message.

@@ -4,9 +4,9 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/Comcast/webpa-common/tracing"
-	"github.com/Comcast/wrp-go/wrp"
 	"github.com/go-kit/kit/log"
+	"github.com/xmidt-org/webpa-common/tracing"
+	"github.com/xmidt-org/wrp-go/wrp"
 )
 
 // Note is the core type implemented by any entity which carries a WRP message.

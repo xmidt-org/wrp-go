@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Initial creation
 
 ## [1.0.0]
-- This release is exactly the same as the last version from github.com/Comcast/webpa-common/wrp
+- This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/Comcast/wrp-go/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/Comcast/wrp-go/compare/v0.0.0...v1.0.0
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/xmidt-org/wrp-go/compare/v0.0.0...v1.0.0

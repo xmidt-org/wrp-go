@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Comcast/wrp-go/wrp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/wrp-go/wrp"
 )
 
 func testNewMessageFromHeadersSuccess(t *testing.T) {
