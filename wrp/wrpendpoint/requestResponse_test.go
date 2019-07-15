@@ -6,11 +6,11 @@ import (
 	"io"
 	"testing"
 
-	"github.com/xmidt-org/webpa-common/tracing"
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/webpa-common/tracing"
 	"github.com/xmidt-org/wrp-go/wrp"
 )
 

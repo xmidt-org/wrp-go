@@ -4,8 +4,8 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/xmidt-org/webpa-common/tracing"
 	"github.com/go-kit/kit/log"
+	"github.com/xmidt-org/webpa-common/tracing"
 	"github.com/xmidt-org/wrp-go/wrp"
 )
 
