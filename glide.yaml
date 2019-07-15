@@ -1,7 +1,7 @@
 package: .
 import:
   - package: github.com/ugorji/go
-    version: e5e69e061d4f7ee3a69b793cf9c1b41afe21918e
+    version: v1.1.7
     subpackages:
       - codec
   - package: github.com/go-kit/kit
