@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Comcast/wrp-go/wrp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/wrp-go/wrp"
 )
 
 func TestDefaultDecoder(t *testing.T) {

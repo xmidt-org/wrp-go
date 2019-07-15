@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Comcast/wrp-go/wrp"
+	"github.com/xmidt-org/wrp-go/wrp"
 )
 
 const (

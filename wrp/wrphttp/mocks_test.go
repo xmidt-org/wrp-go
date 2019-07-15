@@ -3,11 +3,11 @@ package wrphttp
 import (
 	"io"
 
-	"github.com/Comcast/webpa-common/tracing"
-	"github.com/Comcast/wrp-go/wrp"
-	"github.com/Comcast/wrp-go/wrp/wrpendpoint"
+	"github.com/xmidt-org/webpa-common/tracing"
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/mock"
+	"github.com/xmidt-org/wrp-go/wrp"
+	"github.com/xmidt-org/wrp-go/wrp/wrpendpoint"
 )
 
 type mockReadCloser struct {

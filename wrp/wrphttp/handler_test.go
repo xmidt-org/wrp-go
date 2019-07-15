@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Comcast/wrp-go/wrp"
 	gokithttp "github.com/go-kit/kit/transport/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/wrp-go/wrp"
 )
 
 func TestHandlerFunc(t *testing.T) {

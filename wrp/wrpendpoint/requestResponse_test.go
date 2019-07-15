@@ -6,12 +6,12 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Comcast/webpa-common/tracing"
-	"github.com/Comcast/wrp-go/wrp"
+	"github.com/xmidt-org/webpa-common/tracing"
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/wrp-go/wrp"
 )
 
 func assertNote(t *testing.T, expected wrp.Message, actual Note) {

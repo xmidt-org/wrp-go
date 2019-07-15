@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Comcast/wrp-go/wrp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/wrp-go/wrp"
 )
 
 func testRequestContextDefault(t *testing.T) {
