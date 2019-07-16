@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v1.2.0]
+- Updated codec version
+
 ## [v1.1.0]
 - Fixed circular dependencies with webpa-common
 - Added swagger doc comments
@@ -15,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/xmidt-org/wrp-go/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/xmidt-org/wrp-go/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/xmidt-org/wrp-go/compare/v0.0.0...v1.0.0
