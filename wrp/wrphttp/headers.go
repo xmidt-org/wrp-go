@@ -1,6 +1,7 @@
 package wrphttp
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -22,6 +23,8 @@ const (
 	SourceHeader                  = "X-Xmidt-Source"
 	DestinationHeader             = "X-Webpa-Device-Name"
 	AcceptHeader                  = "X-Xmidt-Accept"
+	MetadataHeader                = "X-Xmidt-Metadata"
+	PartnerIdHeader               = "X-Xmidt-Partner-Id"
 )
 
 var (
@@ -92,6 +95,51 @@ func getSpans(h http.Header) [][]string {
 	}
 
 	return spans
+}
+
+// getMetadata returns the map that represents the metadata fields that were
+// passed in as headers.  This function handles multiple duplicate headers.
+// This function panics if the header contains data that is not a name=value
+// pair.
+func getMetadata(h http.Header) map[string]string {
+	if 0 == len(h.Get(MetadataHeader)) {
+		return nil
+	}
+
+	meta := make(map[string]string)
+
+	for _, value := range h[MetadataHeader] {
+		fields := strings.Split(value, ",")
+		for _, v := range fields {
+			kv := strings.Split(v, "=")
+			if 2 != len(kv) {
+				panic(fmt.Errorf("Invalid %s header: %s", MetadataHeader, value))
+			}
+			meta[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+		}
+	}
+
+	return meta
+}
+
+// getPartnerIDs returns the array that represents the partner-ids that were
+// passed in as headers.  This function handles multiple duplicate headers.
+func getPartnerIDs(h http.Header) []string {
+	if 0 == len(h.Get(PartnerIdHeader)) {
+		return nil
+	}
+
+	var partners []string
+
+	for _, value := range h[PartnerIdHeader] {
+		fields := strings.Split(value, ",")
+		for i := 0; i < len(fields); i++ {
+			fields[i] = strings.TrimSpace(fields[i])
+		}
+		partners = append(partners, fields...)
+	}
+
+	return partners
 }
 
 func readPayload(h http.Header, p io.Reader) ([]byte, string) {
@@ -168,6 +216,8 @@ func SetMessageFromHeaders(h http.Header, m *wrp.Message) (err error) {
 	m.ContentType = h.Get("Content-Type")
 	m.Accept = h.Get(AcceptHeader)
 	m.Path = h.Get(PathHeader)
+	m.Metadata = getMetadata(h)
+	m.PartnerIDs = getPartnerIDs(h)
 
 	return
 }
@@ -212,6 +262,19 @@ func AddMessageHeaders(h http.Header, m *wrp.Message) {
 
 	if len(m.Path) > 0 {
 		h.Set(PathHeader, m.Path)
+	}
+
+	for k, v := range m.Metadata {
+		// perform k + "=" + v more efficiently
+		buf := bytes.Buffer{}
+		buf.WriteString(k)
+		buf.WriteString("=")
+		buf.WriteString(v)
+		h.Add(MetadataHeader, buf.String())
+	}
+
+	for _, v := range m.PartnerIDs {
+		h.Add(PartnerIdHeader, v)
 	}
 }
 
