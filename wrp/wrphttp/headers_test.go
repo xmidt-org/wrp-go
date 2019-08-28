@@ -116,7 +116,7 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 					MessageTypeHeader: []string{"SimpleEvent"},
 					SourceHeader:      []string{"test"},
 					DestinationHeader: []string{"mac:111122223333"},
-					MetadataHeader:    []string{"/foo=bar,/goo=car", "/dog=food"},
+					MetadataHeader:    []string{"/foo=bar,/goo=car", "/dog=food", "/tag", "/slag="},
 				},
 				payload: strings.NewReader("payload"),
 				expected: wrp.Message{
@@ -126,8 +126,10 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 					ContentType: "application/octet-stream",
 					Payload:     []byte("payload"),
 					Metadata: map[string]string{"/foo": "bar",
-						"/goo": "car",
-						"/dog": "food"},
+						"/goo":  "car",
+						"/dog":  "food",
+						"/tag":  "",
+						"/slag": ""},
 				},
 			},
 			{
@@ -237,21 +239,6 @@ func testNewMessageFromHeadersBadPayload(t *testing.T) {
 	reader.AssertExpectations(t)
 }
 
-func testNewMessageFromHeadersBadMetadataHeader(t *testing.T) {
-	assert := assert.New(t)
-
-	message, err := NewMessageFromHeaders(
-		http.Header{
-			MessageTypeHeader: []string{wrp.SimpleEventMessageType.FriendlyName()},
-			MetadataHeader:    []string{"foo=bar,invalid"},
-		},
-		nil,
-	)
-
-	assert.Nil(message)
-	assert.Error(err)
-}
-
 func TestNewMessageFromHeaders(t *testing.T) {
 	t.Run("Success", testNewMessageFromHeadersSuccess)
 	t.Run("BadMessageType", testNewMessageFromHeadersBadMessageType)
@@ -267,7 +254,6 @@ func TestNewMessageFromHeaders(t *testing.T) {
 
 	t.Run("BadSpanHeader", testNewMessageFromHeadersBadSpanHeader)
 	t.Run("BadPayload", testNewMessageFromHeadersBadPayload)
-	t.Run("BadMetadataHeader", testNewMessageFromHeadersBadMetadataHeader)
 }
 
 func TestAddMessageHeaders(t *testing.T) {

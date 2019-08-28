@@ -102,20 +102,22 @@ func getSpans(h http.Header) [][]string {
 // This function panics if the header contains data that is not a name=value
 // pair.
 func getMetadata(h http.Header) map[string]string {
-	if 0 == len(h.Get(MetadataHeader)) {
+	headers, ok := h[MetadataHeader]
+	if !ok {
 		return nil
 	}
 
 	meta := make(map[string]string)
 
-	for _, value := range h[MetadataHeader] {
+	for _, value := range headers {
 		fields := strings.Split(value, ",")
 		for _, v := range fields {
 			kv := strings.Split(v, "=")
-			if 2 != len(kv) {
-				panic(fmt.Errorf("Invalid %s header: %s", MetadataHeader, value))
+			if 0 < len(kv) {
+				key := strings.TrimSpace(kv[0])
+				kv = append(kv, "")
+				meta[key] = strings.Join(kv[1:], "")
 			}
-			meta[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
 		}
 	}
 
@@ -125,13 +127,14 @@ func getMetadata(h http.Header) map[string]string {
 // getPartnerIDs returns the array that represents the partner-ids that were
 // passed in as headers.  This function handles multiple duplicate headers.
 func getPartnerIDs(h http.Header) []string {
-	if 0 == len(h.Get(PartnerIdHeader)) {
+	headers, ok := h[PartnerIdHeader]
+	if !ok {
 		return nil
 	}
 
 	var partners []string
 
-	for _, value := range h[PartnerIdHeader] {
+	for _, value := range headers {
 		fields := strings.Split(value, ",")
 		for i := 0; i < len(fields); i++ {
 			fields[i] = strings.TrimSpace(fields[i])
