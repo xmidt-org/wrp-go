@@ -15,6 +15,6 @@ import:
       - linux
 
   - package: github.com/xmidt-org/webpa-common
-    version: v1.2.0
+    version: v1.3.1
     subpackages:
       - tracing

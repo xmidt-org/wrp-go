@@ -1,8 +1,8 @@
-hash: c1057fa26f381ccc955873875abd2a2f6a707716c27a50fa24ac6ffe2e368efd
-updated: 2019-07-15T15:55:38.563124-07:00
+hash: 52e76ef6b5fd1c990555ae2b024d4fbbb772030aa020ecbabbf7561302863584
+updated: 2019-09-04T16:27:04.741962-07:00
 imports:
 - name: github.com/davecgh/go-spew
-  version: 346938d642f2ec3594ed81d874461961cd0faa76
+  version: ecdeabc65495df2dec95d7c4a4c3e021903035e5
   subpackages:
   - spew
 - name: github.com/go-kit/kit
@@ -33,7 +33,7 @@ imports:
   subpackages:
   - codec
 - name: github.com/xmidt-org/webpa-common
-  version: 658cd41899dbff1c2f6e81efe5718bd35c8fbfe7
+  version: 14614c25f8233ee29f05cd7620070b9f7cbde728
   subpackages:
   - tracing
 testImports: []
