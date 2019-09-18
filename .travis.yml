@@ -10,20 +10,13 @@ matrix:
     - go: tip
   fast_finish: true
 
-before_install:
-  # Download the binary to bin folder in $GOPATH
-  - mkdir -p $GOPATH/bin
-  - curl https://glide.sh/get | sh
-
 install:
-  - pushd wrp
-  - popd
-  - glide install -strip-vendor
+  - GO111MODULE=on go mod vendor
 
 script:
   # Don't enforce format yet.
   # - if [ -n "$(gofmt -s -l . | grep -v "vendor")" ]; then diff -u <(echo -n) <(gofmt -d $(gofmt -s -l . | grep -v "vendor")); fi
   - pushd wrp
-  - go test -v -race -coverprofile=coverage.txt
+  - GO111MODULE=on go test -v -race -coverprofile=coverage.txt
   - bash <(curl -s https://codecov.io/bash) -t d4217c9f-8ea5-4b1e-bc00-19c7714bbe61
   - popd
