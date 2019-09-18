@@ -1,4 +1,4 @@
-module libraries/wrp-go
+module github.com/xmidt-org/wrp-go
 
 go 1.13
 
@@ -10,7 +10,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.1.2-0.20180825064932-ef50b0de2877 // indirect
 	github.com/stretchr/testify v1.2.1
-	github.com/ugorji/go v1.1.4
+	github.com/ugorji/go/codec v1.1.7
 	github.com/xmidt-org/webpa-common v1.3.1
-	github.com/xmidt-org/wrp-go v1.3.1
 )

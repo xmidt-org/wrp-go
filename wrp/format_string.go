@@ -4,6 +4,15 @@ package wrp
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[Msgpack-0]
+	_ = x[JSON-1]
+	_ = x[lastFormat-2]
+}
+
 const _Format_name = "MsgpackJSONlastFormat"
 
 var _Format_index = [...]uint8{0, 7, 11, 21}
