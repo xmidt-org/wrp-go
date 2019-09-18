@@ -4,6 +4,22 @@ package wrp
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[SimpleRequestResponseMessageType-3]
+	_ = x[SimpleEventMessageType-4]
+	_ = x[CreateMessageType-5]
+	_ = x[RetrieveMessageType-6]
+	_ = x[UpdateMessageType-7]
+	_ = x[DeleteMessageType-8]
+	_ = x[ServiceRegistrationMessageType-9]
+	_ = x[ServiceAliveMessageType-10]
+	_ = x[UnknownMessageType-11]
+	_ = x[lastMessageType-12]
+}
+
 const _MessageType_name = "SimpleRequestResponseMessageTypeSimpleEventMessageTypeCreateMessageTypeRetrieveMessageTypeUpdateMessageTypeDeleteMessageTypeServiceRegistrationMessageTypeServiceAliveMessageTypeUnknownMessageTypelastMessageType"
 
 var _MessageType_index = [...]uint8{0, 32, 54, 71, 90, 107, 124, 154, 177, 195, 210}
