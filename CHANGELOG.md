@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v1.3.3]
+- Updated module name to be correct
+- upgraded codec to v1.1.7
+
 ## [v1.3.2]
 - Moved from glide to go modules
 
@@ -27,7 +31,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v1.3.3...HEAD
+[v1.3.3]: https://github.com/xmidt-org/wrp-go/compare/v1.3.2...v1.3.3
 [v1.3.2]: https://github.com/xmidt-org/wrp-go/compare/v1.3.1...v1.3.2
 [v1.3.1]: https://github.com/xmidt-org/wrp-go/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/xmidt-org/wrp-go/compare/v1.2.0...v1.3.0
