@@ -12,4 +12,16 @@ structures and supporting utilities.
 [![GitHub release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](CHANGELOG.md)
 [![GoDoc](https://godoc.org/github.com/xmidt-org/wrp-go/wrp?status.svg)](https://godoc.org/github.com/xmidt-org/wrp-go/wrp)
 
+## Table of Contents
 
+- [Code of Conduct](#code-of-conduct)
+- [Contributing](#contributing)
+
+## Code of Conduct
+
+This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
+By participating, you agree to this Code.
+
+## Contributing
+
+Refer to [CONTRIBUTING.md](CONTRIBUTING.md).
