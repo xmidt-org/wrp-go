@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Changed folder structure to bring go files into the root directory
 
 ## [v1.3.4]
 - Bumped webpa-common to v1.3.2

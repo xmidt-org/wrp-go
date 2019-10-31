@@ -10,7 +10,7 @@ structures and supporting utilities.
 [![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-go/blob/master/LICENSE)
 [![GitHub release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](CHANGELOG.md)
-[![GoDoc](https://godoc.org/github.com/xmidt-org/wrp-go/wrp?status.svg)](https://godoc.org/github.com/xmidt-org/wrp-go/wrp)
+[![GoDoc](https://godoc.org/github.com/xmidt-org/wrp-go?status.svg)](https://godoc.org/github.com/xmidt-org/wrp-go)
 
 ## Table of Contents
 

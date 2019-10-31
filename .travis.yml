@@ -15,7 +15,5 @@ install:
 script:
   # Don't enforce format yet.
   # - if [ -n "$(gofmt -s -l . | grep -v "vendor")" ]; then diff -u <(echo -n) <(gofmt -d $(gofmt -s -l . | grep -v "vendor")); fi
-  - pushd wrp
   - GO111MODULE=on go test -v -race -coverprofile=coverage.txt
   - bash <(curl -s https://codecov.io/bash) -t d4217c9f-8ea5-4b1e-bc00-19c7714bbe61
-  - popd

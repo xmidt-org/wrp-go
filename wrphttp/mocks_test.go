@@ -6,8 +6,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/mock"
 	"github.com/xmidt-org/webpa-common/tracing"
-	"github.com/xmidt-org/wrp-go/wrp"
-	"github.com/xmidt-org/wrp-go/wrp/wrpendpoint"
+	"github.com/xmidt-org/wrp-go"
+	"github.com/xmidt-org/wrp-go/wrpendpoint"
 )
 
 type mockReadCloser struct {
