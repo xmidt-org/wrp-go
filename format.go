@@ -31,7 +31,7 @@ func AllFormats() []Format {
 var (
 	jsonHandle = codec.JsonHandle{
 		BasicHandle: codec.BasicHandle{
-			TypeInfos: codec.NewTypeInfos([]string{"wrp"}),
+			TypeInfos: codec.NewTypeInfos([]string{"json"}),
 		},
 		IntegerAsString: 'L',
 	}
@@ -42,7 +42,7 @@ var (
 	msgpackHandle = codec.MsgpackHandle{
 		WriteExt: true,
 		BasicHandle: codec.BasicHandle{
-			TypeInfos: codec.NewTypeInfos([]string{"wrp"}),
+			TypeInfos: codec.NewTypeInfos([]string{"json"}),
 		},
 	}
 )

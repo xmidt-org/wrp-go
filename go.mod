@@ -13,4 +13,5 @@ require (
 	github.com/stretchr/testify v1.2.1
 	github.com/ugorji/go/codec v1.1.7
 	github.com/xmidt-org/webpa-common v1.3.2
+	golang.org/x/tools v0.0.0-20200110142700-428f1ab0ca03 // indirect
 )
