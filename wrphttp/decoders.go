@@ -10,12 +10,15 @@ import (
 
 // Entity represents a decoded WRP message.
 type Entity struct {
-	// Message holds the WRP message that was decoded
+	// Message holds the WRP message that was decoded.
 	Message wrp.Message
 
 	// Format is the original format used to decode the message.
 	// This will generally be used as the default format for output.
 	Format wrp.Format
+
+	// Source is the payload from which the WRP message was decoded.
+	Source []byte
 }
 
 // Decoder turns an HTTP request into a WRP entity.
@@ -45,6 +48,15 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 
 		err = wrp.NewDecoderBytes(contents, format).Decode(&entity.Message)
 		return entity, err
+	}
+}
+
+func DecodeEntityFromSources(defaultFormat wrp.Format, allowHeaderSource bool) Decoder {
+	return func(ctx context.Context, original *http.Request) (*Entity, error) {
+		if allowHeaderSource && original.Header.Get(MessageTypeHeader) != "" {
+			return DecodeRequestHeaders(ctx, original)
+		}
+		return DecodeEntity(defaultFormat)(ctx, original)
 	}
 }
 
