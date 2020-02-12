@@ -167,6 +167,11 @@ type Message struct {
 	// required: false
 	// example: ["hello","world"]
 	PartnerIDs []string `json:"partner_ids,omitempty"`
+
+	// SessionID The ID for the current session with Talaria.
+	//
+	// required: false
+	SessionID string `json:"session_id,omitempty"`
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
@@ -318,6 +323,7 @@ type SimpleEvent struct {
 	Metadata    map[string]string `json:"metadata,omitempty"`
 	Payload     []byte            `json:"payload,omitempty"`
 	PartnerIDs  []string          `json:"partner_ids,omitempty"`
+	SessionID   string            `json:"session_id,omitempty"`
 }
 
 func (msg *SimpleEvent) BeforeEncode() error {
