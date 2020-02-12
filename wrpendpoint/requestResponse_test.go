@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/xmidt-org/webpa-common/tracing"
-	"github.com/xmidt-org/wrp-go"
+	"github.com/xmidt-org/wrp-go/v2"
 )
 
 func assertNote(t *testing.T, expected wrp.Message, actual Note) {

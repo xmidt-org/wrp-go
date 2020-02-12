@@ -5,9 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v2.0.0]
 - Changed folder structure to bring go files into the root directory [#32](https://github.com/xmidt-org/wrp-go/pull/32)
 - Updated travis to automate releases [#40](https://github.com/xmidt-org/wrp-go/pull/40)
+- Use json tag instead of wrp tag [#42](https://github.com/xmidt-org/wrp-go/pull/42)
 - Extend WRPHandler Request Adapter and Decoder [#43](https://github.com/xmidt-org/wrp-go/pull/43)
+- Added SessionID field to wrp SimpleEvent and Message [#45](https://github.com/xmidt-org/wrp-go/pull/45)
 
 ## [v1.3.4]
 - Bumped webpa-common to v1.3.2

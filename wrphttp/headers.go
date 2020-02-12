@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/xmidt-org/wrp-go"
+	"github.com/xmidt-org/wrp-go/v2"
 )
 
 const (

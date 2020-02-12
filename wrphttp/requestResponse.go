@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/xmidt-org/wrp-go"
+	"github.com/xmidt-org/wrp-go/v2"
 )
 
 // DetermineFormat examines zero or more headers to determine which WRP format is to be used, either
