@@ -23,7 +23,7 @@ structures and supporting utilities.
 This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
 By participating, you agree to this Code.
 
-## Examples
+## Examples 
 
 To use the wrp-go library, it first should be added as an import in the file you plan to use it.
 Examples can be found at the top of the [GoDoc](https://godoc.org/github.com/xmidt-org/wrp-go).
