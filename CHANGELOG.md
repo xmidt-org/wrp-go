@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v2.0.1]
+- Fix bug introduced in v2.0.0 for missing logic to populate new wrp entity field
+
 ## [v2.0.0]
 - Changed folder structure to bring go files into the root directory [#32](https://github.com/xmidt-org/wrp-go/pull/32)
 - Updated travis to automate releases [#40](https://github.com/xmidt-org/wrp-go/pull/40)
