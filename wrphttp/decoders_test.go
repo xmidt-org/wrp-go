@@ -41,15 +41,17 @@ func testDecodeEntitySuccess(t *testing.T) {
 					Destination: "bar",
 				}
 
-				body    bytes.Buffer
-				request = httptest.NewRequest("POST", "/", &body)
+				body    []byte
 				decoder = DecodeEntity(record.defaultFormat)
 			)
 
 			require.NotNil(decoder)
+
 			require.NoError(
-				wrp.NewEncoder(&body, record.bodyFormat).Encode(&expected),
+				wrp.NewEncoderBytes(&body, record.bodyFormat).Encode(&expected),
 			)
+
+			request := httptest.NewRequest("POST", "/", bytes.NewBuffer(body))
 
 			request.Header.Set("Content-Type", record.contentType)
 			entity, err := decoder(context.Background(), request)
@@ -57,6 +59,8 @@ func testDecodeEntitySuccess(t *testing.T) {
 			require.NotNil(entity)
 
 			assert.Equal(expected, entity.Message)
+			assert.Equal(record.bodyFormat, entity.Format)
+			assert.Equal(body, entity.Bytes)
 		})
 	}
 }
@@ -115,9 +119,13 @@ func testDecodeRequestHeadersSuccess(t *testing.T) {
 			Payload:         []byte{1, 2, 3},
 			TransactionUUID: "testytest",
 		}
+		expectedBytes []byte
+		body          bytes.Buffer
+		request       = httptest.NewRequest("POST", "/", &body)
+	)
 
-		body    bytes.Buffer
-		request = httptest.NewRequest("POST", "/", &body)
+	require.NoError(
+		wrp.NewEncoderBytes(&expectedBytes, wrp.Msgpack).Encode(&expected),
 	)
 
 	body.Write([]byte{1, 2, 3})
@@ -128,8 +136,9 @@ func testDecodeRequestHeadersSuccess(t *testing.T) {
 	entity, err := DecodeRequestHeaders(context.Background(), request)
 	assert.NoError(err)
 	require.NotNil(entity)
-
 	assert.Equal(expected, entity.Message)
+	assert.Equal(wrp.Msgpack, entity.Format)
+	assert.Equal(expectedBytes, entity.Bytes)
 }
 
 func testDecodeRequestHeadersInvalid(t *testing.T) {
