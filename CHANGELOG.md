@@ -45,7 +45,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v2.0.1...HEAD
+[v2.0.1]: https://github.com/xmidt-org/wrp-go/compare/v2.0.0...v2.0.1
 [v2.0.0]: https://github.com/xmidt-org/wrp-go/compare/v1.3.4...v2.0.0
 [v1.3.4]: https://github.com/xmidt-org/wrp-go/compare/v1.3.3...v1.3.4
 [v1.3.3]: https://github.com/xmidt-org/wrp-go/compare/v1.3.2...v1.3.3
