@@ -17,8 +17,10 @@ type Entity struct {
 	// This will generally be used as the default format for output.
 	Format wrp.Format
 
-	// Source is the payload from which the WRP message was decoded.
-	Source []byte
+	// Bytes is the Format-encoded version of the WRP Message.
+	// It serves as an optimization strategy for WRP handlers
+	// which may need the WRP message in this state.
+	Bytes []byte
 }
 
 // Decoder turns an HTTP request into a WRP entity.
@@ -44,6 +46,7 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 
 		entity := &Entity{
 			Format: format,
+			Bytes:  contents,
 		}
 
 		err = wrp.NewDecoderBytes(contents, format).Decode(&entity.Message)
@@ -73,6 +76,12 @@ func DecodeRequestHeaders(ctx context.Context, original *http.Request) (*Entity,
 	}
 
 	_, err = ReadPayload(original.Header, original.Body, &entity.Message)
+
+	if err != nil {
+		return entity, err
+	}
+
+	err = wrp.NewEncoderBytes(&entity.Bytes, entity.Format).Encode(entity.Message)
 	return entity, err
 }
 
