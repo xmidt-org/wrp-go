@@ -85,7 +85,7 @@ func testEntityResponseWriterInvalidAccept(t *testing.T) {
 	assert.Error(err)
 }
 
-func testEntityResponseWriterSuccess(t *testing.T, defaultFormat, expectedFormat wrp.Format, accept string) {
+func testEntityResponseWriterSuccess(t *testing.T, defaultFormat, expectedFormat wrp.Format, accept, contentType string) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
@@ -105,6 +105,7 @@ func testEntityResponseWriterSuccess(t *testing.T, defaultFormat, expectedFormat
 
 	require.NotNil(erw)
 	wrpRequest.Original.Header.Set("Accept", accept)
+	wrpRequest.Original.Header.Set("Content-Type", contentType)
 
 	wrpResponse, err := erw(httpResponse, wrpRequest)
 	require.NoError(err)
@@ -125,11 +126,15 @@ func TestEntityResponseWriter(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		for _, defaultFormat := range wrp.AllFormats() {
 			t.Run(defaultFormat.String(), func(t *testing.T) {
-				testEntityResponseWriterSuccess(t, defaultFormat, defaultFormat, "")
-
+				testEntityResponseWriterSuccess(t, defaultFormat, defaultFormat, "", "")
 				for _, accept := range wrp.AllFormats() {
+					testEntityResponseWriterSuccess(t, defaultFormat, accept, accept.ContentType(), "")
 					t.Run(accept.String(), func(t *testing.T) {
-						testEntityResponseWriterSuccess(t, defaultFormat, accept, accept.ContentType())
+						for _, contentType := range wrp.AllFormats() {
+							t.Run(contentType.String(), func(t *testing.T) {
+								testEntityResponseWriterSuccess(t, defaultFormat, contentType, "", contentType.ContentType())
+							})
+						}
 					})
 				}
 			})

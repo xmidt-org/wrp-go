@@ -87,7 +87,7 @@ func DefaultResponseWriterFunc() ResponseWriterFunc {
 // default format.
 func NewEntityResponseWriter(defaultFormat wrp.Format) ResponseWriterFunc {
 	return func(httpResponse http.ResponseWriter, wrpRequest *Request) (ResponseWriter, error) {
-		format, err := DetermineFormat(defaultFormat, wrpRequest.Original.Header, "Accept")
+		format, err := DetermineFormat(defaultFormat, wrpRequest.Original.Header, "Accept", "Content-Type")
 		if err != nil {
 			return nil, err
 		}
