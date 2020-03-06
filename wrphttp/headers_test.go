@@ -288,7 +288,7 @@ func TestAddMessageHeaders(t *testing.T) {
 					Spans:                   [][]string{{"foo", "bar", "graar"}},
 					Accept:                  "application/json",
 					Path:                    "/foo/bar",
-					Metadata:                map[string]string{"/goo": "car", "/cow": "milk"},
+					Metadata:                map[string]string{"/goo": "car"},
 					PartnerIDs:              []string{"part-1", "part-2"},
 				},
 				expected: http.Header{
@@ -302,7 +302,7 @@ func TestAddMessageHeaders(t *testing.T) {
 					SpanHeader:                    []string{"foo,bar,graar"},
 					AcceptHeader:                  []string{"application/json"},
 					PathHeader:                    []string{"/foo/bar"},
-					MetadataHeader:                []string{"/goo=car", "/cow=milk"},
+					MetadataHeader:                []string{"/goo=car"},
 					PartnerIdHeader:               []string{"part-1", "part-2"},
 				},
 			},
