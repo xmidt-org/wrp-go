@@ -288,7 +288,7 @@ func TestAddMessageHeaders(t *testing.T) {
 					Spans:                   [][]string{{"foo", "bar", "graar"}},
 					Accept:                  "application/json",
 					Path:                    "/foo/bar",
-					Metadata:                map[string]string{"/goo": "car"},
+					Metadata:                map[string]string{"/goo": "car", "/cow": "milk"},
 					PartnerIDs:              []string{"part-1", "part-2"},
 				},
 				expected: http.Header{
@@ -302,18 +302,28 @@ func TestAddMessageHeaders(t *testing.T) {
 					SpanHeader:                    []string{"foo,bar,graar"},
 					AcceptHeader:                  []string{"application/json"},
 					PathHeader:                    []string{"/foo/bar"},
-					MetadataHeader:                []string{"/goo=car"},
+					MetadataHeader:                []string{"/goo=car", "/cow=milk"},
 					PartnerIdHeader:               []string{"part-1", "part-2"},
 				},
 			},
 		}
 	)
 
+	regularHeaders := []string{MessageTypeHeader, TransactionUuidHeader, SourceHeader, DestinationHeader, StatusHeader,
+		RequestDeliveryResponseHeader, IncludeSpansHeader, SpanHeader, AcceptHeader, PathHeader, PartnerIdHeader}
+
 	for _, record := range testData {
 		t.Logf("%#v", record)
+
+		expected := record.expected
 		actual := make(http.Header)
 		AddMessageHeaders(actual, &record.message)
-		assert.Equal(record.expected, actual)
+
+		for _, header := range regularHeaders {
+			assert.Equal(expected[header], actual[header])
+		}
+
+		assert.ElementsMatch(expected[MetadataHeader], actual[MetadataHeader])
 	}
 }
 
