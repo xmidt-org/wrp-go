@@ -26,7 +26,10 @@ type Entity struct {
 	Bytes []byte
 }
 
-var ErrUndefinedEntity = errors.New("WRP Entity was nil.")
+var (
+	ErrUndefinedEntity  = errors.New("WRP Entity was nil.")
+	ErrInvalidWRPFormat = errors.New("Unsupported WRP format.")
+)
 
 // DetermineFormat examines zero or more headers to determine which WRP format is to be used, either
 // for decoding or encoding.  The headers are tried in order, and the first non-empty value that maps
@@ -93,6 +96,11 @@ type ResponseWriter interface {
 	// by the configuration of the underlying implementation.  This method is idempotent, and returns
 	// an error if called multiple times for the same instance.
 	WriteWRP(e *Entity) (int, error)
+
+	// WriteWRPFromBytes writes a WRP message to the underlying response. The byte array input is assumed
+	// to be the WRP message in the given format. This method is idempotent, and behaves
+	// similarly as WriteWRP.
+	WriteWRPFromBytes(wrp.Format, []byte) (int, error)
 }
 
 type ResponseWriterFunc func(http.ResponseWriter, *Request) (ResponseWriter, error)
@@ -145,4 +153,19 @@ func (erw *entityResponseWriter) WriteWRP(e *Entity) (int, error) {
 
 	erw.ResponseWriter.Header().Set("Content-Type", erw.f.ContentType())
 	return erw.ResponseWriter.Write(output)
+}
+
+func (erw *entityResponseWriter) WriteWRPFromBytes(f wrp.Format, encodedWRP []byte) (int, error) {
+	ok := false
+	for _, supportedFormat := range wrp.AllFormats() {
+		if f == supportedFormat {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return 0, ErrInvalidWRPFormat
+	}
+	erw.ResponseWriter.Header().Set("Content-Type", f.ContentType())
+	return erw.ResponseWriter.Write(encodedWRP)
 }
