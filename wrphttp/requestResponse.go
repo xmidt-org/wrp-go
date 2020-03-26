@@ -27,8 +27,9 @@ type Entity struct {
 }
 
 var (
-	ErrUndefinedEntity  = errors.New("WRP Entity was nil.")
-	ErrInvalidWRPFormat = errors.New("Unsupported WRP format.")
+	ErrUndefinedEntity            = errors.New("WRP Entity was nil.")
+	ErrEmptyWRPBytes              = errors.New("Encoded WRP bytes were empty.")
+	ErrContentNegotiationMismatch = errors.New("Given format violates content negotiation")
 )
 
 // DetermineFormat examines zero or more headers to determine which WRP format is to be used, either
@@ -101,6 +102,10 @@ type ResponseWriter interface {
 	// to be the WRP message in the given format. This method is idempotent, and behaves
 	// similarly as WriteWRP.
 	WriteWRPFromBytes(wrp.Format, []byte) (int, error)
+
+	// WRPFormat returns the format in which the WRP message response will be written. It is a convenience
+	// function to verify the right format is called with WriteWRPFromBytes
+	WRPFormat() wrp.Format
 }
 
 type ResponseWriterFunc func(http.ResponseWriter, *Request) (ResponseWriter, error)
@@ -156,16 +161,16 @@ func (erw *entityResponseWriter) WriteWRP(e *Entity) (int, error) {
 }
 
 func (erw *entityResponseWriter) WriteWRPFromBytes(f wrp.Format, encodedWRP []byte) (int, error) {
-	ok := false
-	for _, supportedFormat := range wrp.AllFormats() {
-		if f == supportedFormat {
-			ok = true
-			break
-		}
+	if encodedWRP == nil {
+		return 0, ErrEmptyWRPBytes
 	}
-	if !ok {
-		return 0, ErrInvalidWRPFormat
+	if f != erw.f {
+		return 0, ErrContentNegotiationMismatch
 	}
 	erw.ResponseWriter.Header().Set("Content-Type", f.ContentType())
 	return erw.ResponseWriter.Write(encodedWRP)
+}
+
+func (erw *entityResponseWriter) WRPFormat() wrp.Format {
+	return erw.f
 }
