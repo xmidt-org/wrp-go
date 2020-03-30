@@ -27,7 +27,6 @@ type Entity struct {
 }
 
 var (
-	ErrUndefinedEntity            = errors.New("WRP Entity was nil.")
 	ErrEmptyWRPBytes              = errors.New("Encoded WRP bytes were empty.")
 	ErrContentNegotiationMismatch = errors.New("Given format violates content negotiation")
 )
