@@ -182,12 +182,12 @@ func testWriteWRPFail(t *testing.T) {
 
 	wrpResponse, err := erw(httpResponse, wrpRequest)
 	require.Nil(err)
-	i, e := wrpResponse.WriteWRP(nil)
-	assert.Zero(i)
-	assert.EqualValues(ErrUndefinedEntity, e)
+	assert.Panics(func() {
+		wrpResponse.WriteWRP(nil)
+	})
 }
 
-func testWriteWRPFromBytesFail(t *testing.T, bytes []byte, f wrp.Format, expectedErr error) {
+func testWriteWRPBytesFail(t *testing.T, bytes []byte, f wrp.Format, expectedErr error) {
 	var (
 		assert  = assert.New(t)
 		require = require.New(t)
@@ -202,7 +202,7 @@ func testWriteWRPFromBytesFail(t *testing.T, bytes []byte, f wrp.Format, expecte
 
 	wrpResponse, err := erw(httpResponse, wrpRequest)
 	require.Nil(err)
-	i, e := wrpResponse.WriteWRPFromBytes(f, bytes)
+	i, e := wrpResponse.WriteWRPBytes(f, bytes)
 	assert.Zero(i)
 	assert.EqualValues(expectedErr, e)
 }
@@ -235,7 +235,7 @@ func testWriteWRPFromBytesSuccess(t *testing.T, defaultFormat, expectedFormat wr
 	format := wrpResponse.WRPFormat()
 	require.Equal(expectedFormat, format)
 
-	count, err := wrpResponse.WriteWRPFromBytes(format, wrp.MustEncode(*expected, format))
+	count, err := wrpResponse.WriteWRPBytes(format, wrp.MustEncode(*expected, format))
 	require.NoError(err)
 	assert.True(count > 0)
 
@@ -251,10 +251,10 @@ func TestEntityResponseWriter(t *testing.T) {
 
 	t.Run("WriteWRPFromBytesFail", func(t *testing.T) {
 		t.Run("EmptyBytes", func(t *testing.T) {
-			testWriteWRPFromBytesFail(t, nil, wrp.Msgpack, ErrEmptyWRPBytes)
+			testWriteWRPBytesFail(t, nil, wrp.Msgpack, ErrEmptyWRPBytes)
 		})
 		t.Run("ContentNegotation", func(t *testing.T) {
-			testWriteWRPFromBytesFail(t, []byte("few-bytes"), wrp.JSON, ErrContentNegotiationMismatch)
+			testWriteWRPBytesFail(t, []byte("few-bytes"), wrp.JSON, ErrContentNegotiationMismatch)
 		})
 	})
 

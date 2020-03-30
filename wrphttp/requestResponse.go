@@ -98,13 +98,13 @@ type ResponseWriter interface {
 	// an error if called multiple times for the same instance.
 	WriteWRP(e *Entity) (int, error)
 
-	// WriteWRPFromBytes writes a WRP message to the underlying response. The byte array input is assumed
+	// WriteWRPBytes writes a WRP message to the underlying response. The byte array input is assumed
 	// to be the WRP message in the given format. This method is idempotent, and behaves
 	// similarly as WriteWRP.
-	WriteWRPFromBytes(wrp.Format, []byte) (int, error)
+	WriteWRPBytes(wrp.Format, []byte) (int, error)
 
 	// WRPFormat returns the format in which the WRP message response will be written. It is a convenience
-	// function to verify the right format is called with WriteWRPFromBytes
+	// function to verify the right format is called with WriteWRPBytes
 	WRPFormat() wrp.Format
 }
 
@@ -140,10 +140,6 @@ type entityResponseWriter struct {
 }
 
 func (erw *entityResponseWriter) WriteWRP(e *Entity) (int, error) {
-	if e == nil {
-		return 0, ErrUndefinedEntity
-	}
-
 	var output []byte
 
 	if len(e.Bytes) > 0 && e.Format == erw.f {
@@ -160,7 +156,7 @@ func (erw *entityResponseWriter) WriteWRP(e *Entity) (int, error) {
 	return erw.ResponseWriter.Write(output)
 }
 
-func (erw *entityResponseWriter) WriteWRPFromBytes(f wrp.Format, encodedWRP []byte) (int, error) {
+func (erw *entityResponseWriter) WriteWRPBytes(f wrp.Format, encodedWRP []byte) (int, error) {
 	if encodedWRP == nil {
 		return 0, ErrEmptyWRPBytes
 	}
