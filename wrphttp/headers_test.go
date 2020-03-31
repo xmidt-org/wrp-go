@@ -309,11 +309,21 @@ func TestAddMessageHeaders(t *testing.T) {
 		}
 	)
 
+	regularHeaders := []string{MessageTypeHeader, TransactionUuidHeader, SourceHeader, DestinationHeader, StatusHeader,
+		RequestDeliveryResponseHeader, IncludeSpansHeader, SpanHeader, AcceptHeader, PathHeader, PartnerIdHeader}
+
 	for _, record := range testData {
 		t.Logf("%#v", record)
+
+		expected := record.expected
 		actual := make(http.Header)
 		AddMessageHeaders(actual, &record.message)
-		assert.Equal(record.expected, actual)
+
+		for _, header := range regularHeaders {
+			assert.Equal(expected[header], actual[header])
+		}
+
+		assert.ElementsMatch(expected[MetadataHeader], actual[MetadataHeader])
 	}
 }
 

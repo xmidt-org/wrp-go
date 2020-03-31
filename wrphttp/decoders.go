@@ -8,21 +8,6 @@ import (
 	"github.com/xmidt-org/wrp-go/v2"
 )
 
-// Entity represents a decoded WRP message.
-type Entity struct {
-	// Message holds the WRP message that was decoded.
-	Message wrp.Message
-
-	// Format is the original format used to decode the message.
-	// This will generally be used as the default format for output.
-	Format wrp.Format
-
-	// Bytes is the Format-encoded version of the WRP Message.
-	// It serves as an optimization strategy for WRP handlers
-	// which may need the WRP message in this state.
-	Bytes []byte
-}
-
 // Decoder turns an HTTP request into a WRP entity.
 type Decoder func(context.Context, *http.Request) (*Entity, error)
 

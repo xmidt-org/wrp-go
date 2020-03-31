@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Add content negotation utility functions [#47](https://github.com/xmidt-org/wrp-go/pull/47)
 
 ## [v2.0.1]
 - Fix bug introduced in v2.0.0 for missing logic to populate new wrp entity field

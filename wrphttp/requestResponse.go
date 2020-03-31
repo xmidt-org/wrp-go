@@ -2,9 +2,33 @@ package wrphttp
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/xmidt-org/wrp-go/v2"
+)
+
+// Entity represents a WRP message in transit. Useful for
+// request/response WRP handler exchanges.
+type Entity struct {
+	// Message holds the WRP message.
+	Message wrp.Message
+
+	// Format is the format of the WRP message encoded into the Bytes
+	// field.
+	// (Optional)
+	Format wrp.Format
+
+	// Bytes is the Format-encoded version of the WRP Message.
+	// It serves as an optimization strategy for WRP handlers
+	// to avoid unnecessary re-encodings.
+	// (Optional)
+	Bytes []byte
+}
+
+var (
+	ErrEmptyWRPBytes              = errors.New("Encoded WRP bytes were empty.")
+	ErrContentNegotiationMismatch = errors.New("Given format violates content negotiation")
 )
 
 // DetermineFormat examines zero or more headers to determine which WRP format is to be used, either
@@ -71,7 +95,16 @@ type ResponseWriter interface {
 	// WriteWRP writes a WRP message to the underlying response.  The format used is determined
 	// by the configuration of the underlying implementation.  This method is idempotent, and returns
 	// an error if called multiple times for the same instance.
-	WriteWRP(interface{}) (int, error)
+	WriteWRP(e *Entity) (int, error)
+
+	// WriteWRPBytes writes a WRP message to the underlying response. The byte array input is assumed
+	// to be the WRP message in the given format. This method is idempotent, and behaves
+	// similarly as WriteWRP.
+	WriteWRPBytes(wrp.Format, []byte) (int, error)
+
+	// WRPFormat returns the format in which the WRP message response will be written. It is a convenience
+	// function to verify the right format is called with WriteWRPBytes
+	WRPFormat() wrp.Format
 }
 
 type ResponseWriterFunc func(http.ResponseWriter, *Request) (ResponseWriter, error)
@@ -105,16 +138,34 @@ type entityResponseWriter struct {
 	f wrp.Format
 }
 
-func (erw *entityResponseWriter) WriteWRP(v interface{}) (int, error) {
-	var (
-		output  []byte
-		encoder = wrp.NewEncoderBytes(&output, erw.f)
-	)
+func (erw *entityResponseWriter) WriteWRP(e *Entity) (int, error) {
+	var output []byte
 
-	if err := encoder.Encode(v); err != nil {
-		return 0, err
+	if len(e.Bytes) > 0 && e.Format == erw.f {
+		output = e.Bytes
+	} else {
+		encoder := wrp.NewEncoderBytes(&output, erw.f)
+
+		if err := encoder.Encode(e.Message); err != nil {
+			return 0, err
+		}
 	}
 
 	erw.ResponseWriter.Header().Set("Content-Type", erw.f.ContentType())
 	return erw.ResponseWriter.Write(output)
+}
+
+func (erw *entityResponseWriter) WriteWRPBytes(f wrp.Format, encodedWRP []byte) (int, error) {
+	if encodedWRP == nil {
+		return 0, ErrEmptyWRPBytes
+	}
+	if f != erw.f {
+		return 0, ErrContentNegotiationMismatch
+	}
+	erw.ResponseWriter.Header().Set("Content-Type", f.ContentType())
+	return erw.ResponseWriter.Write(encodedWRP)
+}
+
+func (erw *entityResponseWriter) WRPFormat() wrp.Format {
+	return erw.f
 }
