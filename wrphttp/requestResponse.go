@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/xmidt-org/wrp-go/v2"
+	"github.com/xmidt-org/wrp-go/v3"
 )
 
 // Entity represents a WRP message in transit. Useful for
