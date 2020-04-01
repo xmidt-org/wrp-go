@@ -1,4 +1,4 @@
-module github.com/xmidt-org/wrp-go/v2
+module github.com/xmidt-org/wrp-go/v3
 
 go 1.13
 

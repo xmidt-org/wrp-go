@@ -5,10 +5,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Add content negotation utility functions [#47](https://github.com/xmidt-org/wrp-go/pull/47)
+
+## [v3.0.0]
+- As a breaking change, `wrphttp.ResponseWriter`'s `WriteWRP` function now takes a `*wrphttp.Entity` type instead of an `interface{}`. 
+
+- `Format` and `WriteWRPBytes` were introduced as additional functions to `wrphttp.ResponseWriter` to offer higher API flexibility.
+
+All changes included in [#47](https://github.com/xmidt-org/wrp-go/pull/47)
 
 ## [v2.0.1]
-- Fix bug introduced in v2.0.0 for missing logic to populate new wrp entity field
+- Fix bug introduced in v2.0.0 for missing logic to populate new wrp entity field [#46](https://github.com/xmidt-org/wrp-go/pull/46)]
 
 ## [v2.0.0]
 - Changed folder structure to bring go files into the root directory [#32](https://github.com/xmidt-org/wrp-go/pull/32)
@@ -46,7 +52,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.0.0...HEAD
+[v3.0.0]: https://github.com/xmidt-org/wrp-go/compare/v2.0.1...v3.0.0
 [v2.0.1]: https://github.com/xmidt-org/wrp-go/compare/v2.0.0...v2.0.1
 [v2.0.0]: https://github.com/xmidt-org/wrp-go/compare/v1.3.4...v2.0.0
 [v1.3.4]: https://github.com/xmidt-org/wrp-go/compare/v1.3.3...v1.3.4
