@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v3.0.1]
+- Upgrade self import paths to /v3 [#49](https://github.com/xmidt-org/wrp-go/pull/49)
+
 ## [v3.0.0]
 - As a breaking change, `wrphttp.ResponseWriter`'s `WriteWRP` function now takes a `*wrphttp.Entity` type instead of an `interface{}`. 
 
@@ -52,7 +55,8 @@ All changes included in [#47](https://github.com/xmidt-org/wrp-go/pull/47)
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.0.1...HEAD
+[v3.0.1]: https://github.com/xmidt-org/wrp-go/compare/v3.0.0...v3.0.1
 [v3.0.0]: https://github.com/xmidt-org/wrp-go/compare/v2.0.1...v3.0.0
 [v2.0.1]: https://github.com/xmidt-org/wrp-go/compare/v2.0.0...v2.0.1
 [v2.0.0]: https://github.com/xmidt-org/wrp-go/compare/v1.3.4...v2.0.0
