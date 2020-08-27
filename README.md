@@ -11,6 +11,7 @@ structures and supporting utilities.
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-go/blob/main/LICENSE)
 [![GitHub release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](CHANGELOG.md)
 [![GoDoc](https://godoc.org/github.com/xmidt-org/wrp-go?status.svg)](https://godoc.org/github.com/xmidt-org/wrp-go)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xmidt-org_wrp-go&metric=alert_status)](https://sonarcloud.io/dashboard?id=xmidt-org_wrp-go)
 
 ## Table of Contents
 
