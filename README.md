@@ -3,14 +3,12 @@
 wrp-go provides a library implementing the [Web Routing Protocol](https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol) 
 structures and supporting utilities.
 
-[![Build Status](https://travis-ci.org/xmidt-org/wrp-go.svg?branch=main)](https://travis-ci.org/xmidt-org/wrp-go)
+[![Build Status](https://github.com/xmidt-org/wrp-go/workflows/CI/badge.svg)](https://github.com/xmidt-org/wrp-go/actions)
 [![codecov.io](http://codecov.io/github/xmidt-org/wrp-go/coverage.svg?branch=main)](http://codecov.io/github/xmidt-org/wrp-go?branch=main)
-[![Code Climate](https://codeclimate.com/github/xmidt-org/wrp-go/badges/gpa.svg)](https://codeclimate.com/github/xmidt-org/wrp-go)
-[![Issue Count](https://codeclimate.com/github/xmidt-org/wrp-go/badges/issue_count.svg)](https://codeclimate.com/github/xmidt-org/wrp-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-go/blob/main/LICENSE)
 [![GitHub release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](CHANGELOG.md)
-[![GoDoc](https://godoc.org/github.com/xmidt-org/wrp-go?status.svg)](https://godoc.org/github.com/xmidt-org/wrp-go)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-go)](https://pkg.go.dev/github.com/xmidt-org/wrp-go)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xmidt-org_wrp-go&metric=alert_status)](https://sonarcloud.io/dashboard?id=xmidt-org_wrp-go)
 
 ## Table of Contents
