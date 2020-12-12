@@ -1,16 +1,11 @@
-codecov:
-  notify:
-    require_ci_to_pass: yes
-
 coverage:
+  range: 50..80
+  round: down
   precision: 2
-  round: nearest
-  range: "80...100"
-
-  status:
-    project: yes
-    patch: yes
-    changes: no
 
 ignore:
- - "wrp/messages_codec.go" # automatically generated code by ugorji
+  - "*_test.go"
+  - "vendor"
+
+fixes:
+  - "github.com/xmidt-org/wrp-go/::"
