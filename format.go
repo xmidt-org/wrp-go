@@ -25,7 +25,10 @@ const (
 	MimeTypeMsgpack     = "application/msgpack"
 	MimeTypeJson        = "application/json"
 	MimeTypeOctetStream = "application/octet-stream"
-	MimeTypeWrp         = "application/wrp" // Should/is this be deprictated?
+
+	// Deprecated: This constant should only be used for backwards compatibility
+	// matching.  Use MimeTypeMsgpack instead.
+	MimeTypeWrp = "application/wrp"
 )
 
 // AllFormats returns a distinct slice of all supported formats.
