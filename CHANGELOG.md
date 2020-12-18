@@ -5,7 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v3.0.2]
 - Updated references to the main branch [#52](https://github.com/xmidt-org/wrp-go/pull/52)
+- Add constants for the different supported MIME types [#58](https://github.com/xmidt-org/wrp-go/pull/58)
 
 ## [v3.0.1]
 - Upgrade self import paths to /v3 [#49](https://github.com/xmidt-org/wrp-go/pull/49)
