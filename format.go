@@ -21,6 +21,14 @@ const (
 	Msgpack Format = iota
 	JSON
 	lastFormat
+
+	MimeTypeMsgpack     = "application/msgpack"
+	MimeTypeJson        = "application/json"
+	MimeTypeOctetStream = "application/octet-stream"
+
+	// Deprecated: This constant should only be used for backwards compatibility
+	// matching.  Use MimeTypeMsgpack instead.
+	MimeTypeWrp = "application/wrp"
 )
 
 // AllFormats returns a distinct slice of all supported formats.
@@ -51,11 +59,11 @@ var (
 func (f Format) ContentType() string {
 	switch f {
 	case Msgpack:
-		return "application/msgpack"
+		return MimeTypeMsgpack
 	case JSON:
-		return "application/json"
+		return MimeTypeJson
 	default:
-		return "application/octet-stream"
+		return MimeTypeOctetStream
 	}
 }
 

@@ -115,7 +115,7 @@ func testDecodeRequestHeadersSuccess(t *testing.T) {
 			Type:            wrp.SimpleEventMessageType,
 			Source:          "foo",
 			Destination:     "bar",
-			ContentType:     "application/octet-stream",
+			ContentType:     wrp.MimeTypeOctetStream,
 			Payload:         []byte{1, 2, 3},
 			TransactionUUID: "testytest",
 		}

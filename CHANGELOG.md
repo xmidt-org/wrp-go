@@ -5,7 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v3.0.2]
 - Updated references to the main branch [#52](https://github.com/xmidt-org/wrp-go/pull/52)
+- Add constants for the different supported MIME types [#58](https://github.com/xmidt-org/wrp-go/pull/58)
 
 ## [v3.0.1]
 - Upgrade self import paths to /v3 [#49](https://github.com/xmidt-org/wrp-go/pull/49)
@@ -56,7 +59,8 @@ All changes included in [#47](https://github.com/xmidt-org/wrp-go/pull/47)
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.0.1...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.0.2...HEAD
+[v3.0.2]: https://github.com/xmidt-org/wrp-go/compare/v3.0.1...v3.0.2
 [v3.0.1]: https://github.com/xmidt-org/wrp-go/compare/v3.0.0...v3.0.1
 [v3.0.0]: https://github.com/xmidt-org/wrp-go/compare/v2.0.1...v3.0.0
 [v2.0.1]: https://github.com/xmidt-org/wrp-go/compare/v2.0.0...v2.0.1

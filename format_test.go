@@ -186,12 +186,12 @@ func testFormatFromContentTypeFallback(t *testing.T) {
 func TestFormatFromContentType(t *testing.T) {
 	t.Run("Invalid", func(t *testing.T) {
 		testFormatFromContentTypeInvalid(t, "text/plain")
-		testFormatFromContentTypeInvalid(t, "application/octet-stream")
+		testFormatFromContentTypeInvalid(t, MimeTypeOctetStream)
 	})
 
 	t.Run("Valid", func(t *testing.T) {
-		testFormatFromContentTypeValid(t, "application/msgpack", Msgpack)
-		testFormatFromContentTypeValid(t, "application/json", JSON)
+		testFormatFromContentTypeValid(t, MimeTypeMsgpack, Msgpack)
+		testFormatFromContentTypeValid(t, MimeTypeJson, JSON)
 		testFormatFromContentTypeValid(t, "text/json", JSON)
 	})
 
@@ -221,7 +221,7 @@ func testFormatContentType(t *testing.T) {
 	assert.NotEmpty(JSON.ContentType())
 	assert.NotEmpty(Msgpack.ContentType())
 	assert.NotEqual(JSON.ContentType(), Msgpack.ContentType())
-	assert.Equal("application/octet-stream", Format(999).ContentType())
+	assert.Equal(MimeTypeOctetStream, Format(999).ContentType())
 }
 
 func TestFormat(t *testing.T) {
@@ -281,8 +281,8 @@ func TestTranscodeMessage(t *testing.T) {
 			SimpleRequestResponse{
 				Source:                  "foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
-				ContentType:             "application/wrp",
-				Accept:                  "application/wrp",
+				ContentType:             MimeTypeWrp,
+				Accept:                  MimeTypeWrp,
 				Status:                  &expectedStatus,
 				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
 				Headers:                 []string{"X-Header-1", "X-Header-2"},
@@ -298,8 +298,8 @@ func TestTranscodeMessage(t *testing.T) {
 			Message{
 				Source:                  "foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
-				ContentType:             "application/wrp",
-				Accept:                  "application/wrp",
+				ContentType:             MimeTypeWrp,
+				Accept:                  MimeTypeWrp,
 				Status:                  &expectedStatus,
 				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
 				Headers:                 []string{"X-Header-1", "X-Header-2"},
