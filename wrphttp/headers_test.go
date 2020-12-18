@@ -60,7 +60,7 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 						"foo, bar, moo",
 						"goo, gar, hoo",
 					},
-					AcceptHeader: []string{"application/json"},
+					AcceptHeader: []string{wrp.MimeTypeJson},
 					PathHeader:   []string{"/foo/bar"},
 				},
 				payload: nil,
@@ -76,7 +76,7 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 						{"foo", "bar", "moo"},
 						{"goo", "gar", "hoo"},
 					},
-					Accept: "application/json",
+					Accept: wrp.MimeTypeJson,
 					Path:   "/foo/bar",
 				},
 			},
@@ -107,7 +107,7 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 					Type:        wrp.SimpleEventMessageType,
 					Source:      "test",
 					Destination: "mac:111122223333",
-					ContentType: "application/octet-stream",
+					ContentType: wrp.MimeTypeOctetStream,
 					Payload:     []byte("payload"),
 				},
 			},
@@ -123,7 +123,7 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 					Type:        wrp.SimpleEventMessageType,
 					Source:      "test",
 					Destination: "mac:111122223333",
-					ContentType: "application/octet-stream",
+					ContentType: wrp.MimeTypeOctetStream,
 					Payload:     []byte("payload"),
 					Metadata: map[string]string{"/foo": "bar",
 						"/goo":  "car",
@@ -144,7 +144,7 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 					Type:        wrp.SimpleEventMessageType,
 					Source:      "test",
 					Destination: "mac:111122223333",
-					ContentType: "application/octet-stream",
+					ContentType: wrp.MimeTypeOctetStream,
 					Payload:     []byte("payload"),
 					PartnerIDs:  []string{"partner-1", "partner-2", "partner-3", "p4"},
 				},
@@ -286,7 +286,7 @@ func TestAddMessageHeaders(t *testing.T) {
 					RequestDeliveryResponse: &expectedRequestDeliveryResponse,
 					IncludeSpans:            &expectedIncludeSpans,
 					Spans:                   [][]string{{"foo", "bar", "graar"}},
-					Accept:                  "application/json",
+					Accept:                  wrp.MimeTypeJson,
 					Path:                    "/foo/bar",
 					Metadata:                map[string]string{"/goo": "car", "/cow": "milk"},
 					PartnerIDs:              []string{"part-1", "part-2"},
@@ -300,7 +300,7 @@ func TestAddMessageHeaders(t *testing.T) {
 					RequestDeliveryResponseHeader: []string{strconv.FormatInt(expectedRequestDeliveryResponse, 10)},
 					IncludeSpansHeader:            []string{strconv.FormatBool(expectedIncludeSpans)},
 					SpanHeader:                    []string{"foo,bar,graar"},
-					AcceptHeader:                  []string{"application/json"},
+					AcceptHeader:                  []string{wrp.MimeTypeJson},
 					PathHeader:                    []string{"/foo/bar"},
 					MetadataHeader:                []string{"/goo=car", "/cow=milk"},
 					PartnerIdHeader:               []string{"part-1", "part-2"},
@@ -375,14 +375,14 @@ func testWritePayloadWithHeader(t *testing.T) {
 			payload         bytes.Buffer
 			message         = wrp.Message{
 				Payload:     expectedPayload,
-				ContentType: "application/json",
+				ContentType: wrp.MimeTypeJson,
 			}
 		)
 
 		c, err := WritePayload(header, &payload, &message)
 		assert.NoError(err)
 		assert.Equal(len(expectedPayload), c)
-		assert.Equal("application/json", header.Get("Content-Type"))
+		assert.Equal(wrp.MimeTypeJson, header.Get("Content-Type"))
 		assert.Equal("this is json, no really", payload.String())
 	}
 
@@ -399,7 +399,7 @@ func testWritePayloadWithHeader(t *testing.T) {
 		c, err := WritePayload(header, &payload, &message)
 		assert.NoError(err)
 		assert.Equal(len(expectedPayload), c)
-		assert.Equal("application/octet-stream", header.Get("Content-Type"))
+		assert.Equal(wrp.MimeTypeOctetStream, header.Get("Content-Type"))
 		assert.Equal("this is binary, honest", payload.String())
 	}
 }

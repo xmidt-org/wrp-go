@@ -161,7 +161,7 @@ func readPayload(h http.Header, p io.Reader) ([]byte, string) {
 
 	contentType := h.Get("Content-Type")
 	if len(contentType) == 0 && len(payload) > 0 {
-		contentType = "application/octet-stream"
+		contentType = wrp.MimeTypeOctetStream
 	}
 
 	return payload, contentType
@@ -286,7 +286,7 @@ func AddMessageHeaders(h http.Header, m *wrp.Message) {
 func ReadPayload(h http.Header, p io.Reader, m *wrp.Message) (int, error) {
 	contentType := h.Get("Content-Type")
 	if len(contentType) == 0 {
-		contentType = "application/octet-stream"
+		contentType = wrp.MimeTypeOctetStream
 	}
 
 	var err error
@@ -313,7 +313,7 @@ func WritePayload(h http.Header, p io.Writer, m *wrp.Message) (int, error) {
 		if len(m.ContentType) > 0 {
 			h.Set("Content-Type", m.ContentType)
 		} else {
-			h.Set("Content-Type", "application/octet-stream")
+			h.Set("Content-Type", wrp.MimeTypeOctetStream)
 		}
 
 		h.Set("Content-Length", strconv.Itoa(len(m.Payload)))
