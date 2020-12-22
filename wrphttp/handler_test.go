@@ -141,19 +141,6 @@ func TestWithDecoder(t *testing.T) {
 	t.Run("Custom", testWithDecoderCustom)
 }
 
-func testWithBeforeNone(t *testing.T) {
-	var (
-		assert = assert.New(t)
-		wh     = new(wrpHandler)
-	)
-
-	WithBefore(nil)(wh)
-	assert.Empty(wh.before)
-
-	WithBefore([]MessageFunc{}...)(wh)
-	assert.Empty(wh.before)
-}
-
 func TestWithBefore(t *testing.T) {
 	testData := [][]MessageFunc{
 		nil,
