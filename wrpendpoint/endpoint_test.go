@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type testContextKey string
+
+var foo testContextKey = "foo"
+
 func TestNew(t *testing.T) {
 	var (
 		assert = assert.New(t)
@@ -23,7 +27,7 @@ func TestNew(t *testing.T) {
 			},
 		}
 
-		expectedCtx = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx = context.WithValue(context.Background(), foo, "bar")
 		service     = new(mockService)
 		endpoint    = New(service)
 	)
@@ -51,7 +55,7 @@ func TestWrap(t *testing.T) {
 			},
 		}
 
-		expectedCtx    = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx    = context.WithValue(context.Background(), foo, "bar")
 		endpointCalled = false
 		endpoint       = func(ctx context.Context, value interface{}) (interface{}, error) {
 			endpointCalled = true

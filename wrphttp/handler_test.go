@@ -15,6 +15,8 @@ import (
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
+var foo testContextKey = "foo"
+
 func TestHandlerFunc(t *testing.T) {
 	var (
 		assert = assert.New(t)
@@ -182,7 +184,7 @@ func testWRPHandlerDecodeError(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedCtx = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx = context.WithValue(context.Background(), foo, "bar")
 		expectedErr = errors.New("expected")
 
 		decoder = func(actualCtx context.Context, httpRequest *http.Request) (*Entity, error) {
@@ -216,7 +218,7 @@ func testWRPHandlerResponseWriterError(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedCtx    = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx    = context.WithValue(context.Background(), foo, "bar")
 		expectedErr    = errors.New("expected")
 		expectedEntity = &Entity{
 			Message: wrp.Message{
@@ -280,7 +282,7 @@ func testWRPHandlerSuccess(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedCtx    = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx    = context.WithValue(context.Background(), foo, "bar")
 		expectedEntity = &Entity{
 			Message: wrp.Message{
 				Type: wrp.SimpleEventMessageType,

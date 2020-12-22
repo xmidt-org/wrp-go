@@ -10,6 +10,8 @@ import (
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
+type testContextKey string
+
 func testRequestContextDefault(t *testing.T) {
 	assert := assert.New(t)
 	assert.Equal(context.Background(), new(Request).Context())
@@ -18,7 +20,8 @@ func testRequestContextDefault(t *testing.T) {
 func testRequestContextCustom(t *testing.T) {
 	var (
 		assert = assert.New(t)
-		ctx    = context.WithValue(context.Background(), "asdf", "poiuy")
+		ctxKey = testContextKey("asdf")
+		ctx    = context.WithValue(context.Background(), ctxKey, "poiuy")
 		r      = Request{ctx: ctx}
 	)
 
@@ -28,7 +31,7 @@ func testRequestContextCustom(t *testing.T) {
 func testRequestWithContextNil(t *testing.T) {
 	assert := assert.New(t)
 	assert.Panics(func() {
-		new(Request).WithContext(nil)
+		new(Request).WithContext(nil) //nolint:staticcheck // we need this to check our panic
 	})
 }
 
@@ -37,8 +40,9 @@ func testRequestWithContextCustom(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		ctx = context.WithValue(context.Background(), "homer", "simpson")
-		r   = &Request{
+		ctxKey = testContextKey("homer")
+		ctx    = context.WithValue(context.Background(), ctxKey, "simpson")
+		r      = &Request{
 			Original: httptest.NewRequest("GET", "/", nil),
 			Entity:   new(Entity),
 		}
