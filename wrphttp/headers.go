@@ -79,7 +79,7 @@ func getBoolHeader(h http.Header, n string) *bool {
 }
 
 func getSpans(h http.Header) [][]string {
-	var spans [][]string
+	spans := make([][]string, len(h[SpanHeader]))
 
 	for _, value := range h[SpanHeader] {
 		fields := strings.Split(value, ",")
@@ -132,7 +132,7 @@ func getPartnerIDs(h http.Header) []string {
 		return nil
 	}
 
-	var partners []string
+	partners := make([]string, len(headers))
 
 	for _, value := range headers {
 		fields := strings.Split(value, ",")
