@@ -79,19 +79,23 @@ func getBoolHeader(h http.Header, n string) *bool {
 }
 
 func getSpans(h http.Header) [][]string {
-	var spans [][]string
+	if len(h[SpanHeader]) == 0 {
+		return nil
+	}
 
-	for _, value := range h[SpanHeader] {
+	spans := make([][]string, len(h[SpanHeader]))
+
+	for i, value := range h[SpanHeader] {
 		fields := strings.Split(value, ",")
 		if len(fields) != 3 {
 			panic(fmt.Errorf("Invalid %s header: %s", SpanHeader, value))
 		}
 
-		for i := 0; i < len(fields); i++ {
-			fields[i] = strings.TrimSpace(fields[i])
+		for j := 0; j < len(fields); j++ {
+			fields[j] = strings.TrimSpace(fields[j])
 		}
 
-		spans = append(spans, fields)
+		spans[i] = fields
 	}
 
 	return spans
@@ -128,11 +132,11 @@ func getMetadata(h http.Header) map[string]string {
 // passed in as headers.  This function handles multiple duplicate headers.
 func getPartnerIDs(h http.Header) []string {
 	headers, ok := h[PartnerIdHeader]
-	if !ok {
+	if !ok || len(headers) == 0 {
 		return nil
 	}
 
-	var partners []string
+	partners := []string{}
 
 	for _, value := range headers {
 		fields := strings.Split(value, ",")

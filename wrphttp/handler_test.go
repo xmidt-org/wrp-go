@@ -15,6 +15,8 @@ import (
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
+var foo testContextKey = "foo"
+
 func TestHandlerFunc(t *testing.T) {
 	var (
 		assert = assert.New(t)
@@ -141,19 +143,6 @@ func TestWithDecoder(t *testing.T) {
 	t.Run("Custom", testWithDecoderCustom)
 }
 
-func testWithBeforeNone(t *testing.T) {
-	var (
-		assert = assert.New(t)
-		wh     = new(wrpHandler)
-	)
-
-	WithBefore(nil)(wh)
-	assert.Empty(wh.before)
-
-	WithBefore([]MessageFunc{}...)(wh)
-	assert.Empty(wh.before)
-}
-
 func TestWithBefore(t *testing.T) {
 	testData := [][]MessageFunc{
 		nil,
@@ -195,7 +184,7 @@ func testWRPHandlerDecodeError(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedCtx = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx = context.WithValue(context.Background(), foo, "bar")
 		expectedErr = errors.New("expected")
 
 		decoder = func(actualCtx context.Context, httpRequest *http.Request) (*Entity, error) {
@@ -229,7 +218,7 @@ func testWRPHandlerResponseWriterError(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedCtx    = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx    = context.WithValue(context.Background(), foo, "bar")
 		expectedErr    = errors.New("expected")
 		expectedEntity = &Entity{
 			Message: wrp.Message{
@@ -293,7 +282,7 @@ func testWRPHandlerSuccess(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedCtx    = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx    = context.WithValue(context.Background(), foo, "bar")
 		expectedEntity = &Entity{
 			Message: wrp.Message{
 				Type: wrp.SimpleEventMessageType,

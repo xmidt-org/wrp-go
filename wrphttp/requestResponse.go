@@ -116,7 +116,7 @@ func DefaultResponseWriterFunc() ResponseWriterFunc {
 }
 
 // NewEntityResponseWriter creates a ResponseWriterFunc that returns an entity-based ResponseWriter.  The returned
-// ResponseWriter writes WRP messages to the response body, using content negotation with a fallback to the supplied
+// ResponseWriter writes WRP messages to the response body, using content negotiation with a fallback to the supplied
 // default format.
 func NewEntityResponseWriter(defaultFormat wrp.Format) ResponseWriterFunc {
 	return func(httpResponse http.ResponseWriter, wrpRequest *Request) (ResponseWriter, error) {

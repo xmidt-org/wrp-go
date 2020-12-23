@@ -23,7 +23,7 @@ func TestServiceFunc(t *testing.T) {
 			},
 		}
 
-		expectedCtx = context.WithValue(context.Background(), "foo", "bar")
+		expectedCtx = context.WithValue(context.Background(), foo, "bar")
 
 		serviceFuncCalled = false
 
