@@ -20,6 +20,7 @@ package wrpclient
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
@@ -56,7 +57,7 @@ type Client struct {
 	HTTPClient HTTPClient
 }
 
-func (c *Client) SendWRP(ctx context.Context, response, request interface{}) (interface{}, error) {
+func (c *Client) SendWRP(ctx context.Context, response, request interface{}) error {
 	if c.HTTPClient == nil {
 		c.HTTPClient = &http.Client{}
 	}
@@ -64,33 +65,27 @@ func (c *Client) SendWRP(ctx context.Context, response, request interface{}) (in
 	var payload []byte
 	err := wrp.NewEncoderBytes(&payload, c.RequestFormat).Encode(request)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL, bytes.NewBuffer(payload))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// (2) use c.HTTPClient or http.DefaultClient to execute the HTTP transaction
 	resp, err := c.HTTPClient.Do(r.WithContext(ctx))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// (3) translate the response using the wrp package and the response as the target of unmarshaling
-	result := &XmidtResponse{
-		ForwardedHeaders: make(http.Header),
-		Body:             []byte{},
-	}
-
-	result.Code = resp.StatusCode
-
 	defer resp.Body.Close()
-
-	result.Body, err = ioutil.ReadAll(resp.Body)
+	result, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return result, nil
+	json.Unmarshal(result, response)
+
+	return nil
 }
