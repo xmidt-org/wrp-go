@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Comcast Cable Communications Management, LLC
+ * Copyright 2022 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,42 +54,42 @@ type Client struct {
 
 	// If unset, defaults to net/http.DefaultClient
 	HTTPClient HTTPClient
-
-	WrpMsg wrp.Message
-
-	authHeaderValue string
 }
 
-func (c *Client) SendWRP(ctx context.Context) (result *XmidtResponse, err error) {
+func (c *Client) SendWRP(ctx context.Context, response, request interface{}) (interface{}, error) {
 	if c.HTTPClient == nil {
 		c.HTTPClient = &http.Client{}
 	}
 	// (1) create an *http.Request, using c.RequestFormat to marshal the body and the client URL
 	var payload []byte
-	err = wrp.NewEncoderBytes(&payload, c.RequestFormat).Encode(c.WrpMsg)
+	err := wrp.NewEncoderBytes(&payload, c.RequestFormat).Encode(request)
 	if err != nil {
 		return nil, err
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL, bytes.NewBuffer(payload))
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}
+
 	// (2) use c.HTTPClient or http.DefaultClient to execute the HTTP transaction
-	var response *http.Response
-	if response, err = c.HTTPClient.Do(request.WithContext(ctx)); err == nil {
+	resp, err := c.HTTPClient.Do(r.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
 
-		// (3) translate the response using the wrp package and the response as the target of unmarshaling
-		result = &XmidtResponse{
-			ForwardedHeaders: make(http.Header),
-			Body:             []byte{},
-		}
+	// (3) translate the response using the wrp package and the response as the target of unmarshaling
+	result := &XmidtResponse{
+		ForwardedHeaders: make(http.Header),
+		Body:             []byte{},
+	}
 
-		result.Code = response.StatusCode
+	result.Code = resp.StatusCode
 
-		defer response.Body.Close()
+	defer resp.Body.Close()
 
-		result.Body, err = ioutil.ReadAll(response.Body)
-		return
+	result.Body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
