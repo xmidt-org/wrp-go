@@ -20,27 +20,14 @@ package wrpclient
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
+	"github.com/xmidt-org/httpaux/erraux"
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
-}
-
-type XmidtResponse struct {
-
-	//Code is the HTTP Status code received from the transaction
-	Code int
-
-	//ForwardedHeaders contains all the headers tr1d1um keeps from the transaction
-	ForwardedHeaders http.Header
-
-	//Body represents the full data off the XMiDT http.Response body
-	Body []byte
 }
 
 type Client struct {
@@ -74,18 +61,24 @@ func (c *Client) SendWRP(ctx context.Context, response, request interface{}) err
 
 	// (2) use c.HTTPClient or http.DefaultClient to execute the HTTP transaction
 	resp, err := c.HTTPClient.Do(r.WithContext(ctx))
-	if err != nil {
+	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
+		return &erraux.Error{
+			Err:     err,
+			Code:    resp.StatusCode,
+			Message: resp.Status,
+			Header:  resp.Header,
+		}
+	} else if err != nil {
 		return err
 	}
 
 	// (3) translate the response using the wrp package and the response as the target of unmarshaling
+
 	defer resp.Body.Close()
-	result, err := ioutil.ReadAll(resp.Body)
+	err = wrp.NewDecoder(resp.Body, c.RequestFormat).Decode(response)
 	if err != nil {
 		return err
 	}
-
-	json.Unmarshal(result, response)
 
 	return nil
 }
