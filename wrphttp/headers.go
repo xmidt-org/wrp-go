@@ -25,6 +25,10 @@ const (
 	AcceptHeader                  = "X-Xmidt-Accept"
 	MetadataHeader                = "X-Xmidt-Metadata"
 	PartnerIdHeader               = "X-Xmidt-Partner-Id"
+	SessionIdHeader               = "X-Xmidt-Session-Id"
+	HeadersHeader                 = "X-Xmidt-Headers"
+	ServiceNameHeader             = "X-Xmidt-Service-Name"
+	URLHeader                     = "X-Xmidt-URL"
 )
 
 var (
@@ -282,6 +286,27 @@ func AddMessageHeaders(h http.Header, m *wrp.Message) {
 
 	for _, v := range m.PartnerIDs {
 		h.Add(PartnerIdHeader, v)
+	}
+
+	// SessionIdHeader = "X-Xmidt-Session-Id"
+	// HeadersHeader = "X-Xmidt-Headers"
+	// ServiceNameHeader = "X-Xmidt-Service-Name"
+	// URLHeader = "X-Xmidt-URL"
+
+	if len(m.SessionID) > 0 {
+		h.Set(SessionIdHeader, m.SessionID)
+	}
+
+	for _, v := range m.Headers {
+		h.Add(HeadersHeader, v)
+	}
+
+	if len(m.ServiceName) > 0 {
+		h.Set(ServiceNameHeader, m.ServiceName)
+	}
+
+	if len(m.URL) > 0 {
+		h.Set(URLHeader, m.URL)
 	}
 }
 
