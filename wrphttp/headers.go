@@ -288,11 +288,6 @@ func AddMessageHeaders(h http.Header, m *wrp.Message) {
 		h.Add(PartnerIdHeader, v)
 	}
 
-	// SessionIdHeader = "X-Xmidt-Session-Id"
-	// HeadersHeader = "X-Xmidt-Headers"
-	// ServiceNameHeader = "X-Xmidt-Service-Name"
-	// URLHeader = "X-Xmidt-URL"
-
 	if len(m.SessionID) > 0 {
 		h.Set(SessionIdHeader, m.SessionID)
 	}
