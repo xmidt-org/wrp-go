@@ -28,7 +28,7 @@ const (
 	SessionIdHeader               = "X-Xmidt-Session-Id"
 	HeadersHeader                 = "X-Xmidt-Headers"
 	ServiceNameHeader             = "X-Xmidt-Service-Name"
-	URLHeader                     = "X-Xmidt-URL"
+	URLHeader                     = "X-Xmidt-Url"
 )
 
 var (
