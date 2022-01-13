@@ -25,6 +25,10 @@ const (
 	AcceptHeader                  = "X-Xmidt-Accept"
 	MetadataHeader                = "X-Xmidt-Metadata"
 	PartnerIdHeader               = "X-Xmidt-Partner-Id"
+	SessionIdHeader               = "X-Xmidt-Session-Id"
+	HeadersHeader                 = "X-Xmidt-Headers"
+	ServiceNameHeader             = "X-Xmidt-Service-Name"
+	URLHeader                     = "X-Xmidt-Url"
 )
 
 var (
@@ -171,6 +175,27 @@ func readPayload(h http.Header, p io.Reader) ([]byte, string) {
 	return payload, contentType
 }
 
+// getHeaders returns the array that represents the headers that were
+// passed in as headers.  This function handles multiple duplicate headers.
+func getHeaders(h http.Header) []string {
+	headers, ok := h[HeadersHeader]
+	if !ok || len(headers) == 0 {
+		return nil
+	}
+
+	hlist := []string{}
+
+	for _, value := range headers {
+		fields := strings.Split(value, ",")
+		for i := 0; i < len(fields); i++ {
+			fields[i] = strings.TrimSpace(fields[i])
+		}
+		hlist = append(hlist, fields...)
+	}
+
+	return hlist
+}
+
 // NewMessageFromHeaders extracts a WRP message from a set of HTTP headers.  If supplied, the
 // given io.Reader is assumed to contain the payload of the WRP message.
 func NewMessageFromHeaders(h http.Header, p io.Reader) (message *wrp.Message, err error) {
@@ -225,7 +250,10 @@ func SetMessageFromHeaders(h http.Header, m *wrp.Message) (err error) {
 	m.Path = h.Get(PathHeader)
 	m.Metadata = getMetadata(h)
 	m.PartnerIDs = getPartnerIDs(h)
-
+	m.SessionID = h.Get(SessionIdHeader)
+	m.Headers = getHeaders(h)
+	m.ServiceName = h.Get(ServiceNameHeader)
+	m.URL = h.Get(URLHeader)
 	return
 }
 
@@ -282,6 +310,22 @@ func AddMessageHeaders(h http.Header, m *wrp.Message) {
 
 	for _, v := range m.PartnerIDs {
 		h.Add(PartnerIdHeader, v)
+	}
+
+	if len(m.SessionID) > 0 {
+		h.Set(SessionIdHeader, m.SessionID)
+	}
+
+	for _, v := range m.Headers {
+		h.Add(HeadersHeader, v)
+	}
+
+	if len(m.ServiceName) > 0 {
+		h.Set(ServiceNameHeader, m.ServiceName)
+	}
+
+	if len(m.URL) > 0 {
+		h.Set(URLHeader, m.URL)
 	}
 }
 
