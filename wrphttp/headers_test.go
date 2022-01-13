@@ -290,6 +290,10 @@ func TestAddMessageHeaders(t *testing.T) {
 					Path:                    "/foo/bar",
 					Metadata:                map[string]string{"/goo": "car", "/cow": "milk"},
 					PartnerIDs:              []string{"part-1", "part-2"},
+					SessionID:               "test123",
+					Headers:                 []string{"head-1", "head-2"},
+					ServiceName:             "service",
+					URL:                     "anonspecialurl",
 				},
 				expected: http.Header{
 					MessageTypeHeader:             []string{wrp.SimpleRequestResponseMessageType.FriendlyName()},
@@ -304,6 +308,10 @@ func TestAddMessageHeaders(t *testing.T) {
 					PathHeader:                    []string{"/foo/bar"},
 					MetadataHeader:                []string{"/goo=car", "/cow=milk"},
 					PartnerIdHeader:               []string{"part-1", "part-2"},
+					SessionIdHeader:               []string{"test123"},
+					HeadersHeader:                 []string{"head-1", "head-2"},
+					ServiceNameHeader:             []string{"service"},
+					URLHeader:                     []string{"anonspecialurl"},
 				},
 			},
 		}
