@@ -46,7 +46,7 @@ func TestMessageTypeSupportsTransaction(t *testing.T) {
 		expectedSupportsTransaction = map[MessageType]bool{
 			Invalid0MessageType:              false,
 			Invalid1MessageType:              false,
-			AuthorizationMessageType:         true,
+			AuthorizationMessageType:         false,
 			SimpleRequestResponseMessageType: true,
 			SimpleEventMessageType:           false,
 			CreateMessageType:                true,

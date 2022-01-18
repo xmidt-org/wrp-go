@@ -35,6 +35,8 @@ func (mt MessageType) SupportsTransaction() bool {
 		return false
 	case Invalid1MessageType:
 		return false
+	case AuthorizationMessageType:
+		return false
 	case SimpleEventMessageType:
 		return false
 	case ServiceRegistrationMessageType:
