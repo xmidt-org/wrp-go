@@ -8,6 +8,9 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
+	_ = x[Invalid0MessageType-0]
+	_ = x[Invalid1MessageType-1]
+	_ = x[AuthorizationMessageType-2]
 	_ = x[SimpleRequestResponseMessageType-3]
 	_ = x[SimpleEventMessageType-4]
 	_ = x[CreateMessageType-5]
@@ -20,14 +23,13 @@ func _() {
 	_ = x[lastMessageType-12]
 }
 
-const _MessageType_name = "SimpleRequestResponseMessageTypeSimpleEventMessageTypeCreateMessageTypeRetrieveMessageTypeUpdateMessageTypeDeleteMessageTypeServiceRegistrationMessageTypeServiceAliveMessageTypeUnknownMessageTypelastMessageType"
+const _MessageType_name = "Invalid0MessageTypeInvalid1MessageTypeAuthorizationMessageTypeSimpleRequestResponseMessageTypeSimpleEventMessageTypeCreateMessageTypeRetrieveMessageTypeUpdateMessageTypeDeleteMessageTypeServiceRegistrationMessageTypeServiceAliveMessageTypeUnknownMessageTypelastMessageType"
 
-var _MessageType_index = [...]uint8{0, 32, 54, 71, 90, 107, 124, 154, 177, 195, 210}
+var _MessageType_index = [...]uint16{0, 19, 38, 62, 94, 116, 133, 152, 169, 186, 216, 239, 257, 272}
 
 func (i MessageType) String() string {
-	i -= 3
 	if i < 0 || i >= MessageType(len(_MessageType_index)-1) {
-		return "MessageType(" + strconv.FormatInt(int64(i+3), 10) + ")"
+		return "MessageType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 	return _MessageType_name[_MessageType_index[i]:_MessageType_index[i+1]]
 }
