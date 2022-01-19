@@ -28,7 +28,7 @@ func TestSendWRP(t *testing.T) {
 		desc string
 	}{
 		{
-			desc: "test"
+			desc: "test",
 		},
 	}
 
