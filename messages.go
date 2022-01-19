@@ -2,6 +2,7 @@ package wrp
 
 import "regexp"
 
+//go:generate go install github.com/ugorji/go/codec/codecgen@latest
 //go:generate codecgen -st "json" -o messages_codec.go messages.go
 
 var (

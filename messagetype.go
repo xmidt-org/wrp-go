@@ -5,6 +5,7 @@ import (
 	"strconv"
 )
 
+//go:generate go install golang.org/x/tools/cmd/stringer@latest
 //go:generate stringer -type=MessageType
 
 // MessageType indicates the kind of WRP message
