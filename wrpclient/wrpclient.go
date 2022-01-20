@@ -26,6 +26,8 @@ import (
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
+var ()
+
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
@@ -33,7 +35,7 @@ type HTTPClient interface {
 type Client struct {
 
 	// URL is the full location for the serverside wrp endpoint.
-	// If unset, use talaria's URI at localhost, which the port used in talaria's docker image
+	// If unset, use talaria's URI at localhost, which is the port used in talaria's docker image
 	URL string
 
 	// RequestFormat would be the wrp Format to use for all requests, which specifies the wrp.Encoder.
@@ -44,11 +46,22 @@ type Client struct {
 	HTTPClient HTTPClient
 }
 
-func (c *Client) SendWRP(ctx context.Context, response, request interface{}) error {
+func (c *Client) checkClientConfig() {
+	if c.URL == "" {
+		c.URL = "http://localhost:6200"
+	}
+	if c.RequestFormat == 0 {
+		c.RequestFormat = 1
+	}
 	if c.HTTPClient == nil {
 		c.HTTPClient = &http.Client{}
 	}
-	// (1) create an *http.Request, using c.RequestFormat to marshal the body and the client URL
+}
+
+func (c *Client) SendWRP(ctx context.Context, response, request interface{}) error {
+	c.checkClientConfig()
+
+	// Create an *http.Request, using c.RequestFormat to marshal the body and the client URL
 	var payload []byte
 	err := wrp.NewEncoderBytes(&payload, c.RequestFormat).Encode(request)
 	if err != nil {
@@ -59,26 +72,30 @@ func (c *Client) SendWRP(ctx context.Context, response, request interface{}) err
 		return err
 	}
 
-	// (2) use c.HTTPClient or http.DefaultClient to execute the HTTP transaction
+	// Use c.HTTPClient or http.DefaultClient to execute the HTTP transaction
 	resp, err := c.HTTPClient.Do(r.WithContext(ctx))
-	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
+	if err != nil {
+		return err
+	} else if resp.StatusCode >= 300 || resp.StatusCode < 200 {
 		return &erraux.Error{
 			Err:     err,
 			Code:    resp.StatusCode,
 			Message: resp.Status,
 			Header:  resp.Header,
 		}
-	} else if err != nil {
-		return err
 	}
 
-	// (3) translate the response using the wrp package and the response as the target of unmarshaling
-
+	// Translate the response using the wrp package and the response as the target of unmarshaling
 	defer resp.Body.Close()
 	err = wrp.NewDecoder(resp.Body, c.RequestFormat).Decode(response)
 	if err != nil {
 		return err
 	}
+	// result, err := ioutil.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return err
+	// }
+	// json.Unmarshal(result, response)
 
 	return nil
 }
