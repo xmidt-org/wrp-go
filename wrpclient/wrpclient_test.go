@@ -78,6 +78,7 @@ func TestSendWRP(t *testing.T) {
 		client      Client
 		response    interface{}
 		request     interface{}
+		nilContext  bool
 		expectedErr error
 	}{
 		{
@@ -97,6 +98,7 @@ func TestSendWRP(t *testing.T) {
 		},
 		{
 			desc:        "Request Creation failure",
+			nilContext:  true,
 			expectedErr: errCreateRequest,
 		},
 		{
@@ -134,7 +136,13 @@ func TestSendWRP(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			assert := assert.New(t)
-			err := tc.client.SendWRP(context.TODO(), &tc.response, &tc.request)
+			var ctx context.Context
+			if tc.nilContext {
+				ctx = nil
+			} else {
+				ctx = context.TODO()
+			}
+			err := tc.client.SendWRP(ctx, &tc.response, &tc.request)
 			assert.True(errors.Is(err, tc.expectedErr),
 				fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
 					err, tc.expectedErr),
