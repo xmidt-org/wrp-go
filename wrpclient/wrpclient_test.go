@@ -80,27 +80,46 @@ func TestSendWRP(t *testing.T) {
 		request     interface{}
 		expectedErr error
 	}{
-		// {
-		// 	desc: "Encode failure",
-		// },
-		// {
-		// 	desc: "Request Creation failure",
-		// },
-		// {
-		// 	desc: "Non 200 Response failure",
-		// 	client: Client{
-		// 		HTTPClient: &mockHTTPClientFailure{},
-		// 	},
-		// 	response:    wrp.Message{},
-		// 	request:     wrp.Message{},
-		// 	expectedErr: nil,
-		// },
-		// {
-		// 	desc: "HTTPClient Do failure",
-		// },
-		// {
-		// 	desc: "Decode failure",
-		// },
+		{
+			desc: "Invalid RequestFormat failure",
+			client: Client{
+				RequestFormat: 8,
+			},
+			response:    wrp.Message{},
+			expectedErr: errInvalidRequestFormat,
+		},
+		{
+			desc: "Non 200 Response failure",
+			client: Client{
+				HTTPClient: &mockHTTPClientFailureCode{},
+			},
+			expectedErr: errNonSucessfulResponse,
+		},
+		{
+			desc:        "Request Creation failure",
+			expectedErr: errCreateRequest,
+		},
+		{
+			desc:        "Encode failure",
+			request:     wrp.Message{},
+			expectedErr: errEncoding,
+		},
+		{
+			desc: "HTTPClient Transaction failure",
+			client: Client{
+				HTTPClient: &mockHTTPClientReturnErr{},
+			},
+			expectedErr: errHTTPTransaction,
+		},
+		{
+			desc: "Decode failure",
+			client: Client{
+				HTTPClient: &mockHTTPClientBodyFailure{},
+			},
+			response:    &wrp.Message{},
+			request:     &wrp.Message{},
+			expectedErr: errDecoding,
+		},
 		{
 			desc: "Happy Client and Path success",
 			client: Client{

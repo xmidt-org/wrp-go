@@ -19,24 +19,46 @@ package wrpclient
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/xmidt-org/wrp-go/v3"
 )
 
 type mockHTTPClientSuccess struct{}
 
 func (m *mockHTTPClientSuccess) Do(_ *http.Request) (*http.Response, error) {
+	var payload []byte
+	wrp.NewEncoderBytes(&payload, 1).Encode(&wrp.Message{Type: 4})
+	return &http.Response{
+		StatusCode: 200,
+		Body:       ioutil.NopCloser(bytes.NewBuffer(payload)),
+	}, nil
+}
+
+type mockHTTPClientFailureCode struct{}
+
+func (m *mockHTTPClientFailureCode) Do(_ *http.Request) (*http.Response, error) {
+	var payload []byte
+	wrp.NewEncoderBytes(&payload, 1).Encode(&wrp.Message{Type: 4})
+	return &http.Response{
+		StatusCode: 400,
+		Body:       ioutil.NopCloser(bytes.NewBuffer(payload)),
+	}, nil
+}
+
+type mockHTTPClientBodyFailure struct{}
+
+func (m *mockHTTPClientBodyFailure) Do(_ *http.Request) (*http.Response, error) {
 	return &http.Response{
 		StatusCode: 200,
 		Body:       ioutil.NopCloser(bytes.NewBufferString("")),
 	}, nil
 }
 
-type mockHTTPClientFailure struct{}
+type mockHTTPClientReturnErr struct{}
 
-func (m *mockHTTPClientFailure) Do(_ *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: 400,
-		Body:       ioutil.NopCloser(bytes.NewBufferString("")),
-	}, nil
+func (m *mockHTTPClientReturnErr) Do(_ *http.Request) (*http.Response, error) {
+	return &http.Response{}, errors.New("test")
 }
