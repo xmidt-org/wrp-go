@@ -27,6 +27,7 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
+//go:generate go install golang.org/x/tools/cmd/stringer@latest
 //go:generate stringer -type=Format
 
 // Format indicates which format is desired.

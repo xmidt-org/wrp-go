@@ -22,13 +22,17 @@ import (
 	"strconv"
 )
 
+//go:generate go install golang.org/x/tools/cmd/stringer@latest
 //go:generate stringer -type=MessageType
 
 // MessageType indicates the kind of WRP message
 type MessageType int64
 
 const (
-	SimpleRequestResponseMessageType MessageType = iota + 3
+	Invalid0MessageType MessageType = iota
+	Invalid1MessageType
+	AuthorizationMessageType
+	SimpleRequestResponseMessageType
 	SimpleEventMessageType
 	CreateMessageType
 	RetrieveMessageType
@@ -45,6 +49,12 @@ const (
 // where applicable).
 func (mt MessageType) SupportsTransaction() bool {
 	switch mt {
+	case Invalid0MessageType:
+		return false
+	case Invalid1MessageType:
+		return false
+	case AuthorizationMessageType:
+		return false
 	case SimpleEventMessageType:
 		return false
 	case ServiceRegistrationMessageType:
