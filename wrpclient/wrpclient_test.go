@@ -111,7 +111,7 @@ func TestSendWRP(t *testing.T) {
 		},
 		{
 			desc:        "Encode failure",
-			request:     wrp.Message{},
+			request:     "a",
 			expectedErr: errEncoding,
 		},
 		{
