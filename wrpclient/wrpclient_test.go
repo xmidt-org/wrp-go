@@ -77,6 +77,7 @@ func TestSendWRP(t *testing.T) {
 	simpleMessage := &wrp.Message{
 		Type: wrp.SimpleRequestResponseMessageType,
 	}
+
 	tcs := []struct {
 		desc              string
 		client            Client
@@ -93,8 +94,6 @@ func TestSendWRP(t *testing.T) {
 			client: Client{
 				RequestFormat: 8,
 			},
-			response:    wrp.Message{},
-			HTTPPayload: simpleMessage,
 			expectedErr: errInvalidRequestFormat,
 		},
 		{
@@ -111,7 +110,7 @@ func TestSendWRP(t *testing.T) {
 		},
 		{
 			desc:        "Encode failure",
-			request:     "a",
+			request:     wrp.Message{},
 			expectedErr: errEncoding,
 		},
 		{
@@ -123,10 +122,9 @@ func TestSendWRP(t *testing.T) {
 			useMockHTTPClient: true,
 			HTTPReturnCode:    200,
 			HTTPPayload:       "",
-
-			response:    &wrp.Message{},
-			request:     &wrp.Message{},
-			expectedErr: errDecoding,
+			response:          &wrp.Message{},
+			request:           &wrp.Message{},
+			expectedErr:       errDecoding,
 		},
 		{
 			desc:              "Happy Client and Path success",
