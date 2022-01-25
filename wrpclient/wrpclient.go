@@ -29,12 +29,12 @@ import (
 )
 
 var (
-	errEncoding             = errors.New("encoding error")
-	errCreateRequest        = errors.New("http request creation error")
-	errHTTPTransaction      = errors.New("http transaction error")
-	errDecoding             = errors.New("decoding response errror")
-	errNonSucessfulResponse = errors.New("non-200 response")
-	errInvalidRequestFormat = errors.New("invalid client RequestFormat")
+	errEncoding              = errors.New("encoding error")
+	errCreateRequest         = errors.New("http request creation error")
+	errHTTPTransaction       = errors.New("http transaction error")
+	errDecoding              = errors.New("decoding response error")
+	errNonSuccessfulResponse = errors.New("non-200 response")
+	errInvalidRequestFormat  = errors.New("invalid client RequestFormat")
 )
 
 type HTTPClient interface {
@@ -63,7 +63,7 @@ func (c *Client) checkClientConfig() error {
 		c.HTTPClient = &http.Client{}
 	}
 	if c.RequestFormat == 0 {
-		c.RequestFormat = 1
+		c.RequestFormat = wrp.JSON
 	} else if c.RequestFormat > 2 || c.RequestFormat < 0 {
 		return errInvalidRequestFormat
 	}
@@ -97,7 +97,7 @@ func (c *Client) SendWRP(ctx context.Context, response, request interface{}) err
 			Message: resp.Status,
 			Header:  resp.Header,
 		}
-		return fmt.Errorf("%w: %v", errNonSucessfulResponse, err)
+		return fmt.Errorf("%w: %v", errNonSuccessfulResponse, err)
 	}
 
 	// Translate the response using the wrp package and the response as the target of unmarshaling

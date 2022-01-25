@@ -19,46 +19,57 @@ package wrpclient
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/xmidt-org/wrp-go/v3"
+	"github.com/stretchr/testify/mock"
 )
 
-type mockHTTPClientSuccess struct{}
+type mockHTTPClient struct {
+	mock.Mock
+}
 
-func (m *mockHTTPClientSuccess) Do(_ *http.Request) (*http.Response, error) {
-	var payload []byte
-	wrp.NewEncoderBytes(&payload, 1).Encode(&wrp.Message{Type: 4})
+func (m *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	args := m.Called(req)
 	return &http.Response{
-		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewBuffer(payload)),
+		StatusCode: args.Int(0),
+		Body:       ioutil.NopCloser(bytes.NewBuffer(args.Get(1).([]byte))),
 	}, nil
 }
 
-type mockHTTPClientFailureCode struct{}
+// type mockHTTPClientSuccess struct{}
 
-func (m *mockHTTPClientFailureCode) Do(_ *http.Request) (*http.Response, error) {
-	var payload []byte
-	wrp.NewEncoderBytes(&payload, 1).Encode(&wrp.Message{Type: 4})
-	return &http.Response{
-		StatusCode: 400,
-		Body:       ioutil.NopCloser(bytes.NewBuffer(payload)),
-	}, nil
-}
+// func (m *mockHTTPClientSuccess) Do(_ *http.Request) (*http.Response, error) {
+// 	var payload []byte
+// 	wrp.NewEncoderBytes(&payload, 1).Encode(&wrp.Message{Type: 4})
+// 	return &http.Response{
+// 		StatusCode: 200,
+// 		Body:       ioutil.NopCloser(bytes.NewBuffer(payload)),
+// 	}, nil
+// }
 
-type mockHTTPClientBodyFailure struct{}
+// type mockHTTPClientFailureCode struct{}
 
-func (m *mockHTTPClientBodyFailure) Do(_ *http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewBufferString("")),
-	}, nil
-}
+// func (m *mockHTTPClientFailureCode) Do(_ *http.Request) (*http.Response, error) {
+// 	var payload []byte
+// 	wrp.NewEncoderBytes(&payload, 1).Encode(&wrp.Message{Type: 4})
+// 	return &http.Response{
+// 		StatusCode: 400,
+// 		Body:       ioutil.NopCloser(bytes.NewBuffer(payload)),
+// 	}, nil
+// }
 
-type mockHTTPClientReturnErr struct{}
+// type mockHTTPClientBodyFailure struct{}
 
-func (m *mockHTTPClientReturnErr) Do(_ *http.Request) (*http.Response, error) {
-	return &http.Response{}, errors.New("test")
-}
+// func (m *mockHTTPClientBodyFailure) Do(_ *http.Request) (*http.Response, error) {
+// 	return &http.Response{
+// 		StatusCode: 200,
+// 		Body:       ioutil.NopCloser(bytes.NewBufferString("")),
+// 	}, nil
+// }
+
+// type mockHTTPClientReturnErr struct{}
+
+// func (m *mockHTTPClientReturnErr) Do(_ *http.Request) (*http.Response, error) {
+// 	return &http.Response{}, errors.New("test")
+// }

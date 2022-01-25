@@ -25,6 +25,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
@@ -91,10 +93,10 @@ func TestSendWRP(t *testing.T) {
 		},
 		{
 			desc: "Non 200 Response failure",
-			client: Client{
-				HTTPClient: &mockHTTPClientFailureCode{},
-			},
-			expectedErr: errNonSucessfulResponse,
+			// client: Client{
+			// 	HTTPClient: &mockHTTPClient{},
+			// },
+			expectedErr: errNonSuccessfulResponse,
 		},
 		{
 			desc:        "Request Creation failure",
@@ -107,17 +109,14 @@ func TestSendWRP(t *testing.T) {
 			expectedErr: errEncoding,
 		},
 		{
-			desc: "HTTPClient Transaction failure",
-			client: Client{
-				HTTPClient: &mockHTTPClientReturnErr{},
-			},
+			desc:        "HTTPClient Transaction failure",
 			expectedErr: errHTTPTransaction,
 		},
 		{
 			desc: "Decode failure",
-			client: Client{
-				HTTPClient: &mockHTTPClientBodyFailure{},
-			},
+			// client: Client{
+			// 	HTTPClient: &mockHTTPClient{},
+			// },
 			response:    &wrp.Message{},
 			request:     &wrp.Message{},
 			expectedErr: errDecoding,
@@ -125,7 +124,7 @@ func TestSendWRP(t *testing.T) {
 		{
 			desc: "Happy Client and Path success",
 			client: Client{
-				HTTPClient: &mockHTTPClientSuccess{},
+				HTTPClient: &mockHTTPClient{},
 			},
 			response:    &wrp.Message{},
 			request:     &wrp.Message{},
@@ -134,15 +133,27 @@ func TestSendWRP(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
+
 		t.Run(tc.desc, func(t *testing.T) {
 			assert := assert.New(t)
+			require := require.New(t)
+
 			var ctx context.Context
 			if tc.nilContext {
 				ctx = nil
 			} else {
-				ctx = context.TODO()
+				ctx = context.Background()
 			}
-			err := tc.client.SendWRP(ctx, &tc.response, &tc.request)
+
+			var payload []byte
+			err := wrp.NewEncoderBytes(&payload, wrp.JSON).Encode(&wrp.Message{
+				Type: wrp.SimpleRequestResponseMessageType,
+			})
+			require.NoError(err)
+			m := new(mockHTTPClient)
+			m.On("Do", mock.AnythingOfType("*http.Request")).Return(http.StatusOK, payload)
+
+			err = tc.client.SendWRP(ctx, &tc.response, &tc.request)
 			assert.True(errors.Is(err, tc.expectedErr),
 				fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
 					err, tc.expectedErr),
