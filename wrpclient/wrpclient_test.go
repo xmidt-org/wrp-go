@@ -109,11 +109,6 @@ func TestSendWRP(t *testing.T) {
 			expectedErr: errCreateRequest,
 		},
 		{
-			desc:        "Encode failure",
-			request:     wrp.Message{},
-			expectedErr: errEncoding,
-		},
-		{
 			desc:        "HTTPClient Transaction failure",
 			expectedErr: errHTTPTransaction,
 		},
