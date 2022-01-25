@@ -74,14 +74,19 @@ func TestCheckClientConfig(t *testing.T) {
 }
 
 func TestSendWRP(t *testing.T) {
-
+	simpleMessage := &wrp.Message{
+		Type: wrp.SimpleRequestResponseMessageType,
+	}
 	tcs := []struct {
-		desc        string
-		client      Client
-		response    interface{}
-		request     interface{}
-		nilContext  bool
-		expectedErr error
+		desc              string
+		client            Client
+		response          interface{}
+		request           interface{}
+		nilContext        bool
+		expectedErr       error
+		HTTPReturnCode    int
+		HTTPPayload       interface{}
+		useMockHTTPClient bool
 	}{
 		{
 			desc: "Invalid RequestFormat failure",
@@ -89,14 +94,15 @@ func TestSendWRP(t *testing.T) {
 				RequestFormat: 8,
 			},
 			response:    wrp.Message{},
+			HTTPPayload: simpleMessage,
 			expectedErr: errInvalidRequestFormat,
 		},
 		{
-			desc: "Non 200 Response failure",
-			// client: Client{
-			// 	HTTPClient: &mockHTTPClient{},
-			// },
-			expectedErr: errNonSuccessfulResponse,
+			desc:              "Non 200 Response failure",
+			useMockHTTPClient: true,
+			expectedErr:       errNonSuccessfulResponse,
+			HTTPReturnCode:    400,
+			HTTPPayload:       simpleMessage,
 		},
 		{
 			desc:        "Request Creation failure",
@@ -113,22 +119,23 @@ func TestSendWRP(t *testing.T) {
 			expectedErr: errHTTPTransaction,
 		},
 		{
-			desc: "Decode failure",
-			// client: Client{
-			// 	HTTPClient: &mockHTTPClient{},
-			// },
+			desc:              "Decode failure",
+			useMockHTTPClient: true,
+			HTTPReturnCode:    200,
+			HTTPPayload:       "",
+
 			response:    &wrp.Message{},
 			request:     &wrp.Message{},
 			expectedErr: errDecoding,
 		},
 		{
-			desc: "Happy Client and Path success",
-			client: Client{
-				HTTPClient: &mockHTTPClient{},
-			},
-			response:    &wrp.Message{},
-			request:     &wrp.Message{},
-			expectedErr: nil,
+			desc:              "Happy Client and Path success",
+			useMockHTTPClient: true,
+			HTTPReturnCode:    200,
+			HTTPPayload:       simpleMessage,
+			response:          &wrp.Message{},
+			request:           &wrp.Message{},
+			expectedErr:       nil,
 		},
 	}
 
@@ -136,7 +143,6 @@ func TestSendWRP(t *testing.T) {
 
 		t.Run(tc.desc, func(t *testing.T) {
 			assert := assert.New(t)
-			require := require.New(t)
 
 			var ctx context.Context
 			if tc.nilContext {
@@ -146,14 +152,19 @@ func TestSendWRP(t *testing.T) {
 			}
 
 			var payload []byte
-			err := wrp.NewEncoderBytes(&payload, wrp.JSON).Encode(&wrp.Message{
-				Type: wrp.SimpleRequestResponseMessageType,
-			})
-			require.NoError(err)
+			err := wrp.NewEncoderBytes(&payload, wrp.JSON).Encode(tc.HTTPPayload)
+			require.NoError(t, err)
 			m := new(mockHTTPClient)
-			m.On("Do", mock.AnythingOfType("*http.Request")).Return(http.StatusOK, payload)
+			m.On("Do", mock.AnythingOfType("*http.Request")).Return(tc.HTTPReturnCode, payload)
+			if tc.useMockHTTPClient {
+				tc.client.HTTPClient = m
+			}
 
 			err = tc.client.SendWRP(ctx, &tc.response, &tc.request)
+			if tc.useMockHTTPClient {
+				m.AssertExpectations(t)
+			}
+
 			assert.True(errors.Is(err, tc.expectedErr),
 				fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
 					err, tc.expectedErr),
