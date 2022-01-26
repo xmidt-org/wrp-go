@@ -32,9 +32,9 @@ import (
 
 func TestNew(t *testing.T) {
 	defaultClient := Client{
-		URL:           "http://localhost:6200",
-		HTTPClient:    &http.Client{},
-		RequestFormat: 1,
+		url:           "http://localhost:6200",
+		httpClient:    &http.Client{},
+		requestFormat: 1,
 	}
 	tcs := []struct {
 		desc           string
@@ -45,18 +45,18 @@ func TestNew(t *testing.T) {
 		{
 			desc: "Happy Input Client",
 			client: Client{
-				URL: "http://random.com",
-				HTTPClient: &http.Client{
+				url: "http://random.com",
+				httpClient: &http.Client{
 					Timeout: 2,
 				},
-				RequestFormat: 2,
+				requestFormat: 2,
 			},
 			expectedClient: Client{
-				URL: "http://random.com",
-				HTTPClient: &http.Client{
+				url: "http://random.com",
+				httpClient: &http.Client{
 					Timeout: 2,
 				},
-				RequestFormat: 2,
+				requestFormat: 2,
 			},
 		},
 		{
@@ -66,16 +66,16 @@ func TestNew(t *testing.T) {
 		},
 
 		{
-			desc: "Invalid RequestFormat failure",
+			desc: "Invalid requestFormat failure",
 			client: Client{
-				RequestFormat: 8,
+				requestFormat: 8,
 			},
 			expectedErr: errInvalidRequestFormat,
 		},
 		{
-			desc: "Invalid URL failure",
+			desc: "Invalid url failure",
 			client: Client{
-				URL: "nope",
+				url: "nope",
 			},
 			expectedErr: errInvalidURL,
 		},
@@ -83,7 +83,7 @@ func TestNew(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			assert := assert.New(t)
-			client, err := New(tc.client.URL, tc.client.RequestFormat, tc.client.HTTPClient)
+			client, err := New(tc.client.url, tc.client.requestFormat, tc.client.httpClient)
 			if tc.expectedErr != nil {
 				assert.True(errors.Is(err, tc.expectedErr),
 					fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
@@ -170,7 +170,7 @@ func TestSendWRP(t *testing.T) {
 			client, err := New("", wrp.JSON, nil)
 			require.NoError(t, err)
 			if tc.useMockHTTPClient {
-				client.HTTPClient = m
+				client.httpClient = m
 			}
 
 			err = client.SendWRP(ctx, &tc.response, &tc.request)

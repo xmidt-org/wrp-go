@@ -47,35 +47,35 @@ type Client struct {
 
 	// URL is the full location for the serverside wrp endpoint.
 	// If unset, use talaria's URI at localhost, which is the port used in talaria's docker image
-	URL string
+	url string
 
 	// RequestFormat is the wrp Format to use for all requests, which specifies the wrp.Encoder.
 	// If unset, defaults to JSON, which is what the wrp package defaults to.
-	RequestFormat wrp.Format
+	requestFormat wrp.Format
 
 	// If unset, defaults to net/http.DefaultClient
-	HTTPClient HTTPClient
+	httpClient HTTPClient
 }
 
 func New(u string, r wrp.Format, h HTTPClient) (*Client, error) {
 	c := Client{
-		URL:           u,
-		RequestFormat: r,
-		HTTPClient:    h,
+		url:           u,
+		requestFormat: r,
+		httpClient:    h,
 	}
-	if c.URL == "" {
-		c.URL = "http://localhost:6200"
+	if c.url == "" {
+		c.url = "http://localhost:6200"
 	}
-	_, err := url.ParseRequestURI(c.URL)
+	_, err := url.ParseRequestURI(c.url)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", errInvalidURL, err)
 	}
-	if c.HTTPClient == nil {
-		c.HTTPClient = &http.Client{}
+	if c.httpClient == nil {
+		c.httpClient = &http.Client{}
 	}
-	if c.RequestFormat == 0 {
-		c.RequestFormat = wrp.JSON
-	} else if c.RequestFormat > 2 || c.RequestFormat < 0 {
+	if c.requestFormat == 0 {
+		c.requestFormat = wrp.JSON
+	} else if c.requestFormat > 2 || c.requestFormat < 0 {
 		return nil, errInvalidRequestFormat
 	}
 	return &c, nil
@@ -84,17 +84,17 @@ func New(u string, r wrp.Format, h HTTPClient) (*Client, error) {
 func (c *Client) SendWRP(ctx context.Context, response, request interface{}) error {
 	// Create an *http.Request, using c.RequestFormat to marshal the body and the client URL
 	var payload []byte
-	err := wrp.NewEncoderBytes(&payload, c.RequestFormat).Encode(request)
+	err := wrp.NewEncoderBytes(&payload, c.requestFormat).Encode(request)
 	if err != nil {
 		return fmt.Errorf("%w: %v", errEncoding, err)
 	}
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL, bytes.NewBuffer(payload))
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url, bytes.NewBuffer(payload))
 	if err != nil {
 		return fmt.Errorf("%w: %v", errCreateRequest, err)
 	}
 
 	// Use c.HTTPClient or http.DefaultClient to execute the HTTP transaction
-	resp, err := c.HTTPClient.Do(r.WithContext(ctx))
+	resp, err := c.httpClient.Do(r.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("%w: %v", errHTTPTransaction, err)
 	} else if resp.StatusCode >= 300 || resp.StatusCode < 200 {
@@ -109,7 +109,7 @@ func (c *Client) SendWRP(ctx context.Context, response, request interface{}) err
 
 	// Translate the response using the wrp package and the response as the target of unmarshaling
 	defer resp.Body.Close()
-	err = wrp.NewDecoder(resp.Body, c.RequestFormat).Decode(response)
+	err = wrp.NewDecoder(resp.Body, c.requestFormat).Decode(response)
 	if err != nil {
 		return fmt.Errorf("%w: %v", errDecoding, err)
 	}
