@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/xmidt-org/httpaux/erraux"
 	"github.com/xmidt-org/wrp-go/v3"
@@ -35,6 +36,7 @@ var (
 	errDecoding              = errors.New("decoding response error")
 	errNonSuccessfulResponse = errors.New("non-200 response")
 	errInvalidRequestFormat  = errors.New("invalid client RequestFormat")
+	errInvalidURL            = errors.New("invalid client URL")
 )
 
 type HTTPClient interface {
@@ -55,9 +57,13 @@ type Client struct {
 	HTTPClient HTTPClient
 }
 
-func (c *Client) checkClientConfig() error {
+func New(c Client) (*Client, error) {
 	if c.URL == "" {
 		c.URL = "http://localhost:6200"
+	}
+	_, err := url.ParseRequestURI(c.URL)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", errInvalidURL, err)
 	}
 	if c.HTTPClient == nil {
 		c.HTTPClient = &http.Client{}
@@ -65,19 +71,15 @@ func (c *Client) checkClientConfig() error {
 	if c.RequestFormat == 0 {
 		c.RequestFormat = wrp.JSON
 	} else if c.RequestFormat > 2 || c.RequestFormat < 0 {
-		return errInvalidRequestFormat
+		return nil, errInvalidRequestFormat
 	}
-	return nil
+	return &c, nil
 }
 
 func (c *Client) SendWRP(ctx context.Context, response, request interface{}) error {
-	err := c.checkClientConfig()
-	if err != nil {
-		return err
-	}
 	// Create an *http.Request, using c.RequestFormat to marshal the body and the client URL
 	var payload []byte
-	err = wrp.NewEncoderBytes(&payload, c.RequestFormat).Encode(request)
+	err := wrp.NewEncoderBytes(&payload, c.RequestFormat).Encode(request)
 	if err != nil {
 		return fmt.Errorf("%w: %v", errEncoding, err)
 	}

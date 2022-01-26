@@ -30,7 +30,7 @@ import (
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
-func TestCheckClientConfig(t *testing.T) {
+func TestNew(t *testing.T) {
 	defaultClient := Client{
 		URL:           "http://localhost:6200",
 		HTTPClient:    &http.Client{},
@@ -40,6 +40,7 @@ func TestCheckClientConfig(t *testing.T) {
 		desc           string
 		client         Client
 		expectedClient Client
+		expectedErr    error
 	}{
 		{
 			desc:           "Empty Client",
@@ -49,26 +50,49 @@ func TestCheckClientConfig(t *testing.T) {
 		{
 			desc: "Happy Input Client",
 			client: Client{
-				URL: "url",
+				URL: "http://random.com",
 				HTTPClient: &http.Client{
 					Timeout: 2,
 				},
 				RequestFormat: 2,
 			},
 			expectedClient: Client{
-				URL: "url",
+				URL: "http://random.com",
 				HTTPClient: &http.Client{
 					Timeout: 2,
 				},
 				RequestFormat: 2,
 			},
 		},
+		{
+			desc: "Invalid RequestFormat failure",
+			client: Client{
+				RequestFormat: 8,
+			},
+			expectedErr: errInvalidRequestFormat,
+		},
+		{
+			desc: "Invalid URL failure",
+			client: Client{
+				URL: "nope",
+			},
+			expectedErr: errInvalidURL,
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			assert := assert.New(t)
-			tc.client.checkClientConfig()
-			assert.EqualValues(tc.client, tc.expectedClient)
+			client, err := New(tc.client)
+			if tc.expectedErr != nil {
+				assert.True(errors.Is(err, tc.expectedErr),
+					fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
+						err, tc.expectedErr),
+				)
+			} else {
+				require.NoError(t, err)
+				assert.EqualValues(tc.expectedClient, *client)
+			}
+
 		})
 	}
 }
@@ -89,13 +113,6 @@ func TestSendWRP(t *testing.T) {
 		HTTPPayload       interface{}
 		useMockHTTPClient bool
 	}{
-		{
-			desc: "Invalid RequestFormat failure",
-			client: Client{
-				RequestFormat: 8,
-			},
-			expectedErr: errInvalidRequestFormat,
-		},
 		{
 			desc:              "Non 200 Response failure",
 			useMockHTTPClient: true,
@@ -149,11 +166,13 @@ func TestSendWRP(t *testing.T) {
 			require.NoError(t, err)
 			m := new(mockHTTPClient)
 			m.On("Do", mock.AnythingOfType("*http.Request")).Return(tc.HTTPReturnCode, payload)
+			client, err := New(Client{})
+			require.NoError(t, err)
 			if tc.useMockHTTPClient {
-				tc.client.HTTPClient = m
+				client.HTTPClient = m
 			}
 
-			err = tc.client.SendWRP(ctx, &tc.response, &tc.request)
+			err = client.SendWRP(ctx, &tc.response, &tc.request)
 			if tc.useMockHTTPClient {
 				m.AssertExpectations(t)
 			}
