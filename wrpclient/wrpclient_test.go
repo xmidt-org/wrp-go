@@ -43,11 +43,6 @@ func TestNew(t *testing.T) {
 		expectedErr    error
 	}{
 		{
-			desc:           "Empty Client",
-			client:         Client{},
-			expectedClient: defaultClient,
-		},
-		{
 			desc: "Happy Input Client",
 			client: Client{
 				URL: "http://random.com",
@@ -64,6 +59,12 @@ func TestNew(t *testing.T) {
 				RequestFormat: 2,
 			},
 		},
+		{
+			desc:           "Empty Client",
+			client:         Client{},
+			expectedClient: defaultClient,
+		},
+
 		{
 			desc: "Invalid RequestFormat failure",
 			client: Client{
@@ -82,7 +83,7 @@ func TestNew(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			assert := assert.New(t)
-			client, err := New(tc.client)
+			client, err := New(tc.client.URL, tc.client.RequestFormat, tc.client.HTTPClient)
 			if tc.expectedErr != nil {
 				assert.True(errors.Is(err, tc.expectedErr),
 					fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
@@ -166,7 +167,7 @@ func TestSendWRP(t *testing.T) {
 			require.NoError(t, err)
 			m := new(mockHTTPClient)
 			m.On("Do", mock.AnythingOfType("*http.Request")).Return(tc.HTTPReturnCode, payload)
-			client, err := New(Client{})
+			client, err := New("", wrp.JSON, nil)
 			require.NoError(t, err)
 			if tc.useMockHTTPClient {
 				client.HTTPClient = m

@@ -57,7 +57,12 @@ type Client struct {
 	HTTPClient HTTPClient
 }
 
-func New(c Client) (*Client, error) {
+func New(u string, r wrp.Format, h HTTPClient) (*Client, error) {
+	c := Client{
+		URL:           u,
+		RequestFormat: r,
+		HTTPClient:    h,
+	}
 	if c.URL == "" {
 		c.URL = "http://localhost:6200"
 	}
