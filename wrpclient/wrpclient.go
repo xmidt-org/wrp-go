@@ -59,9 +59,9 @@ type Client struct {
 
 func New(reqURL string, reqFormat wrp.Format, httpClient HTTPClient) (*Client, error) {
 	c := Client{
-		url:           u,
-		requestFormat: r,
-		httpClient:    h,
+		url:           reqURL,
+		requestFormat: reqFormat,
+		httpClient:    httpClient,
 	}
 	if c.url == "" {
 		c.url = "http://localhost:6200"
