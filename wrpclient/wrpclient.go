@@ -57,7 +57,7 @@ type Client struct {
 	httpClient HTTPClient
 }
 
-func New(u string, r wrp.Format, h HTTPClient) (*Client, error) {
+func New(reqURL string, reqFormat wrp.Format, httpClient HTTPClient) (*Client, error) {
 	c := Client{
 		url:           u,
 		requestFormat: r,
