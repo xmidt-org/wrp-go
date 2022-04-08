@@ -20,6 +20,7 @@ package wrphttp
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -53,13 +54,15 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 			Bytes:  contents,
 		}
 
-		payload := entity.Message.Payload
+		// Check for valid payload
+		payload := contents
 		dst := make([]byte, base64.StdEncoding.DecodedLen(len(payload)))
-		_, err = base64.StdEncoding.Decode(dst, payload)
-		if err != nil {
+		_, e := base64.StdEncoding.Decode(dst, payload)
+		fmt.Println(e)
+		if e != nil {
 			return nil, &xhttp.Error{
 				Code: http.StatusBadRequest,
-				Text: "Unable to decode request: " + err.Error(),
+				Text: "Unable to decode request: " + e.Error(),
 			}
 		}
 
