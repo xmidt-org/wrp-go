@@ -123,32 +123,33 @@ func testDecodeEntityPayloadError(t *testing.T) {
 		require = require.New(t)
 
 		expected = wrp.Message{
-			Type:        wrp.SimpleEventMessageType,
-			ContentType: wrp.MimeTypeOctetStream,
+			Source:      "foo",
+			Destination: "bar",
 			Payload:     []byte("garbage"),
 		}
-		expectedBytes []byte
-		body          bytes.Buffer
-		decoder       = DecodeEntity(wrp.Msgpack)
-		request       = httptest.NewRequest("POST", "/", &body)
+
+		body    []byte
+		decoder = DecodeEntity(wrp.Msgpack)
 	)
+
+	require.NotNil(decoder)
 
 	require.NoError(
-		wrp.NewEncoderBytes(&expectedBytes, wrp.Msgpack).Encode(&expected),
+		wrp.NewEncoderBytes(&body, wrp.Msgpack).Encode(&expected),
 	)
 
-	body.Write([]byte("garbage"))
-	request.Header.Set(MessageTypeHeader, "event")
+	request := httptest.NewRequest("POST", "/", bytes.NewBuffer(body))
+
 	entity, err := decoder(context.Background(), request)
-	assert.Nil(entity)
 	assert.Error(err)
+	require.Nil(entity)
 }
 
 func TestDecodeEntity(t *testing.T) {
 	t.Run("Success", testDecodeEntitySuccess)
-	//t.Run("InvalidContentType", testDecodeEntityInvalidContentType)
-	//t.Run("BodyError", testDecodeEntityBodyError)
-	//t.Run("PayloadError", testDecodeEntityPayloadError)
+	t.Run("InvalidContentType", testDecodeEntityInvalidContentType)
+	t.Run("BodyError", testDecodeEntityBodyError)
+	t.Run("PayloadError", testDecodeEntityPayloadError)
 }
 
 func testDecodeRequestHeadersSuccess(t *testing.T) {
@@ -173,7 +174,7 @@ func testDecodeRequestHeadersSuccess(t *testing.T) {
 		wrp.NewEncoderBytes(&expectedBytes, wrp.Msgpack).Encode(&expected),
 	)
 
-	body.Write([]byte("garbage"))
+	body.Write([]byte{1, 2, 3})
 	request.Header.Set(MessageTypeHeader, "event")
 	request.Header.Set(SourceHeader, "foo")
 	request.Header.Set(DestinationHeader, "bar")
