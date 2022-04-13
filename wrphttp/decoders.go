@@ -54,6 +54,9 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 		}
 
 		err = wrp.NewDecoderBytes(contents, format).Decode(&entity.Message)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode wrp: %v", err)
+		}
 
 		// Check for valid payload
 		payload := entity.Message.Payload
