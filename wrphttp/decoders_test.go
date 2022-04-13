@@ -103,7 +103,7 @@ func testDecodeEntityBodyError(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedError = errors.New("EOF")
+		expectedError = errors.New("failed to decode wrp: EOF")
 		decoder       = DecodeEntity(wrp.Msgpack)
 		body          = bytes.NewReader(nil)
 		request       = httptest.NewRequest("GET", "/", body)
@@ -113,7 +113,7 @@ func testDecodeEntityBodyError(t *testing.T) {
 
 	entity, err := decoder(context.Background(), request)
 
-	assert.NotNil(entity)
+	assert.Nil(entity)
 	assert.Equal(expectedError, err)
 }
 

@@ -19,6 +19,7 @@ package wrphttp
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -52,6 +53,10 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 		}
 
 		err = wrp.NewDecoderBytes(contents, format).Decode(&entity.Message)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode wrp: %v", err)
+		}
+
 		return entity, err
 	}
 }

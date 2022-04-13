@@ -113,7 +113,11 @@ func (wh *wrpHandler) ServeHTTP(httpResponse http.ResponseWriter, httpRequest *h
 	ctx := httpRequest.Context()
 	entity, err := wh.decoder(ctx, httpRequest)
 	if err != nil {
-		wh.errorEncoder(ctx, err, httpResponse)
+		wrappedErr := httpError{
+			err:  err,
+			code: http.StatusBadRequest,
+		}
+		wh.errorEncoder(ctx, wrappedErr, httpResponse)
 		return
 	}
 
