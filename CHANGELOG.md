@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v3.1.1]
+- Fix bug so that error encoder sends a 400 when decoding fails [#70](https://github.com/xmidt-org/wrp-go/pull/70)
+
 ## [v3.1.0]
 - Added enum values to `MessageTypes`. Bumped codecgen version to 1.2.6. Now install stringer and codecgen everytime `go generate` is run. [#69](https://github.com/xmidt-org/wrp-go/pull/69)
 - Added missing wrp fields to header[#68](https://github.com/xmidt-org/wrp-go/pull/68)
@@ -63,7 +66,8 @@ All changes included in [#47](https://github.com/xmidt-org/wrp-go/pull/47)
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.1.1...HEAD
+[v3.1.1]: https://github.com/xmidt-org/wrp-go/compare/v3.1.0...v3.1.1
 [v3.1.0]: https://github.com/xmidt-org/wrp-go/compare/v3.0.2...v3.1.0
 [v3.0.2]: https://github.com/xmidt-org/wrp-go/compare/v3.0.1...v3.0.2
 [v3.0.1]: https://github.com/xmidt-org/wrp-go/compare/v3.0.0...v3.0.1
