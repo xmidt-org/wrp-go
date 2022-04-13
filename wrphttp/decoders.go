@@ -19,7 +19,6 @@ package wrphttp
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -58,17 +57,6 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 			return nil, fmt.Errorf("failed to decode wrp: %v", err)
 		}
 
-		// Check for valid payload
-		payload := entity.Message.Payload
-		dst := make([]byte, base64.StdEncoding.DecodedLen(len(payload)))
-		_, e := base64.StdEncoding.Decode(dst, payload)
-		if e != nil {
-			// return nil, &xhttp.Error{
-			// 	Code: http.StatusBadRequest,
-			// 	Text: "Unable to decode request: " + e.Error(),
-			// }
-			return nil, fmt.Errorf("FAILED to DECODE: %v", e.Error())
-		}
 		return entity, err
 	}
 }
@@ -91,17 +79,17 @@ func DecodeRequestHeaders(ctx context.Context, original *http.Request) (*Entity,
 
 	err := SetMessageFromHeaders(original.Header, &entity.Message)
 	if err != nil {
-		return nil, fmt.Errorf("failed to set message from headers: %v", err)
+		return nil, err
 	}
 
 	_, err = ReadPayload(original.Header, original.Body, &entity.Message)
 
 	if err != nil {
-		return entity, fmt.Errorf("failed to read payload: %v", err)
+		return entity, err
 	}
 
 	err = wrp.NewEncoderBytes(&entity.Bytes, entity.Format).Encode(entity.Message)
-	return entity, fmt.Errorf("failed to encode message: %v", err)
+	return entity, err
 }
 
 // MessageFunc is a strategy for post-processing a WRP message, adding things to the

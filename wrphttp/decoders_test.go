@@ -103,7 +103,7 @@ func testDecodeEntityBodyError(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedError = errors.New("EOF")
+		expectedError = errors.New("failed to decode wrp: EOF")
 		decoder       = DecodeEntity(wrp.Msgpack)
 		body          = bytes.NewReader(nil)
 		request       = httptest.NewRequest("GET", "/", body)
@@ -113,43 +113,14 @@ func testDecodeEntityBodyError(t *testing.T) {
 
 	entity, err := decoder(context.Background(), request)
 
-	assert.NotNil(entity)
+	assert.Nil(entity)
 	assert.Equal(expectedError, err)
-}
-
-func testDecodeEntityPayloadError(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		expected = wrp.Message{
-			Source:      "foo",
-			Destination: "bar",
-			Payload:     []byte("garbage"),
-		}
-
-		body    []byte
-		decoder = DecodeEntity(wrp.Msgpack)
-	)
-
-	require.NotNil(decoder)
-
-	require.NoError(
-		wrp.NewEncoderBytes(&body, wrp.Msgpack).Encode(&expected),
-	)
-
-	request := httptest.NewRequest("POST", "/", bytes.NewBuffer(body))
-
-	entity, err := decoder(context.Background(), request)
-	assert.Error(err)
-	require.Nil(entity)
 }
 
 func TestDecodeEntity(t *testing.T) {
 	t.Run("Success", testDecodeEntitySuccess)
 	t.Run("InvalidContentType", testDecodeEntityInvalidContentType)
 	t.Run("BodyError", testDecodeEntityBodyError)
-	t.Run("PayloadError", testDecodeEntityPayloadError)
 }
 
 func testDecodeRequestHeadersSuccess(t *testing.T) {
