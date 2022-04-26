@@ -20,6 +20,7 @@ package wrphttp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -201,8 +202,9 @@ func testWRPHandlerDecodeError(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedCtx = context.WithValue(context.Background(), foo, "bar")
-		expectedErr = errors.New("expected")
+		expectedCtx            = context.WithValue(context.Background(), foo, "bar")
+		expectedErr            = errors.New("expected")
+		expectedHTTPStatusCode = http.StatusBadRequest
 
 		decoder = func(actualCtx context.Context, httpRequest *http.Request) (*Entity, error) {
 			assert.Equal(expectedCtx, actualCtx)
@@ -213,7 +215,12 @@ func testWRPHandlerDecodeError(t *testing.T) {
 		errorEncoder       = func(actualCtx context.Context, actualErr error, _ http.ResponseWriter) {
 			errorEncoderCalled = true
 			assert.Equal(expectedCtx, actualCtx)
-			assert.Equal(expectedErr, actualErr)
+			assert.ErrorIs(actualErr, expectedErr,
+				fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
+					actualErr, expectedErr))
+			if err, ok := actualErr.(httpError); assert.True(ok) {
+				assert.Equal(err.StatusCode(), expectedHTTPStatusCode)
+			}
 		}
 
 		wrpHandler  = new(MockHandler)
