@@ -42,6 +42,11 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 			return nil, err
 		}
 
+		_, err = DetermineFormat(defaultFormat, original.Header, "Accept")
+		if err != nil {
+			return nil, err
+		}
+
 		contents, err := ioutil.ReadAll(original.Body)
 		if err != nil {
 			return nil, err
