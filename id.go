@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Comcast Cable Communications Management, LLC
+ * Copyright 2022 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,11 @@ var (
 
 // ID represents a normalized identifier for a device.
 type ID string
+
+// Bytes is a convenience function to obtain the []byte representation of an ID.
+func (id ID) Bytes() []byte {
+	return []byte(id)
+}
 
 // ParseID parses a raw device name into a canonicalized identifier.
 func ParseID(deviceName string) (ID, error) {
