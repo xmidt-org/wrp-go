@@ -44,7 +44,7 @@ var (
 	)
 )
 
-// ID represents a normalized identifer for a device.
+// ID represents a normalized identifier for a device.
 type ID string
 
 // ParseID parses a raw device name into a canonicalized identifier.
