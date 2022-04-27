@@ -35,28 +35,28 @@ const (
 var (
 	ErrorInvalidDeviceName = errors.New("invalid device name")
 
-	invalidID = ID("")
+	invalidDeviceID = DeviceID("")
 
 	// idPattern is the precompiled regular expression that all device identifiers must match.
 	// Matching is partial, as everything after the service is ignored.
-	idPattern = regexp.MustCompile(
+	DeviceIDPattern = regexp.MustCompile(
 		`^(?P<prefix>(?i)mac|uuid|dns|serial):(?P<id>[^/]+)(?P<service>/[^/]+)?`,
 	)
 )
 
 // ID represents a normalized identifier for a device.
-type ID string
+type DeviceID string
 
 // Bytes is a convenience function to obtain the []byte representation of an ID.
-func (id ID) Bytes() []byte {
+func (id DeviceID) Bytes() []byte {
 	return []byte(id)
 }
 
 // ParseID parses a raw device name into a canonicalized identifier.
-func ParseID(deviceName string) (ID, error) {
-	match := idPattern.FindStringSubmatch(deviceName)
+func ParseDeviceID(deviceName string) (DeviceID, error) {
+	match := DeviceIDPattern.FindStringSubmatch(deviceName)
 	if match == nil {
-		return invalidID, ErrorInvalidDeviceName
+		return invalidDeviceID, ErrorInvalidDeviceName
 	}
 
 	var (
@@ -82,9 +82,9 @@ func ParseID(deviceName string) (ID, error) {
 		)
 
 		if invalidCharacter != -1 || len(idPart) != macLength {
-			return invalidID, ErrorInvalidDeviceName
+			return invalidDeviceID, ErrorInvalidDeviceName
 		}
 	}
 
-	return ID(fmt.Sprintf("%s:%s", prefix, idPart)), nil
+	return DeviceID(fmt.Sprintf("%s:%s", prefix, idPart)), nil
 }

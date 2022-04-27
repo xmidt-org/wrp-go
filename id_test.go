@@ -23,11 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseID(t *testing.T) {
+func TestParseDeviceID(t *testing.T) {
 	assert := assert.New(t)
 	testData := []struct {
 		id           string
-		expected     ID
+		expected     DeviceID
 		expectsError bool
 	}{
 		{"MAC:11:22:33:44:55:66", "mac:112233445566", false},
@@ -50,7 +50,7 @@ func TestParseID(t *testing.T) {
 
 	for _, record := range testData {
 		t.Run(record.id, func(t *testing.T) {
-			id, err := ParseID(record.id)
+			id, err := ParseDeviceID(record.id)
 			assert.Equal(record.expected, id)
 			assert.Equal(record.expectsError, err != nil)
 			assert.Equal([]byte(record.expected), id.Bytes())
