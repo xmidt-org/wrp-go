@@ -218,8 +218,12 @@ func testWRPHandlerDecodeError(t *testing.T) {
 			assert.ErrorIs(actualErr, expectedErr,
 				fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
 					actualErr, expectedErr))
-			if err, ok := actualErr.(httpError); assert.True(ok) {
-				assert.Equal(err.StatusCode(), expectedHTTPStatusCode)
+
+			var actualErrorHTTP httpError
+			if assert.ErrorAs(actualErr, &actualErrorHTTP,
+				fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
+					actualErr, actualErrorHTTP)) {
+				assert.Equal(expectedHTTPStatusCode, actualErrorHTTP.StatusCode())
 			}
 		}
 
