@@ -39,12 +39,12 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 	return func(ctx context.Context, original *http.Request) (*Entity, error) {
 		format, err := DetermineFormat(defaultFormat, original.Header, "Content-Type")
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to determine format of Content-Type header: %v", err)
 		}
 
 		_, err = DetermineFormat(defaultFormat, original.Header, "Accept")
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to determine format of Accept header: %v", err)
 		}
 
 		contents, err := ioutil.ReadAll(original.Body)
