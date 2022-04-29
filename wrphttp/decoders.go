@@ -47,11 +47,6 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 			return nil, fmt.Errorf("failed to determine format of Accept header: %v", err)
 		}
 
-		_, err = DetermineFormat(defaultFormat, original.Header, "Accept")
-		if err != nil {
-			return nil, err
-		}
-
 		contents, err := ioutil.ReadAll(original.Body)
 		if err != nil {
 			return nil, err
