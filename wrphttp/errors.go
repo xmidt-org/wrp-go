@@ -16,6 +16,8 @@
 
 package wrphttp
 
+import "errors"
+
 type httpError struct {
 	err  error
 	code int
@@ -27,4 +29,9 @@ func (e httpError) Error() string {
 
 func (e httpError) StatusCode() int {
 	return e.code
+}
+
+// Is reports whether any error in e.err's chain matches target.
+func (e httpError) Is(target error) bool {
+	return errors.Is(e.err, target)
 }
