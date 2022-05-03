@@ -103,7 +103,7 @@ func testDecodeEntityInvalidContentType(t *testing.T) {
 	}
 
 	for _, record := range testData {
-		t.Run(fmt.Sprintf("test case: %v", record.name), func(t *testing.T) {
+		t.Run(record.name, func(t *testing.T) {
 			var (
 				assert  = assert.New(t)
 				require = require.New(t)
