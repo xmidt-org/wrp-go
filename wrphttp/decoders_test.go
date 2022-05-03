@@ -22,7 +22,6 @@ import (
 	"context"
 	"errors"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,15 +39,22 @@ func testDecodeEntitySuccess(t *testing.T) {
 		defaultFormat wrp.Format
 		bodyFormat    wrp.Format
 		contentType   string
+		accept        string
+		name          string
 	}{
-		{wrp.Msgpack, wrp.Msgpack, ""},
-		{wrp.JSON, wrp.JSON, ""},
-		{wrp.Msgpack, wrp.JSON, wrp.JSON.ContentType()},
-		{wrp.JSON, wrp.Msgpack, wrp.Msgpack.ContentType()},
+		// Default test cases
+		{wrp.Msgpack, wrp.Msgpack, "", "", "default WRP headers"},
+		{wrp.JSON, wrp.JSON, "", "", "default JSON headers"},
+		// Accept header test cases
+		{wrp.JSON, wrp.JSON, "", wrp.JSON.ContentType(), "JSON Accept header"},
+		{wrp.JSON, wrp.JSON, "", wrp.Msgpack.ContentType(), "WRP Accept header"},
+		// Content-Type header test cases
+		{wrp.Msgpack, wrp.JSON, wrp.JSON.ContentType(), "", "JSON Content-Type header"},
+		{wrp.JSON, wrp.Msgpack, wrp.Msgpack.ContentType(), "", "WRP Content-Type header"},
 	}
 
-	for i, record := range testData {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, record := range testData {
+		t.Run(record.name, func(t *testing.T) {
 			var (
 				assert  = assert.New(t)
 				require = require.New(t)
@@ -71,6 +77,7 @@ func testDecodeEntitySuccess(t *testing.T) {
 			request := httptest.NewRequest("POST", "/", bytes.NewBuffer(body))
 
 			request.Header.Set("Content-Type", record.contentType)
+			request.Header.Set("Accept", record.accept)
 			entity, err := decoder(context.Background(), request)
 			assert.NoError(err)
 			require.NotNil(entity)
@@ -83,19 +90,34 @@ func testDecodeEntitySuccess(t *testing.T) {
 }
 
 func testDecodeEntityInvalidContentType(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
+	testData := []struct {
+		contentType string
+		accept      string
+		name        string
+	}{
+		// Content-Type header test cases
+		{"invalid", "", "Content-Type Header"},
+		// Accept Header test cases
+		{"", "invalid", "Accept Header"},
+	}
 
-		decoder = DecodeEntity(wrp.Msgpack)
-		request = httptest.NewRequest("GET", "/", nil)
-	)
+	for _, record := range testData {
+		t.Run(record.name, func(t *testing.T) {
+			var (
+				assert  = assert.New(t)
+				require = require.New(t)
 
-	require.NotNil(decoder)
-	request.Header.Set("Content-Type", "invalid")
-	entity, err := decoder(context.Background(), request)
-	assert.Nil(entity)
-	assert.Error(err)
+				decoder = DecodeEntity(wrp.Msgpack)
+				request = httptest.NewRequest("GET", "/", nil)
+			)
+			require.NotNil(decoder)
+			request.Header.Set("Content-Type", record.contentType)
+			request.Header.Set("Accept", record.accept)
+			entity, err := decoder(context.Background(), request)
+			assert.Nil(entity)
+			assert.Error(err)
+		})
+	}
 }
 
 func testDecodeEntityBodyError(t *testing.T) {

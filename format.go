@@ -109,7 +109,7 @@ func FormatFromContentType(contentType string, fallback ...Format) (Format, erro
 		return Msgpack, nil
 	}
 
-	return Format(-1), fmt.Errorf("Invalid WRP content type: %s", contentType)
+	return Format(-1), fmt.Errorf("invalid WRP content type: %s", contentType)
 }
 
 // handle looks up the appropriate codec.Handle for this format constant.
