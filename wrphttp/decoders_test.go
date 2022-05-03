@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"net/http/httptest"
 	"testing"
 
