@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 
 	"github.com/ugorji/go/codec"
@@ -72,6 +73,10 @@ var (
 		},
 	}
 )
+
+func init() {
+	msgpackHandle.SetBytesExt(reflect.TypeOf(""), 5, utf8Fixer{})
+}
 
 // ContentType returns the MIME type associated with this format
 func (f Format) ContentType() string {
