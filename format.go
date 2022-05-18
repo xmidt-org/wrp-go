@@ -75,7 +75,7 @@ var (
 )
 
 func init() {
-	msgpackHandle.SetBytesExt(reflect.TypeOf(""), 5, utf8Fixer{})
+	msgpackHandle.SetBytesExt(reflect.TypeOf(""), 1, utf8Fixer{})
 }
 
 // ContentType returns the MIME type associated with this format

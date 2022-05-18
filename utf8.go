@@ -31,7 +31,7 @@ type utf8Fixer struct{}
 func (f utf8Fixer) WriteExt(v interface{}) []byte {
 	return []byte(
 		strings.ToValidUTF8(
-			v.(string), // this works due to how we register
+			*v.(*string), // this works due to how we register
 			strconv.QuoteRune(unicode.ReplacementChar), // may have to convert this to a string, not sure
 		),
 	)
@@ -41,5 +41,5 @@ func (f utf8Fixer) WriteExt(v interface{}) []byte {
 //
 // Note: dst is always a pointer kind to the registered extension type.
 func (f utf8Fixer) ReadExt(dst interface{}, src []byte) {
-	dst = strings.ToValidUTF8(string(src), strconv.QuoteRune(unicode.ReplacementChar))
+	*(dst.(*string)) = strings.ToValidUTF8(string(src), strconv.QuoteRune(unicode.ReplacementChar))
 }
