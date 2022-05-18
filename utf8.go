@@ -31,8 +31,8 @@ type utf8Fixer struct{}
 func (f utf8Fixer) WriteExt(v interface{}) []byte {
 	return []byte(
 		strings.ToValidUTF8(
-			*v.(*string), // this works due to how we register
-			strconv.QuoteRune(unicode.ReplacementChar), // may have to convert this to a string, not sure
+			*v.(*string), // we register for string, but should expect a pointer to string.
+			strconv.QuoteRune(unicode.ReplacementChar),
 		),
 	)
 }
