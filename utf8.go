@@ -25,8 +25,8 @@ import (
 )
 
 var (
-	ErrNotUTF8           = errors.New("field contains non-utf-8 characters")
-	ErrUnexpectedMessage = errors.New("struct not a valid wrp struct")
+	ErrNotUTF8        = errors.New("field contains non-utf-8 characters")
+	ErrUnexpectedKind = errors.New("A struct or non-nil pointer to struct is required")
 )
 
 // UTF8 takes any struct verifies that it contains UTF-8 strings.
@@ -37,7 +37,7 @@ func UTF8(v interface{}) error {
 	}
 
 	if value.Kind() != reflect.Struct {
-		return fmt.Errorf("A struct or non-nil pointer to struct is required")
+		return fmt.Errorf("%w: %s", ErrUnexpectedKind, value.Kind())
 	}
 
 	for i := 0; i < value.NumField(); i++ {

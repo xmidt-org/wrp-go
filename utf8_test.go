@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInvalidUtf8(t *testing.T) {
+func TestInvalidUtf8Decoding(t *testing.T) {
 	assert := assert.New(t)
 
 	/*
@@ -48,10 +48,62 @@ func TestInvalidUtf8(t *testing.T) {
 	decoder := NewDecoderBytes(invalid, Msgpack)
 	msg := new(Message)
 	err := decoder.Decode(msg)
-
 	assert.Nil(err)
 	assert.True(utf8.ValidString(msg.Source))
 
-	/* This fails. */
-	assert.True(utf8.ValidString(msg.Destination))
+	assert.False(utf8.ValidString(msg.Destination))
+	err = UTF8(msg)
+	assert.ErrorIs(err, ErrNotUTF8)
+}
+
+func TestUTF8(t *testing.T) {
+	type Test struct {
+		unexported string
+		Name       string
+		Age        int
+	}
+
+	testVal := Test{
+		unexported: "this shouldn't be output",
+		Name:       "Joe Schmoe",
+		Age:        415,
+	}
+
+	tests := []struct {
+		description string
+		value       interface{}
+		expectedErr error
+	}{
+		{
+			description: "Success",
+			value:       testVal,
+		},
+		{
+			description: "Pointer success",
+			value:       &testVal,
+		},
+		{
+			description: "Non struct error",
+			value:       5,
+			expectedErr: ErrUnexpectedKind,
+		},
+		{
+			description: "UTF8 error",
+			value: Test{
+				Name: string([]byte{0xbf}),
+			},
+			expectedErr: ErrNotUTF8,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			err := UTF8(tc.value)
+			if tc.expectedErr == nil {
+				assert.NoError(err)
+				return
+			}
+			assert.ErrorIs(err, tc.expectedErr)
+		})
+	}
 }
