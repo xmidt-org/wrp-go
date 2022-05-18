@@ -154,11 +154,6 @@ func (ed *encoderDecorator) Encode(value interface{}) error {
 		}
 	}
 
-	err := UTF8(value)
-	if err != nil {
-		return err
-	}
-
 	return ed.Encoder.Encode(value)
 }
 
@@ -167,26 +162,6 @@ type Decoder interface {
 	Decode(interface{}) error
 	Reset(io.Reader)
 	ResetBytes([]byte)
-}
-
-// decoderDecorator wraps a ugorji Decoder and implements the wrp.Decoder interface.
-type decoderDecorator struct {
-	*codec.Decoder
-}
-
-func (dd *decoderDecorator) Decode(value interface{}) error {
-	err := dd.Decoder.Decode(value)
-	if err != nil {
-		return err
-	}
-	return UTF8(value)
-}
-func (dd *decoderDecorator) Reset(r io.Reader) {
-	dd.Decoder.Reset(r)
-}
-
-func (dd *decoderDecorator) ResetBytes(bs []byte) {
-	dd.Decoder.ResetBytes(bs)
 }
 
 // NewEncoder produces a ugorji Encoder using the appropriate WRP configuration
@@ -208,17 +183,13 @@ func NewEncoderBytes(output *[]byte, f Format) Encoder {
 // NewDecoder produces a ugorji Decoder using the appropriate WRP configuration
 // for the given format
 func NewDecoder(input io.Reader, f Format) Decoder {
-	return &decoderDecorator{
-		codec.NewDecoder(input, f.handle()),
-	}
+	return codec.NewDecoder(input, f.handle())
 }
 
 // NewDecoderBytes produces a ugorji Decoder using the appropriate WRP configuration
 // for the given format
 func NewDecoderBytes(input []byte, f Format) Decoder {
-	return &decoderDecorator{
-		codec.NewDecoderBytes(input, f.handle()),
-	}
+	return codec.NewDecoderBytes(input, f.handle())
 }
 
 // TranscodeMessage converts a WRP message of any type from one format into another,
