@@ -18,28 +18,46 @@
 package wrp
 
 import (
-	"strconv"
-	"strings"
-	"unicode"
+	"errors"
+	"fmt"
+	"reflect"
+	"unicode/utf8"
 )
 
-type utf8Fixer struct{}
+var (
+	ErrNotUTF8           = errors.New("field contains non-utf-8 characters")
+	ErrUnexpectedMessage = errors.New("struct not a valid wrp struct")
+)
 
-// WriteExt converts a value to a []byte.
-//
-// Note: v is a pointer iff the registered extension type is a struct or array kind.
-func (f utf8Fixer) WriteExt(v interface{}) []byte {
-	return []byte(
-		strings.ToValidUTF8(
-			*v.(*string), // we register for string, but should expect a pointer to string.
-			strconv.QuoteRune(unicode.ReplacementChar),
-		),
-	)
-}
+// UTF8 takes any struct verifies that it contains UTF-8 strings.
+func UTF8(v interface{}) error {
+	value := reflect.ValueOf(v)
+	if value.Kind() == reflect.Ptr && !value.IsNil() {
+		value = value.Elem()
+	}
 
-// ReadExt updates a value from a []byte.
-//
-// Note: dst is always a pointer kind to the registered extension type.
-func (f utf8Fixer) ReadExt(dst interface{}, src []byte) {
-	*(dst.(*string)) = strings.ToValidUTF8(string(src), strconv.QuoteRune(unicode.ReplacementChar))
+	if value.Kind() != reflect.Struct {
+		return fmt.Errorf("A struct or non-nil pointer to struct is required")
+	}
+
+	for i := 0; i < value.NumField(); i++ {
+		ft := value.Type().Field(i)
+		if len(ft.PkgPath) > 0 || ft.Anonymous {
+			continue // skip embedded or unexported fields
+		}
+
+		f := value.Field(i)
+		if !f.CanInterface() {
+			continue // this should never happen, but ... you never know
+		}
+
+		if s, ok := f.Interface().(string); ok {
+			if !utf8.ValidString(s) {
+				return fmt.Errorf("%w: '%s:%v'", ErrNotUTF8, ft.Name, s)
+			}
+			fmt.Println(s)
+		}
+	}
+
+	return nil
 }
