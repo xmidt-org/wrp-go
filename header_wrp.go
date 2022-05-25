@@ -17,10 +17,6 @@
 
 package wrp
 
-import (
-	"errors"
-)
-
 // Constant HTTP header strings representing WRP fields
 const (
 	MsgTypeHeader         = "X-Midt-Msg-Type"
@@ -34,7 +30,7 @@ const (
 	SourceHeader          = "X-Midt-Source"
 )
 
-var ErrInvalidMsgType = errors.New("Invalid Message Type")
+// var ErrInvalidMsgType = errors.New("Invalid Message Type")
 
 // Map string to MessageType int
 /*
