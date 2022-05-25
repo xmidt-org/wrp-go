@@ -27,6 +27,11 @@ var (
 	ErrInvalidMsgType          = errors.New("invalid WRP message type")
 )
 
+// AlwaysInvalid doesn't validate anything about the message and always returns an error.
+var alwaysInvalidMsg ValidatorFunc = func(m Message) error {
+	return fmt.Errorf("%w: %v", ErrInvalidMsgType, m.MessageType().String())
+}
+
 // Validator is a WRP validator that allows access to the Validate function.
 type Validator interface {
 	Validate(m Message) error
@@ -77,18 +82,11 @@ func NewMsgTypeValidator(m map[MessageType]Validators, defaultValidator Validato
 	}
 
 	if defaultValidator == nil {
-		defaultValidator = alwaysInvalidMsg()
+		defaultValidator = alwaysInvalidMsg
 	}
 
 	return MsgTypeValidator{
 		m:                m,
 		defaultValidator: defaultValidator,
 	}, nil
-}
-
-// AlwaysInvalid doesn't validate anything about the message and always returns an error.
-func alwaysInvalidMsg() ValidatorFunc {
-	return func(m Message) error {
-		return fmt.Errorf("%w: %v", ErrInvalidMsgType, m.MessageType().String())
-	}
 }
