@@ -61,7 +61,7 @@ func testMsgTypeValidatorValidate(t *testing.T) {
 			description: "known message type with failing Validators",
 			value: Test{
 				m: map[MessageType]Validators{
-					SimpleEventMessageType: {alwaysInvalidMsg},
+					SimpleEventMessageType: {AlwaysInvalidMsg},
 				},
 				msg: Message{Type: SimpleEventMessageType},
 			},
@@ -162,7 +162,7 @@ func testNewMsgTypeValidator(t *testing.T) {
 func testAlwaysInvalidMsg(t *testing.T) {
 	assert := assert.New(t)
 	msg := Message{}
-	err := alwaysInvalidMsg(msg)
+	err := AlwaysInvalidMsg(msg)
 
 	assert.NotNil(err)
 	assert.ErrorIs(err, ErrInvalidMsgType)
@@ -174,7 +174,7 @@ func TestHelperValidators(t *testing.T) {
 		name string
 		test func(*testing.T)
 	}{
-		{"alwaysInvalidMsg", testAlwaysInvalidMsg},
+		{"AlwaysInvalidMsg", testAlwaysInvalidMsg},
 	}
 
 	for _, tc := range tests {

@@ -28,7 +28,7 @@ var (
 )
 
 // AlwaysInvalid doesn't validate anything about the message and always returns an error.
-var alwaysInvalidMsg ValidatorFunc = func(m Message) error {
+var AlwaysInvalidMsg ValidatorFunc = func(m Message) error {
 	return fmt.Errorf("%w: %v", ErrInvalidMsgType, m.MessageType().String())
 }
 
@@ -51,14 +51,14 @@ func (vf ValidatorFunc) Validate(m Message) error {
 }
 
 // MsgTypeValidator is a WRP validator that validates based on message type
-// or using the defaultValidator if message type is unknown
+// or using the defaultValidator if message type is unknown.
 type MsgTypeValidator struct {
 	m                map[MessageType]Validators
 	defaultValidator Validator
 }
 
 // Validate validates messages based on message type or using the defaultValidator
-// if message type is unknown
+// if message type is unknown.
 func (m MsgTypeValidator) Validate(msg Message) error {
 	vs, ok := m.m[msg.MessageType()]
 	if !ok {
@@ -75,14 +75,14 @@ func (m MsgTypeValidator) Validate(msg Message) error {
 	return nil
 }
 
-// NewMsgTypeValidator returns a MsgTypeValidator
+// NewMsgTypeValidator is a MsgTypeValidator factory.
 func NewMsgTypeValidator(m map[MessageType]Validators, defaultValidator Validator) (MsgTypeValidator, error) {
 	if m == nil {
 		return MsgTypeValidator{}, fmt.Errorf("%w: %v", ErrInvalidMsgTypeValidator, m)
 	}
 
 	if defaultValidator == nil {
-		defaultValidator = alwaysInvalidMsg
+		defaultValidator = AlwaysInvalidMsg
 	}
 
 	return MsgTypeValidator{
