@@ -75,6 +75,7 @@ func NewMsgTypeValidator(m map[MessageType]Validators, defaultValidator Validato
 	if m == nil {
 		return MsgTypeValidator{}, fmt.Errorf("%w: %v", ErrInvalidMsgTypeValidator, m)
 	}
+
 	if defaultValidator == nil {
 		defaultValidator = alwaysInvalidMsg()
 	}
