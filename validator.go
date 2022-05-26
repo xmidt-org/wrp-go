@@ -63,25 +63,25 @@ func (vf ValidatorFunc) Validate(m Message) error {
 }
 
 // TypeValidator is a WRP validator that validates based on message type
-// or using the defaultValidator if message type is unknown.
+// or using the defaultValidators if message type is unknown.
 type TypeValidator struct {
-	m                map[MessageType]Validators
-	defaultValidator Validator
+	m                 map[MessageType]Validators
+	defaultValidators Validators
 }
 
-// Validate validates messages based on message type or using the defaultValidator
+// Validate validates messages based on message type or using the defaultValidators
 // if message type is unknown.
 func (m TypeValidator) Validate(msg Message) error {
 	vs := m.m[msg.MessageType()]
 	if vs == nil {
-		return m.defaultValidator.Validate(msg)
+		return m.defaultValidators.Validate(msg)
 	}
 
 	return vs.Validate(msg)
 }
 
 // NewTypeValidator is a TypeValidator factory.
-func NewTypeValidator(m map[MessageType]Validators, defaultValidator Validator) (TypeValidator, error) {
+func NewTypeValidator(m map[MessageType]Validators, defaultValidators ...Validator) (TypeValidator, error) {
 	if m == nil {
 		return TypeValidator{}, ErrInvalidTypeValidator
 	}
@@ -98,12 +98,18 @@ func NewTypeValidator(m map[MessageType]Validators, defaultValidator Validator) 
 		}
 	}
 
-	if defaultValidator == nil {
-		defaultValidator = AlwaysInvalid
+	if len(defaultValidators) == 0 {
+		defaultValidators = Validators{AlwaysInvalid}
+	}
+
+	for _, v := range defaultValidators {
+		if v == nil {
+			return TypeValidator{}, ErrInvalidTypeValidator
+		}
 	}
 
 	return TypeValidator{
-		m:                m,
-		defaultValidator: defaultValidator,
+		m:                 m,
+		defaultValidators: defaultValidators,
 	}, nil
 }
