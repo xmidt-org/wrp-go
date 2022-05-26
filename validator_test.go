@@ -235,34 +235,24 @@ func ExampleNewTypeValidator() {
 		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
 		// Validates unknown msg types
 		AlwaysInvalid)
+
+	fmt.Printf("%v, %T", err == nil, msgv)
+	// Output: true, wrp.TypeValidator
+
+}
+
+func ExampleTypeValidator_Validate() {
+	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
+	msgv, err := NewTypeValidator(
+		// Validates known msg types
+		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
+		// Validates unknown msg types
+		AlwaysInvalid)
 	if err != nil {
 		return
 	}
-	err = msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
-	fmt.Println(err == nil)
-	// Output: true
-
-}
-
-func ExampleTypeValidator_Validate_found() {
-	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
-	msgv, err := NewTypeValidator(
-		// Validates known msg types
-		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
-		// Validates unknown msg types
-		AlwaysInvalid)
-	err = msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
-	fmt.Println(err == nil)
-	// Output: true
-}
-func ExampleTypeValidator_Validate_notFound() {
-	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
-	msgv, err := NewTypeValidator(
-		// Validates known msg types
-		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
-		// Validates unknown msg types
-		AlwaysInvalid)
-	err = msgv.Validate(Message{Type: CreateMessageType}) // Not Found error
-	fmt.Println(err == nil)
-	// Output: false
+	foundErr := msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
+	notFoundErr := msgv.Validate(Message{Type: CreateMessageType})   // Not Found error
+	fmt.Printf("foundErr is nil: %v, notFoundErr is nil: %v", foundErr == nil, notFoundErr == nil)
+	// Output: foundErr is nil: true, notFoundErr is nil: false
 }
