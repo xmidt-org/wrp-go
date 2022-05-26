@@ -151,6 +151,26 @@ func testNewTypeValidator(t *testing.T) {
 			expectedErr: ErrInvalidTypeValidator,
 		},
 		{
+			description: "Nil Validators error",
+			value: Test{
+				m: map[MessageType]Validators{
+					SimpleEventMessageType: nil,
+				},
+				defaultValidator: alwaysValid,
+			},
+			expectedErr: ErrInvalidTypeValidator,
+		},
+		{
+			description: "Nil list of Validators error",
+			value: Test{
+				m: map[MessageType]Validators{
+					SimpleEventMessageType: {nil},
+				},
+				defaultValidator: alwaysValid,
+			},
+			expectedErr: ErrInvalidTypeValidator,
+		},
+		{
 			description: "Empty map of Validators error",
 			value:       Test{},
 			expectedErr: ErrInvalidTypeValidator,

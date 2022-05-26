@@ -86,9 +86,15 @@ func NewTypeValidator(m map[MessageType]Validators, defaultValidator Validator) 
 		return TypeValidator{}, ErrInvalidTypeValidator
 	}
 
-	for _, v := range m {
-		if v == nil || len(v) == 0 {
+	for _, vs := range m {
+		if vs == nil || len(vs) == 0 {
 			return TypeValidator{}, ErrInvalidTypeValidator
+		}
+
+		for _, v := range vs {
+			if v == nil {
+				return TypeValidator{}, ErrInvalidTypeValidator
+			}
 		}
 	}
 
