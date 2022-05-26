@@ -202,27 +202,27 @@ func testAlwaysInvalid(t *testing.T) {
 
 func TestHelperValidators(t *testing.T) {
 	tests := []struct {
-		name string
-		test func(*testing.T)
+		description string
+		test        func(*testing.T)
 	}{
 		{"AlwaysInvalid", testAlwaysInvalid},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, tc.test)
+		t.Run(tc.description, tc.test)
 	}
 }
 
 func TestTypeValidator(t *testing.T) {
 	tests := []struct {
-		name string
-		test func(*testing.T)
+		description string
+		test        func(*testing.T)
 	}{
 		{"TypeValidator validate", testTypeValidatorValidate},
 		{"TypeValidator factory", testNewTypeValidator},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, tc.test)
+		t.Run(tc.description, tc.test)
 	}
 }
