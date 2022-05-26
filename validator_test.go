@@ -49,7 +49,7 @@ func testTypeValidatorValidate(t *testing.T) {
 			},
 		},
 		{
-			description: "Not found success",
+			description: "Unfound success",
 			value: Test{
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {AlwaysInvalid},
@@ -71,7 +71,7 @@ func testTypeValidatorValidate(t *testing.T) {
 			expectedErr: ErrInvalidMsgType,
 		},
 		{
-			description: "Not Found error",
+			description: "Unfound error",
 			value: Test{
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {alwaysValid},
@@ -244,15 +244,15 @@ func ExampleNewTypeValidator() {
 func ExampleTypeValidator_Validate() {
 	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
 	msgv, err := NewTypeValidator(
-		// Validates known msg types
+		// Validates found msg types
 		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
-		// Validates unknown msg types
+		// Validates unfound msg types
 		AlwaysInvalid)
 	if err != nil {
 		return
 	}
 	foundErr := msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
-	notFoundErr := msgv.Validate(Message{Type: CreateMessageType})   // Not Found error
-	fmt.Printf("foundErr is nil: %v, notFoundErr is nil: %v", foundErr == nil, notFoundErr == nil)
-	// Output: foundErr is nil: true, notFoundErr is nil: false
+	unfoundErr := msgv.Validate(Message{Type: CreateMessageType})    // Unfound error
+	fmt.Printf("foundErr is nil: %v, unfoundErr is nil: %v", foundErr == nil, unfoundErr == nil)
+	// Output: foundErr is nil: true, unfoundErr is nil: false
 }
