@@ -241,9 +241,9 @@ func TestTypeValidator(t *testing.T) {
 func ExampleNewTypeValidator() {
 	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
 	msgv, err := NewTypeValidator(
-		// Validates known msg types
+		// Validates found msg types
 		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
-		// Validates unknown msg types
+		// Validates unfound msg types
 		AlwaysInvalid)
 
 	fmt.Printf("%v %T", err == nil, msgv)

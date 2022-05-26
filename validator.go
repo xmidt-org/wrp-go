@@ -63,14 +63,14 @@ func (vf ValidatorFunc) Validate(m Message) error {
 }
 
 // TypeValidator is a WRP validator that validates based on message type
-// or using the defaultValidators if message type is unknown.
+// or using the defaultValidators if message type is unfound.
 type TypeValidator struct {
 	m                 map[MessageType]Validators
 	defaultValidators Validators
 }
 
 // Validate validates messages based on message type or using the defaultValidators
-// if message type is unknown.
+// if message type is unfound.
 func (m TypeValidator) Validate(msg Message) error {
 	vs := m.m[msg.MessageType()]
 	if vs == nil {
