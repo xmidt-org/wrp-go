@@ -114,7 +114,7 @@ func testNewTypeValidator(t *testing.T) {
 	}{
 		// Success case
 		{
-			description: "Default Validator success",
+			description: "Default Validators success",
 			value: Test{
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {alwaysValid},
@@ -132,7 +132,7 @@ func testNewTypeValidator(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			description: "Omit default Validator success",
+			description: "Omit default Validators success",
 			value: Test{
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {alwaysValid},
@@ -141,6 +141,16 @@ func testNewTypeValidator(t *testing.T) {
 			expectedErr: nil,
 		},
 		// Failure case
+		{
+			description: "Nil default Validators",
+			value: Test{
+				m: map[MessageType]Validators{
+					SimpleEventMessageType: {alwaysValid},
+				},
+				defaultValidators: Validators{nil},
+			},
+			expectedErr: ErrInvalidTypeValidator,
+		},
 		{
 			description: "Empty list of Validators error",
 			value: Test{
