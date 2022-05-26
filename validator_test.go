@@ -57,14 +57,6 @@ func testTypeValidatorValidate(t *testing.T) {
 				msg:              Message{Type: CreateMessageType},
 			},
 		},
-		{
-			description: "Never found success",
-			value: Test{
-				m:                map[MessageType]Validators{},
-				defaultValidator: alwaysValid,
-				msg:              Message{Type: CreateMessageType},
-			},
-		},
 		// Failure case
 		{
 			description: "Found error",
