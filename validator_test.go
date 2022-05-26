@@ -187,6 +187,7 @@ func testNewTypeValidator(t *testing.T) {
 			expectedErr: ErrInvalidTypeValidator,
 		},
 	}
+
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
@@ -206,9 +207,7 @@ func testAlwaysInvalid(t *testing.T) {
 	assert := assert.New(t)
 	msg := Message{}
 	err := AlwaysInvalid(msg)
-
 	assert.ErrorIs(err, ErrInvalidMsgType)
-
 }
 
 func TestHelperValidators(t *testing.T) {
@@ -245,10 +244,8 @@ func ExampleNewTypeValidator() {
 		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
 		// Validates unfound msg types
 		AlwaysInvalid)
-
 	fmt.Printf("%v %T", err == nil, msgv)
 	// Output: true wrp.TypeValidator
-
 }
 
 func ExampleTypeValidator_Validate() {
@@ -261,6 +258,7 @@ func ExampleTypeValidator_Validate() {
 	if err != nil {
 		return
 	}
+
 	foundErr := msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
 	unfoundErr := msgv.Validate(Message{Type: CreateMessageType})    // Unfound error
 	fmt.Println(foundErr == nil, unfoundErr == nil)
