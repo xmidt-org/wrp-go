@@ -123,7 +123,7 @@ func testNewTypeValidator(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			description: "Omit map of Validator success",
+			description: "Empty map of Validator success",
 			value: Test{
 				m:                map[MessageType]Validators{},
 				defaultValidator: alwaysValid,
