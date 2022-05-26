@@ -18,6 +18,7 @@
 package wrp
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,9 +27,9 @@ import (
 
 func testTypeValidatorValidate(t *testing.T) {
 	type Test struct {
-		m                map[MessageType]Validators
-		defaultValidator Validator
-		msg              Message
+		m                 map[MessageType]Validators
+		defaultValidators Validators
+		msg               Message
 	}
 
 	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
@@ -53,8 +54,8 @@ func testTypeValidatorValidate(t *testing.T) {
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {AlwaysInvalid},
 				},
-				defaultValidator: alwaysValid,
-				msg:              Message{Type: CreateMessageType},
+				defaultValidators: Validators{alwaysValid},
+				msg:               Message{Type: CreateMessageType},
 			},
 		},
 		// Failure case
@@ -64,8 +65,8 @@ func testTypeValidatorValidate(t *testing.T) {
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {AlwaysInvalid},
 				},
-				defaultValidator: alwaysValid,
-				msg:              Message{Type: SimpleEventMessageType},
+				defaultValidators: Validators{alwaysValid},
+				msg:               Message{Type: SimpleEventMessageType},
 			},
 			expectedErr: ErrInvalidMsgType,
 		},
@@ -85,7 +86,7 @@ func testTypeValidatorValidate(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
-			msgv, err := NewTypeValidator(tc.value.m, tc.value.defaultValidator)
+			msgv, err := NewTypeValidator(tc.value.m, tc.value.defaultValidators...)
 			require.NotNil(msgv)
 			require.NoError(err)
 			err = msgv.Validate(tc.value.msg)
@@ -101,8 +102,8 @@ func testTypeValidatorValidate(t *testing.T) {
 
 func testNewTypeValidator(t *testing.T) {
 	type Test struct {
-		m                map[MessageType]Validators
-		defaultValidator Validator
+		m                 map[MessageType]Validators
+		defaultValidators Validators
 	}
 
 	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
@@ -118,15 +119,15 @@ func testNewTypeValidator(t *testing.T) {
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {alwaysValid},
 				},
-				defaultValidator: alwaysValid,
+				defaultValidators: Validators{alwaysValid},
 			},
 			expectedErr: nil,
 		},
 		{
 			description: "Empty map of Validators success",
 			value: Test{
-				m:                map[MessageType]Validators{},
-				defaultValidator: alwaysValid,
+				m:                 map[MessageType]Validators{},
+				defaultValidators: Validators{alwaysValid},
 			},
 			expectedErr: nil,
 		},
@@ -146,7 +147,7 @@ func testNewTypeValidator(t *testing.T) {
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {},
 				},
-				defaultValidator: alwaysValid,
+				defaultValidators: Validators{alwaysValid},
 			},
 			expectedErr: ErrInvalidTypeValidator,
 		},
@@ -156,7 +157,7 @@ func testNewTypeValidator(t *testing.T) {
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: nil,
 				},
-				defaultValidator: alwaysValid,
+				defaultValidators: Validators{alwaysValid},
 			},
 			expectedErr: ErrInvalidTypeValidator,
 		},
@@ -166,7 +167,7 @@ func testNewTypeValidator(t *testing.T) {
 				m: map[MessageType]Validators{
 					SimpleEventMessageType: {nil},
 				},
-				defaultValidator: alwaysValid,
+				defaultValidators: Validators{alwaysValid},
 			},
 			expectedErr: ErrInvalidTypeValidator,
 		},
@@ -179,7 +180,7 @@ func testNewTypeValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			msgv, err := NewTypeValidator(tc.value.m, tc.value.defaultValidator)
+			msgv, err := NewTypeValidator(tc.value.m, tc.value.defaultValidators...)
 			assert.NotNil(msgv)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
@@ -225,4 +226,43 @@ func TestTypeValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, tc.test)
 	}
+}
+
+func ExampleNewTypeValidator() {
+	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
+	msgv, err := NewTypeValidator(
+		// Validates known msg types
+		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
+		// Validates unknown msg types
+		AlwaysInvalid)
+	if err != nil {
+		return
+	}
+	err = msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
+	fmt.Println(err == nil)
+	// Output: true
+
+}
+
+func ExampleTypeValidator_Validate_found() {
+	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
+	msgv, err := NewTypeValidator(
+		// Validates known msg types
+		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
+		// Validates unknown msg types
+		AlwaysInvalid)
+	err = msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
+	fmt.Println(err == nil)
+	// Output: true
+}
+func ExampleTypeValidator_Validate_notFound() {
+	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
+	msgv, err := NewTypeValidator(
+		// Validates known msg types
+		map[MessageType]Validators{SimpleEventMessageType: {alwaysValid}},
+		// Validates unknown msg types
+		AlwaysInvalid)
+	err = msgv.Validate(Message{Type: CreateMessageType}) // Not Found error
+	fmt.Println(err == nil)
+	// Output: false
 }
