@@ -22,12 +22,12 @@ import (
 )
 
 var (
-	ErrInvalidMsgTypeValidator = errors.New("invalid WRP message type validator")
-	ErrInvalidMsgType          = errors.New("invalid WRP message type")
+	ErrInvalidTypeValidator = errors.New("invalid WRP message type validator")
+	ErrInvalidMsgType       = errors.New("invalid WRP message type")
 )
 
 // AlwaysInvalid doesn't validate anything about the message and always returns an error.
-var AlwaysInvalidMsg ValidatorFunc = func(m Message) error {
+var AlwaysInvalid ValidatorFunc = func(m Message) error {
 	return ErrInvalidMsgType
 }
 
@@ -40,6 +40,19 @@ type Validator interface {
 // message type and each validator in the list.
 type Validators []Validator
 
+// Validate runs messages through each validator in the validators list.
+// It returns as soon as the message is considered invalid, otherwise returns nil if valid.
+func (vs Validators) Validate(m Message) error {
+	for _, v := range vs {
+		err := v.Validate(m)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ValidatorFunc is a WRP validator that takes messages and validates them
 // against functions.
 type ValidatorFunc func(Message) error
@@ -49,42 +62,41 @@ func (vf ValidatorFunc) Validate(m Message) error {
 	return vf(m)
 }
 
-// MsgTypeValidator is a WRP validator that validates based on message type
+// TypeValidator is a WRP validator that validates based on message type
 // or using the defaultValidator if message type is unknown.
-type MsgTypeValidator struct {
+type TypeValidator struct {
 	m                map[MessageType]Validators
 	defaultValidator Validator
 }
 
 // Validate validates messages based on message type or using the defaultValidator
 // if message type is unknown.
-func (m MsgTypeValidator) Validate(msg Message) error {
-	vs, ok := m.m[msg.MessageType()]
-	if !ok {
+func (m TypeValidator) Validate(msg Message) error {
+	vs := m.m[msg.MessageType()]
+	if vs == nil {
 		return m.defaultValidator.Validate(msg)
 	}
 
-	for _, v := range vs {
-		err := v.Validate(msg)
-		if err != nil {
-			return err
+	return vs.Validate(msg)
+}
+
+// NewTypeValidator is a TypeValidator factory.
+func NewTypeValidator(m map[MessageType]Validators, defaultValidator Validator) (TypeValidator, error) {
+	if m == nil {
+		return TypeValidator{}, ErrInvalidTypeValidator
+	}
+
+	for _, v := range m {
+		if v == nil || len(v) == 0 {
+			return TypeValidator{}, ErrInvalidTypeValidator
 		}
 	}
 
-	return nil
-}
-
-// NewMsgTypeValidator is a MsgTypeValidator factory.
-func NewMsgTypeValidator(m map[MessageType]Validators, defaultValidator Validator) (MsgTypeValidator, error) {
-	if m == nil {
-		return MsgTypeValidator{}, ErrInvalidMsgTypeValidator
-	}
-
 	if defaultValidator == nil {
-		defaultValidator = AlwaysInvalidMsg
+		defaultValidator = AlwaysInvalid
 	}
 
-	return MsgTypeValidator{
+	return TypeValidator{
 		m:                m,
 		defaultValidator: defaultValidator,
 	}, nil

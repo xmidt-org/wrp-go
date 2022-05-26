@@ -21,16 +21,17 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func testMsgTypeValidatorValidate(t *testing.T) {
+func testTypeValidatorValidate(t *testing.T) {
 	type Test struct {
 		m                map[MessageType]Validators
 		defaultValidator Validator
 		msg              Message
 	}
 
-	var alwaysValidMsg ValidatorFunc = func(msg Message) error { return nil }
+	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
 	tests := []struct {
 		description string
 		value       Test
@@ -38,70 +39,81 @@ func testMsgTypeValidatorValidate(t *testing.T) {
 	}{
 		// Success case
 		{
-			description: "known message type with successful Validators",
+			description: "Found success",
 			value: Test{
 				m: map[MessageType]Validators{
-					SimpleEventMessageType: {alwaysValidMsg},
+					SimpleEventMessageType: {alwaysValid},
 				},
 				msg: Message{Type: SimpleEventMessageType},
 			},
 		},
 		{
-			description: "unknown message type with provided default Validator",
+			description: "Not found success",
 			value: Test{
 				m: map[MessageType]Validators{
-					SimpleEventMessageType: {alwaysValidMsg},
+					SimpleEventMessageType: {AlwaysInvalid},
 				},
-				defaultValidator: alwaysValidMsg,
+				defaultValidator: alwaysValid,
+				msg:              Message{Type: CreateMessageType},
+			},
+		},
+		{
+			description: "Never found success",
+			value: Test{
+				m:                map[MessageType]Validators{},
+				defaultValidator: alwaysValid,
 				msg:              Message{Type: CreateMessageType},
 			},
 		},
 		// Failure case
 		{
-			description: "known message type with failing Validators",
+			description: "Found error",
 			value: Test{
 				m: map[MessageType]Validators{
-					SimpleEventMessageType: {AlwaysInvalidMsg},
+					SimpleEventMessageType: {AlwaysInvalid},
 				},
-				msg: Message{Type: SimpleEventMessageType},
+				defaultValidator: alwaysValid,
+				msg:              Message{Type: SimpleEventMessageType},
 			},
 			expectedErr: ErrInvalidMsgType,
 		},
 		{
-			description: "unknown message type without provided default Validator",
+			description: "Not Found error",
 			value: Test{
 				m: map[MessageType]Validators{
-					SimpleEventMessageType: {alwaysValidMsg},
+					SimpleEventMessageType: {alwaysValid},
 				},
 				msg: Message{Type: CreateMessageType},
 			},
 			expectedErr: ErrInvalidMsgType,
 		},
 	}
+
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			msgv, err := NewMsgTypeValidator(tc.value.m, tc.value.defaultValidator)
-			assert.NotNil(msgv)
-			assert.Nil(err)
+			require := require.New(t)
+			msgv, err := NewTypeValidator(tc.value.m, tc.value.defaultValidator)
+			require.NotNil(msgv)
+			require.NoError(err)
 			err = msgv.Validate(tc.value.msg)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
 				return
 			}
 
-			assert.Nil(err)
+			assert.NoError(err)
 		})
 	}
 }
 
-func testNewMsgTypeValidator(t *testing.T) {
+func testNewTypeValidator(t *testing.T) {
 	type Test struct {
 		m                map[MessageType]Validators
 		defaultValidator Validator
 	}
 
-	var alwaysValidMsg ValidatorFunc = func(msg Message) error { return nil }
+	var alwaysValid ValidatorFunc = func(msg Message) error { return nil }
 	tests := []struct {
 		description string
 		value       Test
@@ -109,62 +121,69 @@ func testNewMsgTypeValidator(t *testing.T) {
 	}{
 		// Success case
 		{
-			description: "with provided default Validator",
+			description: "Default Validator success",
 			value: Test{
 				m: map[MessageType]Validators{
-					SimpleEventMessageType: {alwaysValidMsg},
+					SimpleEventMessageType: {alwaysValid},
 				},
-				defaultValidator: alwaysValidMsg,
+				defaultValidator: alwaysValid,
 			},
 			expectedErr: nil,
 		},
 		{
-			description: "without provided default Validator",
+			description: "Omit map of Validator success",
 			value: Test{
-				m: map[MessageType]Validators{
-					SimpleEventMessageType: {alwaysValidMsg},
-				},
+				m:                map[MessageType]Validators{},
+				defaultValidator: alwaysValid,
 			},
 			expectedErr: nil,
 		},
 		{
-			description: "empty list of message type Validators",
+			description: "Omit default Validator success",
 			value: Test{
 				m: map[MessageType]Validators{
-					SimpleEventMessageType: {},
+					SimpleEventMessageType: {alwaysValid},
 				},
-				defaultValidator: alwaysValidMsg,
 			},
 			expectedErr: nil,
 		},
 		// Failure case
 		{
-			description: "missing message type Validators",
+			description: "Empty list of Validators error",
+			value: Test{
+				m: map[MessageType]Validators{
+					SimpleEventMessageType: {},
+				},
+				defaultValidator: alwaysValid,
+			},
+			expectedErr: ErrInvalidTypeValidator,
+		},
+		{
+			description: "Empty map of Validators error",
 			value:       Test{},
-			expectedErr: ErrInvalidMsgTypeValidator,
+			expectedErr: ErrInvalidTypeValidator,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			msgv, err := NewMsgTypeValidator(tc.value.m, tc.value.defaultValidator)
+			msgv, err := NewTypeValidator(tc.value.m, tc.value.defaultValidator)
 			assert.NotNil(msgv)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
 				return
 			}
 
-			assert.Nil(err)
+			assert.NoError(err)
 		})
 	}
 }
 
-func testAlwaysInvalidMsg(t *testing.T) {
+func testAlwaysInvalid(t *testing.T) {
 	assert := assert.New(t)
 	msg := Message{}
-	err := AlwaysInvalidMsg(msg)
+	err := AlwaysInvalid(msg)
 
-	assert.NotNil(err)
 	assert.ErrorIs(err, ErrInvalidMsgType)
 
 }
@@ -174,7 +193,7 @@ func TestHelperValidators(t *testing.T) {
 		name string
 		test func(*testing.T)
 	}{
-		{"AlwaysInvalidMsg", testAlwaysInvalidMsg},
+		{"AlwaysInvalid", testAlwaysInvalid},
 	}
 
 	for _, tc := range tests {
@@ -182,13 +201,13 @@ func TestHelperValidators(t *testing.T) {
 	}
 }
 
-func TestMsgTypeValidator(t *testing.T) {
+func TestTypeValidator(t *testing.T) {
 	tests := []struct {
 		name string
 		test func(*testing.T)
 	}{
-		{"MsgTypeValidator validate", testMsgTypeValidatorValidate},
-		{"MsgTypeValidator factory", testNewMsgTypeValidator},
+		{"TypeValidator validate", testTypeValidatorValidate},
+		{"TypeValidator factory", testNewTypeValidator},
 	}
 
 	for _, tc := range tests {

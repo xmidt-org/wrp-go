@@ -30,8 +30,6 @@ const (
 	SourceHeader          = "X-Midt-Source"
 )
 
-// var ErrInvalidMsgType = errors.New("Invalid Message Type")
-
 // Map string to MessageType int
 /*
 func StringToMessageType(str string) MessageType {
