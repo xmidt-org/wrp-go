@@ -246,8 +246,8 @@ func ExampleNewTypeValidator() {
 		// Validates unknown msg types
 		AlwaysInvalid)
 
-	fmt.Printf("%v, %T", err == nil, msgv)
-	// Output: true, wrp.TypeValidator
+	fmt.Printf("%v %T", err == nil, msgv)
+	// Output: true wrp.TypeValidator
 
 }
 
@@ -263,6 +263,6 @@ func ExampleTypeValidator_Validate() {
 	}
 	foundErr := msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
 	unfoundErr := msgv.Validate(Message{Type: CreateMessageType})    // Unfound error
-	fmt.Printf("foundErr is nil: %v, unfoundErr is nil: %v", foundErr == nil, unfoundErr == nil)
-	// Output: foundErr is nil: true, unfoundErr is nil: false
+	fmt.Println(foundErr == nil, unfoundErr == nil)
+	// Output: true false
 }
