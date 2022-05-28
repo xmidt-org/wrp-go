@@ -168,6 +168,11 @@ type Message struct {
 
 	// SessionID is the ID for the current session.
 	SessionID string `json:"session_id,omitempty"`
+
+	// QualityOfService is the qos value associated with this message.  Values between 0 and 99, inclusive,
+	// are defined by the wrp spec.  Negative values are assumed to be zero, and values larger than 99
+	// are assumed to be 99.
+	QualityOfService QOSValue `json:"qos"`
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
