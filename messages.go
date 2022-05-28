@@ -91,104 +91,82 @@ type Routable interface {
 //
 // swagger:response Message
 type Message struct {
-	// Type The message type for the message
+	// Type is the message type for the message.
 	//
-	// required: true
-	// example: 4
+	// example: SimpleRequestResponseMessageType
 	Type MessageType `json:"msg_type"`
 
-	// Source The device_id name of the device originating the request or response.
+	// Source is the device_id name of the device originating the request or response.
 	//
-	// required: false
 	// example: dns:talaria.xmidt.example.com
 	Source string `json:"source,omitempty"`
 
-	// Destination The device_id name of the target device of the request or response.
+	// Destination is the device_id name of the target device of the request or response.
 	//
-	// required: false
 	// example: event:device-status/mac:ffffffffdae4/online
 	Destination string `json:"dest,omitempty"`
 
 	// TransactionUUID The transaction key for the message
 	//
-	// required: false
 	// example: 546514d4-9cb6-41c9-88ca-ccd4c130c525
 	TransactionUUID string `json:"transaction_uuid,omitempty"`
 
 	// ContentType The media type of the payload.
 	//
-	// required: false
 	// example: json
 	ContentType string `json:"content_type,omitempty"`
 
-	// Accept  The media type accepted in the response.
-	//
-	// required: false
+	// Accept is the media type accepted in the response.
 	Accept string `json:"accept,omitempty"`
 
-	// Status The response status from the originating service.
-	//
-	// required: false
+	// Status is the response status from the originating service.
 	Status *int64 `json:"status,omitempty"`
 
-	// RequestDeliveryResponse The request delivery response is the delivery result of the previous (implied request)
-	// message with a matching transaction_uuid
-	//
-	// required: false
+	// RequestDeliveryResponse is the request delivery response is the delivery result
+	// of the previous (implied request) message with a matching transaction_uuid
 	RequestDeliveryResponse *int64 `json:"rdr,omitempty"`
 
-	// Headers The headers associated with the payload.
-	//
-	// required: false
+	// Headers is the headers associated with the payload.
 	Headers []string `json:"headers,omitempty"`
 
-	// Metadata The map of name/value pairs used by consumers of WRP messages for filtering & other purposes.
+	// Metadata is the map of name/value pairs used by consumers of WRP messages for filtering & other purposes.
 	//
-	// required: false
 	// example: {"/boot-time":1542834188,"/last-reconnect-reason":"spanish inquisition"}
 	Metadata map[string]string `json:"metadata,omitempty"`
 
-	// Spans An array of arrays of timing values as a list in the format: "parent" (string), "name" (string),
+	// Spans is an array of arrays of timing values as a list in the format: "parent" (string), "name" (string),
 	// "start time" (int), "duration" (int), "status" (int)
-	//
-	// required: false
 	Spans [][]string `json:"spans,omitempty"`
 
-	// IncludeSpans (Deprecated) If the timing values should be included in the response.
+	// IncludeSpans indicates whether timing values should be included in the response.
 	//
-	// required: false
+	// Deprecated: A future version of wrp will remove this field.
 	IncludeSpans *bool `json:"include_spans,omitempty"`
 
-	// Path The path to which to apply the payload.
-	//
-	// required: false
+	// Path is the path to which to apply the payload.
 	Path string `json:"path,omitempty"`
 
-	// Payload The string encoded of the ContentType
+	// Payload is the payload for this message.  It's format is expected to match ContentType.
 	//
-	// required: false
+	// For JSON, this field must be a UTF-8 string.  Binary payloads may be base64-encoded.
+	//
+	// For msgpack, this field may be raw binary or a UTF-8 string.
+	//
 	// example: eyJpZCI6IjUiLCJ0cyI6IjIwMTktMDItMTJUMTE6MTA6MDIuNjE0MTkxNzM1WiIsImJ5dGVzLXNlbnQiOjAsIm1lc3NhZ2VzLXNlbnQiOjEsImJ5dGVzLXJlY2VpdmVkIjowLCJtZXNzYWdlcy1yZWNlaXZlZCI6MH0=
 	Payload []byte `json:"payload,omitempty"`
 
-	// ServiceName The originating point of the request or response
-	//
-	// required: false
+	// ServiceName is the originating point of the request or response.
 	ServiceName string `json:"service_name,omitempty"`
 
-	// URL The url to use when connecting to the nanomsg pipeline
-	//
-	// required: false
+	// URL is the url to use when connecting to the nanomsg pipeline.
 	URL string `json:"url,omitempty"`
 
-	// PartnerIDs The list of partner ids the message is meant to target.
+	// PartnerIDs is the list of partner ids the message is meant to target.
 	//
-	// required: false
 	// example: ["hello","world"]
 	PartnerIDs []string `json:"partner_ids,omitempty"`
 
-	// SessionID The ID for the current session with Talaria.
-	//
-	// required: false
+	// SessionID is the ID for the current session.
 	SessionID string `json:"session_id,omitempty"`
 }
 
@@ -247,6 +225,8 @@ func (msg *Message) SetIncludeSpans(value bool) *Message {
 // SimpleRequestResponse represents a WRP message of type SimpleRequestResponseMessageType.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#simple-request-response-definition
+//
+// Deprecated: A future version of wrp will remove this type.
 type SimpleRequestResponse struct {
 	// Type is exposed principally for encoding.  This field *must* be set to SimpleRequestResponseMessageType,
 	// and is automatically set by the BeforeEncode method.
@@ -330,6 +310,8 @@ func (msg *SimpleRequestResponse) Response(newSource string, requestDeliveryResp
 // the Routable interface.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#simple-event-definition
+//
+// Deprecated: A future version of wrp will remove this type.
 type SimpleEvent struct {
 	// Type is exposed principally for encoding.  This field *must* be set to SimpleEventMessageType,
 	// and is automatically set by the BeforeEncode method.
@@ -383,6 +365,8 @@ func (msg *SimpleEvent) Response(newSource string, requestDeliveryResponse int64
 // and so does not automatically set the Type field.  Client code must set the Type code appropriately.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#crud-message-definition
+//
+// Deprecated: A future version of wrp will remove this type.
 type CRUD struct {
 	Type                    MessageType       `json:"msg_type"`
 	Source                  string            `json:"source"`
@@ -450,6 +434,8 @@ func (msg *CRUD) Response(newSource string, requestDeliveryResponse int64) Routa
 // ServiceRegistration represents a WRP message of type ServiceRegistrationMessageType.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#on-device-service-registration-message-definition
+//
+// Deprecated: A future version of wrp will remove this type.
 type ServiceRegistration struct {
 	// Type is exposed principally for encoding.  This field *must* be set to ServiceRegistrationMessageType,
 	// and is automatically set by the BeforeEncode method.
@@ -466,6 +452,8 @@ func (msg *ServiceRegistration) BeforeEncode() error {
 // ServiceAlive represents a WRP message of type ServiceAliveMessageType.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#on-device-service-alive-message-definition
+//
+// Deprecated: A future version of wrp will remove this type.
 type ServiceAlive struct {
 	// Type is exposed principally for encoding.  This field *must* be set to ServiceAliveMessageType,
 	// and is automatically set by the BeforeEncode method.
@@ -480,6 +468,8 @@ func (msg *ServiceAlive) BeforeEncode() error {
 // Unknown represents a WRP message of type UnknownMessageType.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#unknown-message-definition
+//
+// Deprecated: A future version of wrp will remove this type.
 type Unknown struct {
 	// Type is exposed principally for encoding.  This field *must* be set to UnknownMessageType,
 	// and is automatically set by the BeforeEncode method.
