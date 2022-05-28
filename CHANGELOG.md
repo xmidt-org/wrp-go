@@ -5,9 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Fix `500 Invalid WRP content type` for invalid `Accept` headers [#74](https://github.com/xmidt-org/wrp-go/pull/74)
 - Deprecated the concrete message structs, e.g. SimpleEvent
 - Added support for the new qos field.
+
+## [v3.1.3]
+- Fix `500 Invalid WRP content type` for invalid `Accept` headers [#74](https://github.com/xmidt-org/wrp-go/pull/74)
+- Added helper function that errors if a wrp message contains non-UTF-8 strings. [#77](https://github.com/xmidt-org/wrp-go/pull/77)
 
 ## [v3.1.2]
 - Move ParseID func and relevant consts from webpa-common to wrp-go. [#75](https://github.com/xmidt-org/wrp-go/pull/75)
@@ -72,7 +75,8 @@ All changes included in [#47](https://github.com/xmidt-org/wrp-go/pull/47)
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.1.2...HEAD
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.1.3...HEAD
+[v3.1.3]: https://github.com/xmidt-org/wrp-go/compare/v3.1.2...v3.1.3
 [v3.1.2]: https://github.com/xmidt-org/wrp-go/compare/v3.1.1...v3.1.2
 [v3.1.1]: https://github.com/xmidt-org/wrp-go/compare/v3.1.0...v3.1.1
 [v3.1.0]: https://github.com/xmidt-org/wrp-go/compare/v3.0.2...v3.1.0
