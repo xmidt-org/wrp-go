@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 - Fix `500 Invalid WRP content type` for invalid `Accept` headers [#74](https://github.com/xmidt-org/wrp-go/pull/74)
+- Deprecated the concrete message structs, e.g. SimpleEvent
+- Added support for the new qos field.
 
 ## [v3.1.2]
 - Move ParseID func and relevant consts from webpa-common to wrp-go. [#75](https://github.com/xmidt-org/wrp-go/pull/75)
