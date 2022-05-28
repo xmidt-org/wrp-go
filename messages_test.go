@@ -161,10 +161,11 @@ func TestMessage(t *testing.T) {
 		messages = []Message{
 			{},
 			{
-				Type:            SimpleEventMessageType,
-				Source:          "mac:121234345656",
-				Destination:     "foobar.com/service",
-				TransactionUUID: "a unique identifier",
+				Type:             SimpleEventMessageType,
+				Source:           "mac:121234345656",
+				Destination:      "foobar.com/service",
+				TransactionUUID:  "a unique identifier",
+				QualityOfService: 24,
 			},
 			{
 				Type:                    SimpleRequestResponseMessageType,
