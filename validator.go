@@ -19,6 +19,8 @@ package wrp
 
 import (
 	"errors"
+
+	"go.uber.org/multierr"
 )
 
 var (
@@ -44,14 +46,12 @@ type Validators []Validator
 // Validate runs messages through each validator in the validators list.
 // It returns as soon as the message is considered invalid, otherwise returns nil if valid.
 func (vs Validators) Validate(m Message) error {
+	var err error
 	for _, v := range vs {
-		err := v.Validate(m)
-		if err != nil {
-			return err
-		}
+		err = multierr.Append(err, v.Validate(m))
 	}
 
-	return nil
+	return err
 }
 
 // ValidatorFunc is a WRP validator that takes messages and validates them
