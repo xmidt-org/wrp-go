@@ -26,7 +26,7 @@ import (
 
 var (
 	ErrNotUTF8        = errors.New("field contains non-utf-8 characters")
-	ErrUnexpectedKind = errors.New("A struct or non-nil pointer to struct is required")
+	ErrUnexpectedKind = errors.New("a struct or non-nil pointer to struct is required")
 )
 
 // UTF8 takes any struct verifies that it contains UTF-8 strings.
