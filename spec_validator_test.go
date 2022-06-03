@@ -159,6 +159,16 @@ func testMessageTypeValidator(t *testing.T) {
 			value:       Message{Type: lastMessageType},
 			expectedErr: ErrorInvalidMessageType,
 		},
+		{
+			description: "Non-existing negative MessageType error",
+			value:       Message{Type: -10},
+			expectedErr: ErrorInvalidMessageType,
+		},
+		{
+			description: "Non-existing positive MessageType error",
+			value:       Message{Type: lastMessageType + 1},
+			expectedErr: ErrorInvalidMessageType,
+		},
 	}
 
 	for _, tc := range tests {
