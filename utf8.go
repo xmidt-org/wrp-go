@@ -55,7 +55,6 @@ func UTF8(v interface{}) error {
 			if !utf8.ValidString(s) {
 				return fmt.Errorf("%w: '%s:%v'", ErrNotUTF8, ft.Name, s)
 			}
-			fmt.Println(s)
 		}
 	}
 
