@@ -18,6 +18,7 @@
 package wrp
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -440,4 +441,38 @@ func TestSpecValidators(t *testing.T) {
 			assert.NoError(err)
 		})
 	}
+}
+
+func ExampleTypeValidator_Validate_specValidators() {
+	msgv, err := NewTypeValidator(
+		// Validates found msg types
+		map[MessageType]Validator{
+			SimpleEventMessageType: SpecValidators,
+			// Only validates Source and nothing else
+			SimpleRequestResponseMessageType: SourceValidator,
+		},
+		// Validates unfound msg types
+		AlwaysInvalid)
+	if err != nil {
+		return
+	}
+
+	foundErrSuccess1 := msgv.Validate(Message{
+		Type:        SimpleEventMessageType,
+		Source:      "MAC:11:22:33:44:55:66",
+		Destination: "MAC:11:22:33:44:55:61",
+	}) // Found success
+	foundErrSuccess2 := msgv.Validate(Message{
+		Type:        SimpleRequestResponseMessageType,
+		Source:      "MAC:11:22:33:44:55:66",
+		Destination: "invalid:a-BB-44-55",
+	}) // Found success
+	foundErrFailure := msgv.Validate(Message{
+		Type:        Invalid0MessageType,
+		Source:      "invalid:a-BB-44-55",
+		Destination: "invalid:a-BB-44-55",
+	}) // Found error
+	unfoundErrFailure := msgv.Validate(Message{Type: CreateMessageType}) // Unfound error
+	fmt.Println(foundErrSuccess1 == nil, foundErrSuccess2 == nil, foundErrFailure == nil, unfoundErrFailure == nil)
+	// Output: true true false false
 }
