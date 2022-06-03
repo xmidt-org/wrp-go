@@ -457,6 +457,7 @@ func ExampleTypeValidator_Validate_specValidators() {
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
 		map[MessageType]Validator{
+			// Validates opinionated portions of the spec
 			SimpleEventMessageType: SpecValidators,
 			// Only validates Source and nothing else
 			SimpleRequestResponseMessageType: SourceValidator,

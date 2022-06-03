@@ -49,7 +49,7 @@ var LocatorPattern = regexp.MustCompile(
 )
 
 // SpecValidators is a WRP validator that ensures messages are valid based on
-// each spec validator in the list.
+// each spec validator in the list. Only validates the opinionated portions of the spec.
 var SpecValidators = Validators{UTF8Validator, MessageTypeValidator, SourceValidator, DestinationValidator}
 
 // UTF8Validator is a WRP validator that takes messages and validates that it contains UTF-8 strings.
