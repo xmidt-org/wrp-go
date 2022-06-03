@@ -140,7 +140,7 @@ func testNewTypeValidator(t *testing.T) {
 		},
 		// Failure case
 		{
-			description: "Nil list of default Validators error ",
+			description: "Nil list of default Validators error",
 			value: Test{
 				m: map[MessageType]Validator{
 					SimpleEventMessageType: AlwaysValid,
