@@ -204,6 +204,13 @@ func testNewTypeValidator(t *testing.T) {
 	}
 }
 
+func testAlwaysValid(t *testing.T) {
+	assert := assert.New(t)
+	msg := Message{}
+	err := AlwaysValid(msg)
+	assert.NoError(err)
+}
+
 func testAlwaysInvalid(t *testing.T) {
 	assert := assert.New(t)
 	msg := Message{}
@@ -217,6 +224,7 @@ func TestHelperValidators(t *testing.T) {
 		test        func(*testing.T)
 	}{
 		{"AlwaysInvalid", testAlwaysInvalid},
+		{"AlwaysValid", testAlwaysValid},
 	}
 
 	for _, tc := range tests {
