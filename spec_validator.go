@@ -19,12 +19,13 @@ package wrp
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
 	"github.com/google/uuid"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -37,7 +38,6 @@ const (
 var (
 	ErrorInvalidMessageEncoding = errors.New("invalid message encoding")
 	ErrorInvalidMessageType     = errors.New("invalid message type")
-	ErrorInvalidLocator         = errors.New("invalid locator")
 	ErrorInvalidSource          = errors.New("invalid Source name")
 	ErrorInvalidDestination     = errors.New("invalid Destination name")
 )
@@ -50,16 +50,17 @@ var LocatorPattern = regexp.MustCompile(
 
 // SpecValidators is a WRP validator that ensures messages are valid based on
 // each spec validator in the list. Only validates the opinionated portions of the spec.
-var SpecValidators = Validators{UTF8Validator, MessageTypeValidator, SourceValidator, DestinationValidator}
+func SpecValidators() Validators {
+	return Validators{UTF8Validator, MessageTypeValidator, SourceValidator, DestinationValidator}
+}
 
 // UTF8Validator is a WRP validator that takes messages and validates that it contains UTF-8 strings.
 var UTF8Validator ValidatorFunc = func(m Message) error {
-	var err error
-	if multierr.AppendInto(&err, UTF8(m)) {
-		err = multierr.Append(err, ErrorInvalidMessageEncoding)
+	if err := UTF8(m); err != nil {
+		return fmt.Errorf("%w: %v", ErrorInvalidMessageEncoding, err)
 	}
 
-	return err
+	return nil
 }
 
 // MessageTypeValidator is a WRP validator that takes messages and validates their Type.
@@ -81,35 +82,31 @@ var MessageTypeValidator ValidatorFunc = func(m Message) error {
 // Only mac and uuid sources are validated. Serial, event and dns sources are
 // not validated.
 var SourceValidator ValidatorFunc = func(m Message) error {
-	var err error
-	if multierr.AppendInto(&err, validateLocator(m.Source)) {
-		err = multierr.Append(err, ErrorInvalidSource)
+	if err := validateLocator(m.Source); err != nil {
+		return fmt.Errorf("%w: %v", ErrorInvalidSource, err)
 	}
 
-	return err
+	return nil
 }
 
 // DestinationValidator is a WRP validator that takes messages and validates their Destination.
 // Only mac and uuid destinations are validated. Serial, event and dns destinations are
 // not validated.
 var DestinationValidator ValidatorFunc = func(m Message) error {
-	var err error
-	if multierr.AppendInto(&err, validateLocator(m.Destination)) {
-		err = multierr.Append(err, ErrorInvalidDestination)
+	if err := validateLocator(m.Destination); err != nil {
+		return fmt.Errorf("%w: %v", ErrorInvalidDestination, err)
 	}
 
-	return err
+	return nil
 }
 
 // validateLocator validates a given locator's scheme and authority (ID).
 // Only mac and uuid schemes' IDs are validated. IDs from serial, event and dns schemes are
 // not validated.
 func validateLocator(l string) error {
-	var err error
-
 	match := LocatorPattern.FindStringSubmatch(l)
 	if match == nil {
-		return multierr.Append(err, ErrorInvalidLocator)
+		return fmt.Errorf("spec scheme not found")
 	}
 
 	idPart := match[2]
@@ -131,14 +128,16 @@ func validateLocator(l string) error {
 			idPart,
 		)
 
-		if invalidCharacter != -1 || len(idPart) != macLength {
-			return multierr.Append(err, ErrorInvalidLocator)
+		if invalidCharacter != -1 {
+			return fmt.Errorf("invalid character %v", strconv.QuoteRune(invalidCharacter))
+		} else if len(idPart) != macLength {
+			return errors.New("invalid mac length")
 		}
 	case uuidPrefix:
-		if _, uuidErr := uuid.Parse(idPart); multierr.AppendInto(&err, uuidErr) {
-			return multierr.Append(err, ErrorInvalidLocator)
+		if _, err := uuid.Parse(idPart); err != nil {
+			return err
 		}
 	}
 
-	return err
+	return nil
 }
