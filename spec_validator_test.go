@@ -61,7 +61,7 @@ func testUTF8Validator(t *testing.T) {
 		{
 			description: "Not UTF8 error",
 			value:       *msg,
-			expectedErr: []error{ErrorInvalidMessageEncoding, ErrNotUTF8},
+			expectedErr: []error{ErrorInvalidMessageEncoding},
 		},
 	}
 
@@ -189,7 +189,7 @@ func testSourceValidator(t *testing.T) {
 	tests := []struct {
 		description string
 		value       Message
-		expectedErr []error
+		expectedErr error
 	}{
 		// Success case
 		{
@@ -201,7 +201,7 @@ func testSourceValidator(t *testing.T) {
 		{
 			description: "Source error",
 			value:       Message{Source: "invalid:a-BB-44-55"},
-			expectedErr: []error{ErrorInvalidSource, ErrorInvalidLocator},
+			expectedErr: ErrorInvalidSource,
 		},
 	}
 
@@ -210,9 +210,7 @@ func testSourceValidator(t *testing.T) {
 			assert := assert.New(t)
 			err := SourceValidator(tc.value)
 			if tc.expectedErr != nil {
-				for _, e := range tc.expectedErr {
-					assert.ErrorIs(err, e)
-				}
+				assert.ErrorIs(err, tc.expectedErr)
 				return
 			}
 
@@ -225,7 +223,7 @@ func testDestinationValidator(t *testing.T) {
 	tests := []struct {
 		description string
 		value       Message
-		expectedErr []error
+		expectedErr error
 	}{
 		// Success case
 		{
@@ -237,7 +235,7 @@ func testDestinationValidator(t *testing.T) {
 		{
 			description: "Destination error",
 			value:       Message{Destination: "invalid:a-BB-44-55"},
-			expectedErr: []error{ErrorInvalidDestination, ErrorInvalidLocator},
+			expectedErr: ErrorInvalidDestination,
 		},
 	}
 
@@ -246,9 +244,7 @@ func testDestinationValidator(t *testing.T) {
 			assert := assert.New(t)
 			err := DestinationValidator(tc.value)
 			if tc.expectedErr != nil {
-				for _, e := range tc.expectedErr {
-					assert.ErrorIs(err, e)
-				}
+				assert.ErrorIs(err, tc.expectedErr)
 				return
 			}
 
@@ -261,120 +257,120 @@ func testValidateLocator(t *testing.T) {
 	tests := []struct {
 		description string
 		value       string
-		expectedErr error
+		shouldErr   bool
 	}{
 		// mac success case
 		{
 			description: "Mac ID ':' delimiter success",
 			value:       "MAC:11:22:33:44:55:66",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "Mac ID no delimiter success",
 			value:       "MAC:11aaBB445566",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "Mac ID '-' delimiter success",
 			value:       "mac:11-aa-BB-44-55-66",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "Mac ID ',' delimiter success",
 			value:       "mac:11,aa,BB,44,55,66",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "Mac with service success",
 			value:       "mac:11,aa,BB,44,55,66/parodus/tag/test0",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		// Mac failure case
 		{
 			description: "Invalid mac ID character error",
 			value:       "MAC:invalid45566",
-			expectedErr: ErrorInvalidLocator,
+			shouldErr:   true,
 		},
 		{
 			description: "Invalid mac ID length error",
 			value:       "mac:11-aa-BB-44-55",
-			expectedErr: ErrorInvalidLocator,
+			shouldErr:   true,
 		},
 		// Serial success case
 		{
 			description: "Serial ID success",
 			value:       "serial:anything Goes!",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		// UUID success case
 		{
 			description: "UUID RFC4122 variant ID success", // The variant specified in RFC4122
 			value:       "uuid:f47ac10b-58cc-0372-8567-0e02b2c3d479",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "UUID RFC4122 variant with Microsoft encoding ID success", // The variant specified in RFC4122
 			value:       "uuid:{f47ac10b-58cc-0372-8567-0e02b2c3d479}",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "UUID Reserved variant ID #1 success", // Reserved, NCS backward compatibility.
 			value:       "UUID:urn:uuid:f47ac10b-58cc-4372-0567-0e02b2c3d479",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "UUID Reserved variant ID #2 success", // Reserved, NCS backward compatibility.
 			value:       "UUID:URN:UUID:f47ac10b-58cc-4372-0567-0e02b2c3d479",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "UUID Reserved variant ID #3 success", // Reserved, NCS backward compatibility.
 			value:       "UUID:f47ac10b-58cc-4372-0567-0e02b2c3d479",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "UUID Microsoft variant ID success", // Reserved, Microsoft Corporation backward compatibility.
 			value:       "uuid:f47ac10b-58cc-4372-c567-0e02b2c3d479",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		{
 			description: "UUID Future variant ID success", // Reserved for future definition.
 			value:       "uuid:f47ac10b-58cc-4372-e567-0e02b2c3d479",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		// UUID failure case
 		{
 			description: "Invalid UUID ID #1 error",
 			value:       "uuid:invalid45566",
-			expectedErr: ErrorInvalidLocator,
+			shouldErr:   true,
 		},
 		{
 			description: "Invalid UUID ID #2 error",
 			value:       "uuid:URN:UUID:invalid45566",
-			expectedErr: ErrorInvalidLocator,
+			shouldErr:   true,
 		},
 		{
 			description: "Invalid UUID ID #3 error",
 			value:       "uuid:{invalid45566}",
-			expectedErr: ErrorInvalidLocator,
+			shouldErr:   true,
 		},
 		// Event success case
 		{
 			description: "Event ID success",
 			value:       "event:anything Goes!",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		// DNS success case
 		{
 			description: "DNS ID success",
 			value:       "dns:anything Goes!",
-			expectedErr: nil,
+			shouldErr:   false,
 		},
 		// Scheme failure case
 		{
 			description: "Invalid scheme error",
 			value:       "invalid:a-BB-44-55",
-			expectedErr: ErrorInvalidLocator,
+			shouldErr:   true,
 		},
 	}
 
@@ -382,8 +378,8 @@ func testValidateLocator(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			err := validateLocator(tc.value)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			if tc.shouldErr {
+				assert.Error(err)
 				return
 			}
 
@@ -433,14 +429,14 @@ func TestSpecValidators(t *testing.T) {
 				Source:      "invalid:a-BB-44-55",
 				Destination: "invalid:a-BB-44-55",
 			},
-			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidLocator, ErrorInvalidDestination},
+			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SpecValidators.Validate(tc.value)
+			err := SpecValidators().Validate(tc.value)
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
 					assert.ErrorIs(err, e)
@@ -458,7 +454,7 @@ func ExampleTypeValidator_Validate_specValidators() {
 		// Validates found msg types
 		map[MessageType]Validator{
 			// Validates opinionated portions of the spec
-			SimpleEventMessageType: SpecValidators,
+			SimpleEventMessageType: SpecValidators(),
 			// Only validates Source and nothing else
 			SimpleRequestResponseMessageType: SourceValidator,
 		},
