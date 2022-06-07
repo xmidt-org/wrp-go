@@ -23,60 +23,88 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/multierr"
 )
 
 func testTypeValidatorValidate(t *testing.T) {
-	type Test struct {
-		m                 map[MessageType]Validator
-		defaultValidators Validators
-		msg               Message
-	}
-
 	tests := []struct {
-		description string
-		value       Test
-		expectedErr error
+		description       string
+		m                 map[MessageType]Validator
+		defaultValidators []Validator
+		msg               Message
+		expectedErr       error
 	}{
 		// Success case
 		{
 			description: "Found success",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: Validators{AlwaysValid},
-				},
-				msg: Message{Type: SimpleEventMessageType},
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysValid,
 			},
+			msg: Message{Type: SimpleEventMessageType},
 		},
 		{
 			description: "Unfound success",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: Validators{AlwaysInvalid},
-				},
-				defaultValidators: Validators{AlwaysValid},
-				msg:               Message{Type: CreateMessageType},
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysInvalid,
 			},
+			defaultValidators: []Validator{AlwaysValid},
+			msg:               Message{Type: CreateMessageType},
+		},
+		{
+			description: "Unfound success, nil list of default Validators",
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysInvalid,
+			},
+			defaultValidators: []Validator{nil},
+			msg:               Message{Type: CreateMessageType},
+		},
+		{
+			description: "Unfound success, empty map of default Validators",
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysInvalid,
+			},
+			defaultValidators: []Validator{},
+			msg:               Message{Type: CreateMessageType},
 		},
 		// Failure case
 		{
 			description: "Found error",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: Validators{AlwaysInvalid},
-				},
-				defaultValidators: Validators{AlwaysValid},
-				msg:               Message{Type: SimpleEventMessageType},
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysInvalid,
 			},
+			defaultValidators: []Validator{AlwaysValid},
+			msg:               Message{Type: SimpleEventMessageType},
+			expectedErr:       ErrInvalidMsgType,
+		},
+		{
+			description: "Found error, nil Validator",
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: nil,
+			},
+			msg:         Message{Type: SimpleEventMessageType},
 			expectedErr: ErrInvalidMsgType,
 		},
 		{
 			description: "Unfound error",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: Validators{AlwaysValid},
-				},
-				msg: Message{Type: CreateMessageType},
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysValid,
 			},
+			msg:         Message{Type: CreateMessageType},
+			expectedErr: ErrInvalidMsgType,
+		},
+		{
+			description: "Unfound error, nil default Validators",
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysInvalid,
+			},
+			defaultValidators: nil,
+			msg:               Message{Type: CreateMessageType},
+			expectedErr:       ErrInvalidMsgType,
+		},
+		{
+			description: "Unfound error, empty map of Validators",
+			m:           map[MessageType]Validator{},
+			msg:         Message{Type: CreateMessageType},
 			expectedErr: ErrInvalidMsgType,
 		},
 	}
@@ -85,10 +113,11 @@ func testTypeValidatorValidate(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
-			msgv, err := NewTypeValidator(tc.value.m, tc.value.defaultValidators...)
-			require.NotNil(msgv)
+			msgv, err := NewTypeValidator(tc.m, tc.defaultValidators...)
 			require.NoError(err)
-			err = msgv.Validate(tc.value.msg)
+			require.NotNil(msgv)
+			require.False(msgv.IsBad())
+			err = msgv.Validate(tc.msg)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
 				return
@@ -99,123 +128,257 @@ func testTypeValidatorValidate(t *testing.T) {
 	}
 }
 
-func testNewTypeValidator(t *testing.T) {
-	type Test struct {
-		m                 map[MessageType]Validator
-		defaultValidators Validators
-	}
-
+func testTypeValidatorFactory(t *testing.T) {
 	tests := []struct {
-		description string
-		value       Test
-		expectedErr error
+		description       string
+		m                 map[MessageType]Validator
+		defaultValidators []Validator
+		expectedErr       error
 	}{
 		// Success case
 		{
 			description: "Default Validators success",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: AlwaysValid,
-				},
-				defaultValidators: Validators{AlwaysValid},
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysValid,
 			},
-			expectedErr: nil,
-		},
-		{
-			description: "Empty map of Validators success",
-			value: Test{
-				m:                 map[MessageType]Validator{},
-				defaultValidators: Validators{AlwaysValid},
-			},
-			expectedErr: nil,
+			defaultValidators: []Validator{AlwaysValid},
+			expectedErr:       nil,
 		},
 		{
 			description: "Omit default Validators success",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: Validators{AlwaysValid},
-				},
+			m: map[MessageType]Validator{
+				SimpleEventMessageType: AlwaysValid,
 			},
 			expectedErr: nil,
 		},
 		// Failure case
 		{
-			description: "Nil list of default Validators error",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: AlwaysValid,
-				},
-				defaultValidators: Validators{nil},
-			},
-			expectedErr: ErrInvalidTypeValidator,
-		},
-		{
-			description: "Empty list of Validators error",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: Validators{},
-				},
-				defaultValidators: Validators{AlwaysValid},
-			},
-			expectedErr: ErrInvalidTypeValidator,
-		},
-		{
-			description: "Nil Validator error",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: nil,
-				},
-				defaultValidators: Validators{AlwaysValid},
-			},
-			expectedErr: ErrInvalidTypeValidator,
-		},
-		{
-			description: "Nil list of Validators error",
-			value: Test{
-				m: map[MessageType]Validator{
-					SimpleEventMessageType: Validators{nil},
-				},
-				defaultValidators: Validators{AlwaysValid},
-			},
-			expectedErr: ErrInvalidTypeValidator,
-		},
-		{
-			description: "Nil map of Validators error",
-			value: Test{
-				m:                 nil,
-				defaultValidators: Validators{AlwaysValid},
-			},
-			expectedErr: ErrInvalidTypeValidator,
+			description:       "Nil map of Validators error",
+			m:                 nil,
+			defaultValidators: []Validator{AlwaysValid},
+			expectedErr:       ErrInvalidValidator,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			msgv, err := NewTypeValidator(tc.value.m, tc.value.defaultValidators...)
+			msgv, err := NewTypeValidator(tc.m, tc.defaultValidators...)
 			assert.NotNil(msgv)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
+				assert.ErrorIs(msgv.Validate(Message{}), ErrInvalidTypeValidator)
+				assert.True(msgv.IsBad())
+				return
+			}
+
+			assert.NoError(err)
+			assert.False(msgv.IsBad())
+		})
+	}
+}
+
+func testAlwaysValid(t *testing.T) {
+	var (
+		expectedStatus                  int64 = 3471
+		expectedRequestDeliveryResponse int64 = 34
+		expectedIncludeSpans            bool  = true
+	)
+	tests := []struct {
+		description string
+		msg         Message
+		expectedErr []error
+	}{
+		// Success case
+		{
+			description: "Not UTF8 success",
+			msg: Message{
+				Type:   SimpleRequestResponseMessageType,
+				Source: "external.com",
+				// Not UFT8 Destination string
+				Destination:             "mac:\xed\xbf\xbf",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
+				URL:                     "someURL.com",
+				PartnerIDs:              []string{"foo"},
+				SessionID:               "sessionID123",
+			},
+		},
+		{
+			description: "Filled message success",
+			msg: Message{
+				Type:                    SimpleRequestResponseMessageType,
+				Source:                  "external.com",
+				Destination:             "mac:FFEEAADD44443333",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
+				URL:                     "someURL.com",
+				PartnerIDs:              []string{"foo"},
+				SessionID:               "sessionID123",
+			},
+		},
+		{
+			description: "Empty message success",
+			msg:         Message{},
+		},
+		{
+			description: "Bad message type success",
+			msg: Message{
+				Type:        lastMessageType,
+				Source:      "external.com",
+				Destination: "mac:FFEEAADD44443333",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			err := AlwaysValid.Validate(tc.msg)
+			assert.NoError(err)
+		})
+	}
+}
+
+func testAlwaysInvalid(t *testing.T) {
+	var (
+		expectedStatus                  int64 = 3471
+		expectedRequestDeliveryResponse int64 = 34
+		expectedIncludeSpans            bool  = true
+	)
+	tests := []struct {
+		description string
+		msg         Message
+		expectedErr []error
+	}{
+		// Failure case
+		{
+			description: "Not UTF8 error",
+			msg: Message{
+				Type:   SimpleRequestResponseMessageType,
+				Source: "external.com",
+				// Not UFT8 Destination string
+				Destination:             "mac:\xed\xbf\xbf",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
+				URL:                     "someURL.com",
+				PartnerIDs:              []string{"foo"},
+				SessionID:               "sessionID123",
+			},
+		},
+		{
+			description: "Filled message error",
+			msg: Message{
+				Type:                    SimpleRequestResponseMessageType,
+				Source:                  "external.com",
+				Destination:             "mac:FFEEAADD44443333",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
+				URL:                     "someURL.com",
+				PartnerIDs:              []string{"foo"},
+				SessionID:               "sessionID123",
+			},
+		},
+		{
+			description: "Empty message error",
+			msg:         Message{},
+		},
+		{
+			description: "Bad message type error",
+			msg: Message{
+				Type:        lastMessageType,
+				Source:      "external.com",
+				Destination: "mac:FFEEAADD44443333",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			err := AlwaysInvalid.Validate(tc.msg)
+			assert.Error(err)
+		})
+	}
+}
+
+func TestValidators(t *testing.T) {
+	tests := []struct {
+		description string
+		vs          Validators
+		msg         Message
+		expectedErr []error
+	}{
+		// Success case
+		{
+			description: "Empty Validators success",
+			vs:          Validators{},
+			msg:         Message{Type: SimpleEventMessageType},
+		},
+		// Failure case
+		{
+			description: "Mix Validators error",
+			vs:          Validators{AlwaysValid, nil, AlwaysInvalid, Validators{AlwaysValid, nil, AlwaysInvalid}},
+			msg:         Message{Type: SimpleEventMessageType},
+			expectedErr: []error{ErrInvalidMsgType, ErrInvalidMsgType},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			err := tc.vs.Validate(tc.msg)
+			if tc.expectedErr != nil {
+				assert.Equal(multierr.Errors(err), tc.expectedErr)
+				for _, e := range tc.expectedErr {
+					assert.ErrorIs(err, e)
+				}
 				return
 			}
 
 			assert.NoError(err)
 		})
 	}
-}
-
-func testAlwaysValid(t *testing.T) {
-	assert := assert.New(t)
-	msg := Message{}
-	err := AlwaysValid(msg)
-	assert.NoError(err)
-}
-
-func testAlwaysInvalid(t *testing.T) {
-	assert := assert.New(t)
-	msg := Message{}
-	err := AlwaysInvalid(msg)
-	assert.ErrorIs(err, ErrInvalidMsgType)
 }
 
 func TestHelperValidators(t *testing.T) {
@@ -237,8 +400,8 @@ func TestTypeValidator(t *testing.T) {
 		description string
 		test        func(*testing.T)
 	}{
-		{"TypeValidator validate", testTypeValidatorValidate},
-		{"TypeValidator factory", testNewTypeValidator},
+		{"Validate", testTypeValidatorValidate},
+		{"Factory", testTypeValidatorFactory},
 	}
 
 	for _, tc := range tests {
@@ -249,7 +412,7 @@ func TestTypeValidator(t *testing.T) {
 func ExampleNewTypeValidator() {
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
-		map[MessageType]Validator{SimpleEventMessageType: Validators{AlwaysValid}},
+		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid},
 		// Validates unfound msg types
 		AlwaysInvalid)
 	fmt.Printf("%v %T", err == nil, msgv)
@@ -259,7 +422,7 @@ func ExampleNewTypeValidator() {
 func ExampleTypeValidator_Validate() {
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
-		map[MessageType]Validator{SimpleEventMessageType: Validators{AlwaysValid}},
+		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid},
 		// Validates unfound msg types
 		AlwaysInvalid)
 	if err != nil {
