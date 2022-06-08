@@ -307,7 +307,6 @@ func testAlwaysValid(t *testing.T) {
 				SessionID:               "sessionID123",
 			},
 		},
-		// Failure case
 		{
 			description: "Filled message success",
 			msg: Message{
