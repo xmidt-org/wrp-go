@@ -20,3 +20,7 @@ report.json
 
 # Images
 *.png
+
+# VSCode
+*.code-workspace
+.vscode/*

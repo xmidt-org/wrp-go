@@ -12,4 +12,5 @@ require (
 	github.com/ugorji/go/codec v1.2.6
 	github.com/xmidt-org/httpaux v0.3.0
 	github.com/xmidt-org/webpa-common v1.3.2
+	go.uber.org/multierr v1.8.0
 )
