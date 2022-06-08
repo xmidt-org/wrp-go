@@ -42,12 +42,6 @@ var (
 	ErrorInvalidDestination     = errors.New("invalid Destination name")
 )
 
-// locatorPattern is the precompiled regular expression that all source and dest locators must match.
-// Matching is partial, as everything after the authority (ID) is ignored. https://xmidt.io/docs/wrp/basics/#locators
-var LocatorPattern = regexp.MustCompile(
-	`^(?P<scheme>(?i)` + macPrefix + `|` + uuidPrefix + `|` + eventPrefix + `|` + dnsPrefix + `|` + serialPrefix + `):(?P<authority>[^/]+)?`,
-)
-
 // SpecValidators is a WRP validator that ensures messages are valid based on
 // each spec validator in the list. Only validates the opinionated portions of the spec.
 func SpecValidators() Validators {
@@ -100,11 +94,17 @@ var DestinationValidator ValidatorFunc = func(m Message) error {
 	return nil
 }
 
+// locatorPattern is the precompiled regular expression that all source and dest locators must match.
+// Matching is partial, as everything after the authority (ID) is ignored. https://xmidt.io/docs/wrp/basics/#locators
+var locatorPattern = regexp.MustCompile(
+	`^(?P<scheme>(?i)` + macPrefix + `|` + uuidPrefix + `|` + eventPrefix + `|` + dnsPrefix + `|` + serialPrefix + `):(?P<authority>[^/]+)?`,
+)
+
 // validateLocator validates a given locator's scheme and authority (ID).
 // Only mac and uuid schemes' IDs are validated. IDs from serial, event and dns schemes are
 // not validated.
 func validateLocator(l string) error {
-	match := LocatorPattern.FindStringSubmatch(l)
+	match := locatorPattern.FindStringSubmatch(l)
 	if match == nil {
 		return fmt.Errorf("spec scheme not found")
 	}
@@ -139,7 +139,7 @@ func validateLocator(l string) error {
 		}
 	case serialPrefix, eventPrefix, dnsPrefix:
 		if len(idPart) == 0 {
-			return fmt.Errorf("invalid %v empty authority (ID)", serialPrefix)
+			return fmt.Errorf("invalid empty authority (ID)")
 		}
 	}
 
