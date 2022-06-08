@@ -287,7 +287,7 @@ func testAlwaysValid(t *testing.T) {
 			description: "Not UTF8 success",
 			msg: Message{
 				Type:   SimpleRequestResponseMessageType,
-				Source: "external.com",
+				Source: "dns:external.com",
 				// Not UFT8 Destination string
 				Destination:             "mac:\xed\xbf\xbf",
 				TransactionUUID:         "DEADBEEF",
@@ -307,11 +307,12 @@ func testAlwaysValid(t *testing.T) {
 				SessionID:               "sessionID123",
 			},
 		},
+		// Failure case
 		{
 			description: "Filled message success",
 			msg: Message{
 				Type:                    SimpleRequestResponseMessageType,
-				Source:                  "external.com",
+				Source:                  "dns:external.com",
 				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
 				ContentType:             "ContentType",
@@ -338,7 +339,7 @@ func testAlwaysValid(t *testing.T) {
 			description: "Bad message type success",
 			msg: Message{
 				Type:        lastMessageType + 1,
-				Source:      "external.com",
+				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
 		},
@@ -369,7 +370,7 @@ func testAlwaysInvalid(t *testing.T) {
 			description: "Not UTF8 error",
 			msg: Message{
 				Type:   SimpleRequestResponseMessageType,
-				Source: "external.com",
+				Source: "dns:external.com",
 				// Not UFT8 Destination string
 				Destination:             "mac:\xed\xbf\xbf",
 				TransactionUUID:         "DEADBEEF",
@@ -393,7 +394,7 @@ func testAlwaysInvalid(t *testing.T) {
 			description: "Filled message error",
 			msg: Message{
 				Type:                    SimpleRequestResponseMessageType,
-				Source:                  "external.com",
+				Source:                  "dns:external.com",
 				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
 				ContentType:             "ContentType",
@@ -420,7 +421,7 @@ func testAlwaysInvalid(t *testing.T) {
 			description: "Bad message type error",
 			msg: Message{
 				Type:        lastMessageType + 1,
-				Source:      "external.com",
+				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
 		},
@@ -430,7 +431,7 @@ func testAlwaysInvalid(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			err := AlwaysInvalid.Validate(tc.msg)
-			assert.Error(err)
+			assert.ErrorIs(err, ErrInvalidMsgType)
 		})
 	}
 }
