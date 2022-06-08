@@ -24,6 +24,179 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSpecHelperValidators(t *testing.T) {
+	tests := []struct {
+		description string
+		test        func(*testing.T)
+	}{
+		{"UTF8Validator", testUTF8Validator},
+		{"MessageTypeValidator", testMessageTypeValidator},
+		{"SourceValidator", testSourceValidator},
+		{"DestinationValidator", testDestinationValidator},
+		{"validateLocator", testValidateLocator},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, tc.test)
+	}
+}
+
+func TestSpecValidators(t *testing.T) {
+	var (
+		expectedStatus                  int64 = 3471
+		expectedRequestDeliveryResponse int64 = 34
+		expectedIncludeSpans            bool  = true
+	)
+
+	tests := []struct {
+		description string
+		msg         Message
+		expectedErr []error
+	}{
+		// Success case
+		{
+			description: "Valid spec success",
+			msg: Message{
+				Type:                    SimpleRequestResponseMessageType,
+				Source:                  "dns:external.com",
+				Destination:             "MAC:11:22:33:44:55:66",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
+				URL:                     "someURL.com",
+				PartnerIDs:              []string{"foo"},
+				SessionID:               "sessionID123",
+			},
+		},
+		// Failure case
+		{
+			description: "Invaild spec error",
+			msg: Message{
+				Type: Invalid0MessageType,
+				// Missing scheme
+				Source: "external.com",
+				// Invalid Mac
+				Destination:             "MAC:+++BB-44-55",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				// Not UFT8 Payload
+				Payload:     []byte{1, 2, 3, 4, 0xff /* \xed\xbf\xbf is invalid */, 0xce},
+				ServiceName: "ServiceName",
+				// Not UFT8 URL string
+				URL:        "someURL\xed\xbf\xbf.com",
+				PartnerIDs: []string{"foo"},
+				SessionID:  "sessionID123",
+			},
+			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination, ErrorInvalidMessageEncoding},
+		},
+		{
+			description: "Invaild spec error, empty message",
+			msg:         Message{},
+			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination},
+		},
+		{
+			description: "Invaild spec error, nonexistent MessageType",
+			msg: Message{
+				Type:        lastMessageType + 1,
+				Source:      "dns:external.com",
+				Destination: "MAC:11:22:33:44:55:66",
+			},
+			expectedErr: []error{ErrorInvalidMessageType},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			err := SpecValidators().Validate(tc.msg)
+			if tc.expectedErr != nil {
+				for _, e := range tc.expectedErr {
+					assert.ErrorIs(err, e)
+				}
+				return
+			}
+
+			assert.NoError(err)
+		})
+	}
+}
+
+func ExampleTypeValidator_Validate_specValidators() {
+	msgv, err := NewTypeValidator(
+		// Validates found msg types
+		map[MessageType]Validator{
+			// Validates opinionated portions of the spec
+			SimpleEventMessageType: SpecValidators(),
+			// Only validates Source and nothing else
+			SimpleRequestResponseMessageType: SourceValidator,
+		},
+		// Validates unfound msg types
+		AlwaysInvalid)
+	if err != nil {
+		return
+	}
+
+	var (
+		expectedStatus                  int64 = 3471
+		expectedRequestDeliveryResponse int64 = 34
+		expectedIncludeSpans            bool  = true
+	)
+	foundErrFailure := msgv.Validate(Message{
+		Type: SimpleEventMessageType,
+		// Missing scheme
+		Source: "external.com",
+		// Invalid Mac
+		Destination:             "MAC:+++BB-44-55",
+		TransactionUUID:         "DEADBEEF",
+		ContentType:             "ContentType",
+		Accept:                  "Accept",
+		Status:                  &expectedStatus,
+		RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+		Headers:                 []string{"Header1", "Header2"},
+		Metadata:                map[string]string{"name": "value"},
+		Spans:                   [][]string{{"1", "2"}, {"3"}},
+		IncludeSpans:            &expectedIncludeSpans,
+		Path:                    "/some/where/over/the/rainbow",
+		// Not UFT8 Payload
+		Payload:     []byte{1, 2, 3, 4, 0xff /* \xed\xbf\xbf is invalid */, 0xce},
+		ServiceName: "ServiceName",
+		// Not UFT8 URL string
+		URL:        "someURL\xed\xbf\xbf.com",
+		PartnerIDs: []string{"foo"},
+		SessionID:  "sessionID123",
+	}) // Found error
+	foundErrSuccess1 := msgv.Validate(Message{
+		Type:        SimpleEventMessageType,
+		Source:      "MAC:11:22:33:44:55:66",
+		Destination: "MAC:11:22:33:44:55:61",
+	}) // Found success
+	foundErrSuccess2 := msgv.Validate(Message{
+		Type:        SimpleRequestResponseMessageType,
+		Source:      "MAC:11:22:33:44:55:66",
+		Destination: "invalid:a-BB-44-55",
+	}) // Found success
+	unfoundErrFailure := msgv.Validate(Message{Type: CreateMessageType}) // Unfound error
+	fmt.Println(foundErrFailure == nil, foundErrSuccess1 == nil, foundErrSuccess2 == nil, unfoundErrFailure == nil)
+	// Output: false true true false
+}
+
 func testUTF8Validator(t *testing.T) {
 	var (
 		expectedStatus                  int64 = 3471
@@ -441,177 +614,4 @@ func testValidateLocator(t *testing.T) {
 			assert.NoError(err)
 		})
 	}
-}
-
-func TestSpecHelperValidators(t *testing.T) {
-	tests := []struct {
-		description string
-		test        func(*testing.T)
-	}{
-		{"UTF8Validator", testUTF8Validator},
-		{"MessageTypeValidator", testMessageTypeValidator},
-		{"SourceValidator", testSourceValidator},
-		{"DestinationValidator", testDestinationValidator},
-		{"validateLocator", testValidateLocator},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, tc.test)
-	}
-}
-
-func TestSpecValidators(t *testing.T) {
-	var (
-		expectedStatus                  int64 = 3471
-		expectedRequestDeliveryResponse int64 = 34
-		expectedIncludeSpans            bool  = true
-	)
-
-	tests := []struct {
-		description string
-		msg         Message
-		expectedErr []error
-	}{
-		// Success case
-		{
-			description: "Valid spec success",
-			msg: Message{
-				Type:                    SimpleRequestResponseMessageType,
-				Source:                  "dns:external.com",
-				Destination:             "MAC:11:22:33:44:55:66",
-				TransactionUUID:         "DEADBEEF",
-				ContentType:             "ContentType",
-				Accept:                  "Accept",
-				Status:                  &expectedStatus,
-				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
-				Headers:                 []string{"Header1", "Header2"},
-				Metadata:                map[string]string{"name": "value"},
-				Spans:                   [][]string{{"1", "2"}, {"3"}},
-				IncludeSpans:            &expectedIncludeSpans,
-				Path:                    "/some/where/over/the/rainbow",
-				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
-				ServiceName:             "ServiceName",
-				URL:                     "someURL.com",
-				PartnerIDs:              []string{"foo"},
-				SessionID:               "sessionID123",
-			},
-		},
-		// Failure case
-		{
-			description: "Invaild spec error",
-			msg: Message{
-				Type: Invalid0MessageType,
-				// Missing scheme
-				Source: "external.com",
-				// Invalid Mac
-				Destination:             "MAC:+++BB-44-55",
-				TransactionUUID:         "DEADBEEF",
-				ContentType:             "ContentType",
-				Accept:                  "Accept",
-				Status:                  &expectedStatus,
-				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
-				Headers:                 []string{"Header1", "Header2"},
-				Metadata:                map[string]string{"name": "value"},
-				Spans:                   [][]string{{"1", "2"}, {"3"}},
-				IncludeSpans:            &expectedIncludeSpans,
-				Path:                    "/some/where/over/the/rainbow",
-				// Not UFT8 Payload
-				Payload:     []byte{1, 2, 3, 4, 0xff /* \xed\xbf\xbf is invalid */, 0xce},
-				ServiceName: "ServiceName",
-				// Not UFT8 URL string
-				URL:        "someURL\xed\xbf\xbf.com",
-				PartnerIDs: []string{"foo"},
-				SessionID:  "sessionID123",
-			},
-			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination, ErrorInvalidMessageEncoding},
-		},
-		{
-			description: "Invaild spec error, empty message",
-			msg:         Message{},
-			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination},
-		},
-		{
-			description: "Invaild spec error, nonexistent MessageType",
-			msg: Message{
-				Type:        lastMessageType + 1,
-				Source:      "dns:external.com",
-				Destination: "MAC:11:22:33:44:55:66",
-			},
-			expectedErr: []error{ErrorInvalidMessageType},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			assert := assert.New(t)
-			err := SpecValidators().Validate(tc.msg)
-			if tc.expectedErr != nil {
-				for _, e := range tc.expectedErr {
-					assert.ErrorIs(err, e)
-				}
-				return
-			}
-
-			assert.NoError(err)
-		})
-	}
-}
-
-func ExampleTypeValidator_Validate_specValidators() {
-	msgv, err := NewTypeValidator(
-		// Validates found msg types
-		map[MessageType]Validator{
-			// Validates opinionated portions of the spec
-			SimpleEventMessageType: SpecValidators(),
-			// Only validates Source and nothing else
-			SimpleRequestResponseMessageType: SourceValidator,
-		},
-		// Validates unfound msg types
-		AlwaysInvalid)
-	if err != nil {
-		return
-	}
-
-	var (
-		expectedStatus                  int64 = 3471
-		expectedRequestDeliveryResponse int64 = 34
-		expectedIncludeSpans            bool  = true
-	)
-	foundErrFailure := msgv.Validate(Message{
-		Type: SimpleEventMessageType,
-		// Missing scheme
-		Source: "external.com",
-		// Invalid Mac
-		Destination:             "MAC:+++BB-44-55",
-		TransactionUUID:         "DEADBEEF",
-		ContentType:             "ContentType",
-		Accept:                  "Accept",
-		Status:                  &expectedStatus,
-		RequestDeliveryResponse: &expectedRequestDeliveryResponse,
-		Headers:                 []string{"Header1", "Header2"},
-		Metadata:                map[string]string{"name": "value"},
-		Spans:                   [][]string{{"1", "2"}, {"3"}},
-		IncludeSpans:            &expectedIncludeSpans,
-		Path:                    "/some/where/over/the/rainbow",
-		// Not UFT8 Payload
-		Payload:     []byte{1, 2, 3, 4, 0xff /* \xed\xbf\xbf is invalid */, 0xce},
-		ServiceName: "ServiceName",
-		// Not UFT8 URL string
-		URL:        "someURL\xed\xbf\xbf.com",
-		PartnerIDs: []string{"foo"},
-		SessionID:  "sessionID123",
-	}) // Found error
-	foundErrSuccess1 := msgv.Validate(Message{
-		Type:        SimpleEventMessageType,
-		Source:      "MAC:11:22:33:44:55:66",
-		Destination: "MAC:11:22:33:44:55:61",
-	}) // Found success
-	foundErrSuccess2 := msgv.Validate(Message{
-		Type:        SimpleRequestResponseMessageType,
-		Source:      "MAC:11:22:33:44:55:66",
-		Destination: "invalid:a-BB-44-55",
-	}) // Found success
-	unfoundErrFailure := msgv.Validate(Message{Type: CreateMessageType}) // Unfound error
-	fmt.Println(foundErrFailure == nil, foundErrSuccess1 == nil, foundErrSuccess2 == nil, unfoundErrFailure == nil)
-	// Output: false true true false
 }
