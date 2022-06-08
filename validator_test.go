@@ -26,6 +26,99 @@ import (
 	"go.uber.org/multierr"
 )
 
+func TestValidators(t *testing.T) {
+	tests := []struct {
+		description string
+		vs          Validators
+		msg         Message
+		expectedErr []error
+	}{
+		// Success case
+		{
+			description: "Empty Validators success",
+			vs:          Validators{},
+			msg:         Message{Type: SimpleEventMessageType},
+		},
+		// Failure case
+		{
+			description: "Mix Validators error",
+			vs:          Validators{AlwaysValid, nil, AlwaysInvalid, Validators{AlwaysValid, nil, AlwaysInvalid}},
+			msg:         Message{Type: SimpleEventMessageType},
+			expectedErr: []error{ErrInvalidMsgType, ErrInvalidMsgType},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			err := tc.vs.Validate(tc.msg)
+			if tc.expectedErr != nil {
+				assert.Equal(multierr.Errors(err), tc.expectedErr)
+				for _, e := range tc.expectedErr {
+					assert.ErrorIs(err, e)
+				}
+				return
+			}
+
+			assert.NoError(err)
+		})
+	}
+}
+
+func TestHelperValidators(t *testing.T) {
+	tests := []struct {
+		description string
+		test        func(*testing.T)
+	}{
+		{"AlwaysInvalid", testAlwaysInvalid},
+		{"AlwaysValid", testAlwaysValid},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, tc.test)
+	}
+}
+
+func TestTypeValidator(t *testing.T) {
+	tests := []struct {
+		description string
+		test        func(*testing.T)
+	}{
+		{"Validate", testTypeValidatorValidate},
+		{"Factory", testTypeValidatorFactory},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, tc.test)
+	}
+}
+
+func ExampleNewTypeValidator() {
+	msgv, err := NewTypeValidator(
+		// Validates found msg types
+		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid},
+		// Validates unfound msg types
+		AlwaysInvalid)
+	fmt.Printf("%v %T", err == nil, msgv)
+	// Output: true wrp.TypeValidator
+}
+
+func ExampleTypeValidator_Validate() {
+	msgv, err := NewTypeValidator(
+		// Validates found msg types
+		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid},
+		// Validates unfound msg types
+		AlwaysInvalid)
+	if err != nil {
+		return
+	}
+
+	foundErr := msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
+	unfoundErr := msgv.Validate(Message{Type: CreateMessageType})    // Unfound error
+	fmt.Println(foundErr == nil, unfoundErr == nil)
+	// Output: true false
+}
+
 func testTypeValidatorValidate(t *testing.T) {
 	tests := []struct {
 		description       string
@@ -340,97 +433,4 @@ func testAlwaysInvalid(t *testing.T) {
 			assert.Error(err)
 		})
 	}
-}
-
-func TestValidators(t *testing.T) {
-	tests := []struct {
-		description string
-		vs          Validators
-		msg         Message
-		expectedErr []error
-	}{
-		// Success case
-		{
-			description: "Empty Validators success",
-			vs:          Validators{},
-			msg:         Message{Type: SimpleEventMessageType},
-		},
-		// Failure case
-		{
-			description: "Mix Validators error",
-			vs:          Validators{AlwaysValid, nil, AlwaysInvalid, Validators{AlwaysValid, nil, AlwaysInvalid}},
-			msg:         Message{Type: SimpleEventMessageType},
-			expectedErr: []error{ErrInvalidMsgType, ErrInvalidMsgType},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			assert := assert.New(t)
-			err := tc.vs.Validate(tc.msg)
-			if tc.expectedErr != nil {
-				assert.Equal(multierr.Errors(err), tc.expectedErr)
-				for _, e := range tc.expectedErr {
-					assert.ErrorIs(err, e)
-				}
-				return
-			}
-
-			assert.NoError(err)
-		})
-	}
-}
-
-func TestHelperValidators(t *testing.T) {
-	tests := []struct {
-		description string
-		test        func(*testing.T)
-	}{
-		{"AlwaysInvalid", testAlwaysInvalid},
-		{"AlwaysValid", testAlwaysValid},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, tc.test)
-	}
-}
-
-func TestTypeValidator(t *testing.T) {
-	tests := []struct {
-		description string
-		test        func(*testing.T)
-	}{
-		{"Validate", testTypeValidatorValidate},
-		{"Factory", testTypeValidatorFactory},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, tc.test)
-	}
-}
-
-func ExampleNewTypeValidator() {
-	msgv, err := NewTypeValidator(
-		// Validates found msg types
-		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid},
-		// Validates unfound msg types
-		AlwaysInvalid)
-	fmt.Printf("%v %T", err == nil, msgv)
-	// Output: true wrp.TypeValidator
-}
-
-func ExampleTypeValidator_Validate() {
-	msgv, err := NewTypeValidator(
-		// Validates found msg types
-		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid},
-		// Validates unfound msg types
-		AlwaysInvalid)
-	if err != nil {
-		return
-	}
-
-	foundErr := msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
-	unfoundErr := msgv.Validate(Message{Type: CreateMessageType})    // Unfound error
-	fmt.Println(foundErr == nil, unfoundErr == nil)
-	// Output: true false
 }
