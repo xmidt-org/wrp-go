@@ -259,14 +259,14 @@ func testTypeValidatorFactory(t *testing.T) {
 			msgv, err := NewTypeValidator(tc.m, tc.defaultValidators...)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
-				assert.NotNil(msgv)
-				assert.NotZero(msgv)
+				// Zero asserts that msgv is the zero value for its type and not nil.
+				assert.Zero(msgv)
 				return
 			}
 
 			assert.NoError(err)
-			// Zero asserts that msgv is the zero value for its type and not nil.
-			assert.Zero(msgv)
+			assert.NotNil(msgv)
+			assert.NotZero(msgv)
 		})
 	}
 }
