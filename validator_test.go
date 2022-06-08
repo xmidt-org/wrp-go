@@ -121,11 +121,11 @@ func ExampleTypeValidator_Validate() {
 
 func testTypeValidatorValidate(t *testing.T) {
 	tests := []struct {
-		description       string
-		m                 map[MessageType]Validator
-		defaultValidators []Validator
-		msg               Message
-		expectedErr       error
+		description      string
+		m                map[MessageType]Validator
+		defaultValidator Validator
+		msg              Message
+		expectedErr      error
 	}{
 		// Success case
 		{
@@ -140,24 +140,24 @@ func testTypeValidatorValidate(t *testing.T) {
 			m: map[MessageType]Validator{
 				SimpleEventMessageType: AlwaysInvalid,
 			},
-			defaultValidators: []Validator{AlwaysValid},
-			msg:               Message{Type: CreateMessageType},
+			defaultValidator: AlwaysValid,
+			msg:              Message{Type: CreateMessageType},
 		},
 		{
 			description: "Unfound success, nil list of default Validators",
 			m: map[MessageType]Validator{
 				SimpleEventMessageType: AlwaysInvalid,
 			},
-			defaultValidators: []Validator{nil},
-			msg:               Message{Type: CreateMessageType},
+			defaultValidator: Validators{nil},
+			msg:              Message{Type: CreateMessageType},
 		},
 		{
 			description: "Unfound success, empty map of default Validators",
 			m: map[MessageType]Validator{
 				SimpleEventMessageType: AlwaysInvalid,
 			},
-			defaultValidators: []Validator{},
-			msg:               Message{Type: CreateMessageType},
+			defaultValidator: Validators{},
+			msg:              Message{Type: CreateMessageType},
 		},
 		// Failure case
 		{
@@ -165,9 +165,9 @@ func testTypeValidatorValidate(t *testing.T) {
 			m: map[MessageType]Validator{
 				SimpleEventMessageType: AlwaysInvalid,
 			},
-			defaultValidators: []Validator{AlwaysValid},
-			msg:               Message{Type: SimpleEventMessageType},
-			expectedErr:       ErrInvalidMsgType,
+			defaultValidator: AlwaysValid,
+			msg:              Message{Type: SimpleEventMessageType},
+			expectedErr:      ErrInvalidMsgType,
 		},
 		{
 			description: "Found error, nil Validator",
@@ -190,9 +190,9 @@ func testTypeValidatorValidate(t *testing.T) {
 			m: map[MessageType]Validator{
 				SimpleEventMessageType: AlwaysInvalid,
 			},
-			defaultValidators: nil,
-			msg:               Message{Type: CreateMessageType},
-			expectedErr:       ErrInvalidMsgType,
+			defaultValidator: nil,
+			msg:              Message{Type: CreateMessageType},
+			expectedErr:      ErrInvalidMsgType,
 		},
 		{
 			description: "Unfound error, empty map of Validators",
@@ -206,7 +206,7 @@ func testTypeValidatorValidate(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
-			msgv, err := NewTypeValidator(tc.m, tc.defaultValidators...)
+			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator)
 			require.NoError(err)
 			require.NotNil(msgv)
 			assert.NotZero(msgv)
@@ -223,10 +223,10 @@ func testTypeValidatorValidate(t *testing.T) {
 
 func testTypeValidatorFactory(t *testing.T) {
 	tests := []struct {
-		description       string
-		m                 map[MessageType]Validator
-		defaultValidators []Validator
-		expectedErr       error
+		description      string
+		m                map[MessageType]Validator
+		defaultValidator Validator
+		expectedErr      error
 	}{
 		// Success case
 		{
@@ -234,8 +234,8 @@ func testTypeValidatorFactory(t *testing.T) {
 			m: map[MessageType]Validator{
 				SimpleEventMessageType: AlwaysValid,
 			},
-			defaultValidators: []Validator{AlwaysValid},
-			expectedErr:       nil,
+			defaultValidator: AlwaysValid,
+			expectedErr:      nil,
 		},
 		{
 			description: "Omit default Validators success",
@@ -246,17 +246,17 @@ func testTypeValidatorFactory(t *testing.T) {
 		},
 		// Failure case
 		{
-			description:       "Nil map of Validators error",
-			m:                 nil,
-			defaultValidators: []Validator{AlwaysValid},
-			expectedErr:       ErrInvalidValidator,
+			description:      "Nil map of Validators error",
+			m:                nil,
+			defaultValidator: AlwaysValid,
+			expectedErr:      ErrInvalidValidator,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			msgv, err := NewTypeValidator(tc.m, tc.defaultValidators...)
+			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
 				// Zero asserts that msgv is the zero value for its type and not nil.
