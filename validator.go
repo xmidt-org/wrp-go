@@ -24,7 +24,8 @@ import (
 )
 
 var (
-	ErrInvalidTypeValidator = errors.New("invalid WRP message type validator")
+	ErrInvalidTypeValidator = errors.New("invalid TypeValidator")
+	ErrInvalidValidator     = errors.New("invalid WRP message type validator")
 	ErrInvalidMsgType       = errors.New("invalid WRP message type")
 )
 
@@ -48,7 +49,9 @@ type Validators []Validator
 func (vs Validators) Validate(m Message) error {
 	var err error
 	for _, v := range vs {
-		err = multierr.Append(err, v.Validate(m))
+		if v != nil {
+			err = multierr.Append(err, v.Validate(m))
+		}
 	}
 
 	return err
@@ -67,7 +70,7 @@ func (vf ValidatorFunc) Validate(m Message) error {
 // or using the defaultValidators if message type is unfound.
 type TypeValidator struct {
 	m                 map[MessageType]Validator
-	defaultValidators Validators
+	defaultValidators Validator
 }
 
 // Validate validates messages based on message type or using the defaultValidators
@@ -84,49 +87,15 @@ func (m TypeValidator) Validate(msg Message) error {
 // NewTypeValidator is a TypeValidator factory.
 func NewTypeValidator(m map[MessageType]Validator, defaultValidators ...Validator) (TypeValidator, error) {
 	if m == nil {
-		return TypeValidator{}, ErrInvalidTypeValidator
+		return TypeValidator{}, ErrInvalidValidator
 	}
 
-	for _, v := range m {
-		if err := validateValidator(v); err != nil {
-			return TypeValidator{}, err
-		}
-	}
-
-	if len(defaultValidators) == 0 {
+	if defaultValidators == nil {
 		defaultValidators = Validators{AlwaysInvalid}
-	}
-
-	for _, v := range defaultValidators {
-		if err := validateValidator(v); err != nil {
-			return TypeValidator{}, err
-		}
 	}
 
 	return TypeValidator{
 		m:                 m,
-		defaultValidators: defaultValidators,
+		defaultValidators: Validators(defaultValidators),
 	}, nil
-}
-
-// validateValidator validates a given Validator.
-func validateValidator(v Validator) error {
-	switch vs := v.(type) {
-	case Validators:
-		if vs == nil || len(vs) == 0 {
-			return ErrInvalidTypeValidator
-		}
-
-		for _, v := range vs {
-			if v == nil {
-				return ErrInvalidTypeValidator
-			}
-		}
-	case Validator, ValidatorFunc:
-	// catch nil Validator
-	default:
-		return ErrInvalidTypeValidator
-	}
-
-	return nil
 }
