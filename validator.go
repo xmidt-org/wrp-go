@@ -71,16 +71,11 @@ func (vf ValidatorFunc) Validate(m Message) error {
 type TypeValidator struct {
 	m                 map[MessageType]Validator
 	defaultValidators Validator
-	isbad             bool
 }
 
 // Validate validates messages based on message type or using the defaultValidators
 // if message type is unfound.
 func (m TypeValidator) Validate(msg Message) error {
-	if m.isbad {
-		return ErrInvalidTypeValidator
-	}
-
 	vs := m.m[msg.MessageType()]
 	if vs == nil {
 		return m.defaultValidators.Validate(msg)
@@ -89,15 +84,10 @@ func (m TypeValidator) Validate(msg Message) error {
 	return vs.Validate(msg)
 }
 
-// IsBad returns a boolean indicating whether the TypeValidator receiver is valid
-func (m TypeValidator) IsBad() bool {
-	return m.isbad
-}
-
 // NewTypeValidator is a TypeValidator factory.
 func NewTypeValidator(m map[MessageType]Validator, defaultValidators ...Validator) (TypeValidator, error) {
 	if m == nil {
-		return TypeValidator{isbad: true}, ErrInvalidValidator
+		return TypeValidator{}, ErrInvalidValidator
 	}
 
 	if defaultValidators == nil {
