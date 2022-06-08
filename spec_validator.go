@@ -137,6 +137,10 @@ func validateLocator(l string) error {
 		if _, err := uuid.Parse(idPart); err != nil {
 			return err
 		}
+	case serialPrefix, eventPrefix, dnsPrefix:
+		if len(idPart) == 0 {
+			return fmt.Errorf("invalid %v empty authority (ID)", serialPrefix)
+		}
 	}
 
 	return nil

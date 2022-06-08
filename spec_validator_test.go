@@ -34,15 +34,14 @@ func testUTF8Validator(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         Message
-		expectedErr []error
+		expectedErr error
 	}{
 		// Success case
 		{
 			description: "UTF8 success",
 			msg: Message{
-				Type:   SimpleRequestResponseMessageType,
-				Source: "external.com",
-				// Not UFT8 Destination string
+				Type:                    SimpleRequestResponseMessageType,
+				Source:                  "dns:external.com",
 				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
 				ContentType:             "ContentType",
@@ -60,13 +59,12 @@ func testUTF8Validator(t *testing.T) {
 				PartnerIDs:              []string{"foo"},
 				SessionID:               "sessionID123",
 			},
-			expectedErr: nil,
 		},
 		{
 			description: "Not UTF8 error",
 			msg: Message{
 				Type:   SimpleRequestResponseMessageType,
-				Source: "external.com",
+				Source: "dns:external.com",
 				// Not UFT8 Destination string
 				Destination:             "MAC:\xed\xbf\xbf",
 				TransactionUUID:         "DEADBEEF",
@@ -85,7 +83,7 @@ func testUTF8Validator(t *testing.T) {
 				PartnerIDs:              []string{"foo"},
 				SessionID:               "sessionID123",
 			},
-			expectedErr: []error{ErrorInvalidMessageEncoding},
+			expectedErr: ErrorInvalidMessageEncoding,
 		},
 	}
 
@@ -94,9 +92,7 @@ func testUTF8Validator(t *testing.T) {
 			assert := assert.New(t)
 			err := UTF8Validator(tc.msg)
 			if tc.expectedErr != nil {
-				for _, e := range tc.expectedErr {
-					assert.ErrorIs(err, e)
-				}
+				assert.ErrorIs(err, tc.expectedErr)
 				return
 			}
 
@@ -115,52 +111,42 @@ func testMessageTypeValidator(t *testing.T) {
 		{
 			description: "AuthorizationMessageType success",
 			msg:         Message{Type: AuthorizationMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "SimpleRequestResponseMessageType success",
 			msg:         Message{Type: SimpleRequestResponseMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "SimpleEventMessageType success",
 			msg:         Message{Type: SimpleEventMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "CreateMessageType success",
 			msg:         Message{Type: CreateMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "RetrieveMessageType success",
 			msg:         Message{Type: RetrieveMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "UpdateMessageType success",
 			msg:         Message{Type: UpdateMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "DeleteMessageType success",
 			msg:         Message{Type: DeleteMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "ServiceRegistrationMessageType success",
 			msg:         Message{Type: ServiceRegistrationMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "ServiceAliveMessageType success",
 			msg:         Message{Type: ServiceAliveMessageType},
-			expectedErr: nil,
 		},
 		{
 			description: "UnknownMessageType success",
 			msg:         Message{Type: UnknownMessageType},
-			expectedErr: nil,
 		},
 		// Failure case
 		{
@@ -184,12 +170,12 @@ func testMessageTypeValidator(t *testing.T) {
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
-			description: "Non-existing negative MessageType error",
+			description: "Nonexistent negative MessageType error",
 			msg:         Message{Type: -10},
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
-			description: "Non-existing positive MessageType error",
+			description: "Nonexistent positive MessageType error",
 			msg:         Message{Type: lastMessageType + 1},
 			expectedErr: ErrorInvalidMessageType,
 		},
@@ -210,6 +196,11 @@ func testMessageTypeValidator(t *testing.T) {
 }
 
 func testSourceValidator(t *testing.T) {
+	// SourceValidator is mainly a wrapper for validateLocator.
+	// This test mainly ensures that SourceValidator returns nil for non errors
+	// and wraps errors with ErrorInvalidSource.
+	// testValidateLocator covers the actual spectrum of test cases.
+
 	tests := []struct {
 		description string
 		msg         Message
@@ -219,7 +210,6 @@ func testSourceValidator(t *testing.T) {
 		{
 			description: "Source success",
 			msg:         Message{Source: "MAC:11:22:33:44:55:66"},
-			expectedErr: nil,
 		},
 		// Failures
 		{
@@ -244,6 +234,11 @@ func testSourceValidator(t *testing.T) {
 }
 
 func testDestinationValidator(t *testing.T) {
+	// DestinationValidator is mainly a wrapper for validateLocator.
+	// This test mainly ensures that DestinationValidator returns nil for non errors
+	// and wraps errors with ErrorInvalidDestination.
+	// testValidateLocator covers the actual spectrum of test cases.
+
 	tests := []struct {
 		description string
 		msg         Message
@@ -253,7 +248,6 @@ func testDestinationValidator(t *testing.T) {
 		{
 			description: "Destination success",
 			msg:         Message{Destination: "MAC:11:22:33:44:55:66"},
-			expectedErr: nil,
 		},
 		// Failures
 		{
@@ -285,39 +279,44 @@ func testValidateLocator(t *testing.T) {
 	}{
 		// mac success case
 		{
-			description: "Mac ID ':' delimiter success",
+			description: "Mac ID success, ':' delimiter",
 			value:       "MAC:11:22:33:44:55:66",
 			shouldErr:   false,
 		},
 		{
-			description: "Mac ID no delimiter success",
+			description: "Mac ID success, no delimiter",
 			value:       "MAC:11aaBB445566",
 			shouldErr:   false,
 		},
 		{
-			description: "Mac ID '-' delimiter success",
+			description: "Mac ID success, '-' delimiter",
 			value:       "mac:11-aa-BB-44-55-66",
 			shouldErr:   false,
 		},
 		{
-			description: "Mac ID ',' delimiter success",
+			description: "Mac ID success, ',' delimiter",
 			value:       "mac:11,aa,BB,44,55,66",
 			shouldErr:   false,
 		},
 		{
-			description: "Mac with service success",
+			description: "Mac service success",
 			value:       "mac:11,aa,BB,44,55,66/parodus/tag/test0",
 			shouldErr:   false,
 		},
 		// Mac failure case
 		{
-			description: "Invalid mac ID character error",
+			description: "Mac ID error, invalid mac ID character",
 			value:       "MAC:invalid45566",
 			shouldErr:   true,
 		},
 		{
-			description: "Invalid mac ID length error",
+			description: "Mac ID error, invalid mac ID length",
 			value:       "mac:11-aa-BB-44-55",
+			shouldErr:   true,
+		},
+		{
+			description: "Mac ID error, no ID",
+			value:       "mac:",
 			shouldErr:   true,
 		},
 		// Serial success case
@@ -326,56 +325,71 @@ func testValidateLocator(t *testing.T) {
 			value:       "serial:anything Goes!",
 			shouldErr:   false,
 		},
-		// UUID success case
+		// Serial failure case
 		{
-			description: "UUID RFC4122 variant ID success", // The variant specified in RFC4122
+			description: "Invalid serial ID error, no ID",
+			value:       "serial:",
+			shouldErr:   true,
+		},
+		// UUID success case
+		// The variant specified in RFC4122
+		{
+			description: "UUID RFC4122 variant ID success",
 			value:       "uuid:f47ac10b-58cc-0372-8567-0e02b2c3d479",
 			shouldErr:   false,
 		},
 		{
-			description: "UUID RFC4122 variant with Microsoft encoding ID success", // The variant specified in RFC4122
+			description: "UUID RFC4122 variant ID success, with Microsoft encoding",
 			value:       "uuid:{f47ac10b-58cc-0372-8567-0e02b2c3d479}",
 			shouldErr:   false,
 		},
+		// Reserved, NCS backward compatibility.
 		{
-			description: "UUID Reserved variant ID #1 success", // Reserved, NCS backward compatibility.
+			description: "UUID Reserved variant ID success, with URN lower case ",
 			value:       "UUID:urn:uuid:f47ac10b-58cc-4372-0567-0e02b2c3d479",
 			shouldErr:   false,
 		},
 		{
-			description: "UUID Reserved variant ID #2 success", // Reserved, NCS backward compatibility.
+			description: "UUID Reserved variant ID success, with URN upper case",
 			value:       "UUID:URN:UUID:f47ac10b-58cc-4372-0567-0e02b2c3d479",
 			shouldErr:   false,
 		},
 		{
-			description: "UUID Reserved variant ID #3 success", // Reserved, NCS backward compatibility.
+			description: "UUID Reserved variant ID success, without URN",
 			value:       "UUID:f47ac10b-58cc-4372-0567-0e02b2c3d479",
 			shouldErr:   false,
 		},
+		// Reserved, Microsoft Corporation backward compatibility.
 		{
-			description: "UUID Microsoft variant ID success", // Reserved, Microsoft Corporation backward compatibility.
+			description: "UUID Microsoft variant ID success",
 			value:       "uuid:f47ac10b-58cc-4372-c567-0e02b2c3d479",
 			shouldErr:   false,
 		},
+		// Reserved for future definition.
 		{
-			description: "UUID Future variant ID success", // Reserved for future definition.
+			description: "UUID Future variant ID success",
 			value:       "uuid:f47ac10b-58cc-4372-e567-0e02b2c3d479",
 			shouldErr:   false,
 		},
 		// UUID failure case
 		{
-			description: "Invalid UUID ID #1 error",
+			description: "Invalid UUID ID error",
 			value:       "uuid:invalid45566",
 			shouldErr:   true,
 		},
 		{
-			description: "Invalid UUID ID #2 error",
+			description: "Invalid UUID ID error, with URN",
 			value:       "uuid:URN:UUID:invalid45566",
 			shouldErr:   true,
 		},
 		{
-			description: "Invalid UUID ID #3 error",
+			description: "Invalid UUID ID error, with Microsoft encoding",
 			value:       "uuid:{invalid45566}",
+			shouldErr:   true,
+		},
+		{
+			description: "Invalid UUID ID error, no ID",
+			value:       "uuid:",
 			shouldErr:   true,
 		},
 		// Event success case
@@ -384,16 +398,33 @@ func testValidateLocator(t *testing.T) {
 			value:       "event:anything Goes!",
 			shouldErr:   false,
 		},
+		// Event failure case
+		{
+			description: "Invalid event ID error, no ID",
+			value:       "event:",
+			shouldErr:   true,
+		},
 		// DNS success case
 		{
 			description: "DNS ID success",
 			value:       "dns:anything Goes!",
 			shouldErr:   false,
 		},
+		// DNS failure case
+		{
+			description: "Invalid DNS ID error, no ID",
+			value:       "dns:",
+			shouldErr:   true,
+		},
 		// Scheme failure case
 		{
 			description: "Invalid scheme error",
 			value:       "invalid:a-BB-44-55",
+			shouldErr:   true,
+		},
+		{
+			description: "Invalid scheme error, empty string",
+			value:       "",
 			shouldErr:   true,
 		},
 	}
@@ -430,6 +461,12 @@ func TestSpecHelperValidators(t *testing.T) {
 }
 
 func TestSpecValidators(t *testing.T) {
+	var (
+		expectedStatus                  int64 = 3471
+		expectedRequestDeliveryResponse int64 = 34
+		expectedIncludeSpans            bool  = true
+	)
+
 	tests := []struct {
 		description string
 		msg         Message
@@ -437,23 +474,70 @@ func TestSpecValidators(t *testing.T) {
 	}{
 		// Success case
 		{
-			description: "Valid specs success",
+			description: "Valid spec success",
 			msg: Message{
-				Type:        SimpleEventMessageType,
-				Source:      "MAC:11:22:33:44:55:66",
+				Type:                    SimpleRequestResponseMessageType,
+				Source:                  "dns:external.com",
+				Destination:             "MAC:11:22:33:44:55:66",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
+				URL:                     "someURL.com",
+				PartnerIDs:              []string{"foo"},
+				SessionID:               "sessionID123",
+			},
+		},
+		// Failure case
+		{
+			description: "Invaild spec error",
+			msg: Message{
+				Type: Invalid0MessageType,
+				// Missing scheme
+				Source: "external.com",
+				// Invalid Mac
+				Destination:             "MAC:+++BB-44-55",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				// Not UFT8 Payload
+				Payload:     []byte{1, 2, 3, 4, 0xff /* \xed\xbf\xbf is invalid */, 0xce},
+				ServiceName: "ServiceName",
+				// Not UFT8 URL string
+				URL:        "someURL\xed\xbf\xbf.com",
+				PartnerIDs: []string{"foo"},
+				SessionID:  "sessionID123",
+			},
+			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination, ErrorInvalidMessageEncoding},
+		},
+		{
+			description: "Invaild spec error, empty message",
+			msg:         Message{},
+			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination},
+		},
+		{
+			description: "Invaild spec error, nonexistent MessageType",
+			msg: Message{
+				Type:        lastMessageType + 1,
+				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
-			expectedErr: nil,
-		},
-		// Failure cases
-		{
-			description: "Invaild specs error",
-			msg: Message{
-				Type:        Invalid0MessageType,
-				Source:      "invalid:a-BB-44-55",
-				Destination: "invalid:a-BB-44-55",
-			},
-			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination},
+			expectedErr: []error{ErrorInvalidMessageType},
 		},
 	}
 
@@ -488,6 +572,35 @@ func ExampleTypeValidator_Validate_specValidators() {
 		return
 	}
 
+	var (
+		expectedStatus                  int64 = 3471
+		expectedRequestDeliveryResponse int64 = 34
+		expectedIncludeSpans            bool  = true
+	)
+	foundErrFailure := msgv.Validate(Message{
+		Type: SimpleEventMessageType,
+		// Missing scheme
+		Source: "external.com",
+		// Invalid Mac
+		Destination:             "MAC:+++BB-44-55",
+		TransactionUUID:         "DEADBEEF",
+		ContentType:             "ContentType",
+		Accept:                  "Accept",
+		Status:                  &expectedStatus,
+		RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+		Headers:                 []string{"Header1", "Header2"},
+		Metadata:                map[string]string{"name": "value"},
+		Spans:                   [][]string{{"1", "2"}, {"3"}},
+		IncludeSpans:            &expectedIncludeSpans,
+		Path:                    "/some/where/over/the/rainbow",
+		// Not UFT8 Payload
+		Payload:     []byte{1, 2, 3, 4, 0xff /* \xed\xbf\xbf is invalid */, 0xce},
+		ServiceName: "ServiceName",
+		// Not UFT8 URL string
+		URL:        "someURL\xed\xbf\xbf.com",
+		PartnerIDs: []string{"foo"},
+		SessionID:  "sessionID123",
+	}) // Found error
 	foundErrSuccess1 := msgv.Validate(Message{
 		Type:        SimpleEventMessageType,
 		Source:      "MAC:11:22:33:44:55:66",
@@ -498,12 +611,7 @@ func ExampleTypeValidator_Validate_specValidators() {
 		Source:      "MAC:11:22:33:44:55:66",
 		Destination: "invalid:a-BB-44-55",
 	}) // Found success
-	foundErrFailure := msgv.Validate(Message{
-		Type:        Invalid0MessageType,
-		Source:      "invalid:a-BB-44-55",
-		Destination: "invalid:a-BB-44-55",
-	}) // Found error
 	unfoundErrFailure := msgv.Validate(Message{Type: CreateMessageType}) // Unfound error
-	fmt.Println(foundErrSuccess1 == nil, foundErrSuccess2 == nil, foundErrFailure == nil, unfoundErrFailure == nil)
-	// Output: true true false false
+	fmt.Println(foundErrFailure == nil, foundErrSuccess1 == nil, foundErrSuccess2 == nil, unfoundErrFailure == nil)
+	// Output: false true true false
 }
