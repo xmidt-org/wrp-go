@@ -312,7 +312,7 @@ func testAlwaysValid(t *testing.T) {
 			msg: Message{
 				Type:                    SimpleRequestResponseMessageType,
 				Source:                  "external.com",
-				Destination:             "mac:FFEEAADD44443333",
+				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
 				ContentType:             "ContentType",
 				Accept:                  "Accept",
@@ -339,7 +339,7 @@ func testAlwaysValid(t *testing.T) {
 			msg: Message{
 				Type:        lastMessageType,
 				Source:      "external.com",
-				Destination: "mac:FFEEAADD44443333",
+				Destination: "MAC:11:22:33:44:55:66",
 			},
 		},
 	}
@@ -394,7 +394,7 @@ func testAlwaysInvalid(t *testing.T) {
 			msg: Message{
 				Type:                    SimpleRequestResponseMessageType,
 				Source:                  "external.com",
-				Destination:             "mac:FFEEAADD44443333",
+				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
 				ContentType:             "ContentType",
 				Accept:                  "Accept",
@@ -421,7 +421,7 @@ func testAlwaysInvalid(t *testing.T) {
 			msg: Message{
 				Type:        lastMessageType,
 				Source:      "external.com",
-				Destination: "mac:FFEEAADD44443333",
+				Destination: "MAC:11:22:33:44:55:66",
 			},
 		},
 	}
