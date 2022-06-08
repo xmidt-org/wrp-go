@@ -116,7 +116,7 @@ func testTypeValidatorValidate(t *testing.T) {
 			msgv, err := NewTypeValidator(tc.m, tc.defaultValidators...)
 			require.NoError(err)
 			require.NotNil(msgv)
-			require.False(msgv.IsBad())
+			assert.NotZero(msgv)
 			err = msgv.Validate(tc.msg)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
@@ -164,16 +164,16 @@ func testTypeValidatorFactory(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			msgv, err := NewTypeValidator(tc.m, tc.defaultValidators...)
-			assert.NotNil(msgv)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(err, tc.expectedErr)
-				assert.ErrorIs(msgv.Validate(Message{}), ErrInvalidTypeValidator)
-				assert.True(msgv.IsBad())
+				assert.NotNil(msgv)
+				assert.NotZero(msgv)
 				return
 			}
 
 			assert.NoError(err)
-			assert.False(msgv.IsBad())
+			// Zero asserts that msgv is the zero value for its type and not nil.
+			assert.Zero(msgv)
 		})
 	}
 }
