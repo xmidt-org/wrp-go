@@ -96,9 +96,8 @@ func TestSpecValidators(t *testing.T) {
 				Spans:                   [][]string{{"1", "2"}, {"3"}},
 				IncludeSpans:            &expectedIncludeSpans,
 				Path:                    "/some/where/over/the/rainbow",
-				// Not UFT8 Payload
-				Payload:     []byte{1, 2, 3, 4, 0xff /* \xed\xbf\xbf is invalid */, 0xce},
-				ServiceName: "ServiceName",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
 				// Not UFT8 URL string
 				URL:        "someURL\xed\xbf\xbf.com",
 				PartnerIDs: []string{"foo"},
