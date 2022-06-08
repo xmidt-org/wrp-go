@@ -44,6 +44,7 @@ var (
 
 // SpecValidators is a WRP validator that ensures messages are valid based on
 // each spec validator in the list. Only validates the opinionated portions of the spec.
+// SpecValidators validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
 func SpecValidators() Validators {
 	return Validators{UTF8Validator, MessageTypeValidator, SourceValidator, DestinationValidator}
 }
