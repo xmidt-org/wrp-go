@@ -60,12 +60,11 @@ var UTF8Validator ValidatorFunc = func(m Message) error {
 
 // MessageTypeValidator is a WRP validator that takes messages and validates their Type.
 var MessageTypeValidator ValidatorFunc = func(m Message) error {
-	t := m.MessageType()
-	if t < Invalid0MessageType || t > lastMessageType {
+	if m.Type < Invalid0MessageType || m.Type > lastMessageType {
 		return ErrorInvalidMessageType
 	}
 
-	switch t {
+	switch m.Type {
 	case Invalid0MessageType, Invalid1MessageType, lastMessageType:
 		return ErrorInvalidMessageType
 	}
