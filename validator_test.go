@@ -42,7 +42,7 @@ func TestValidators(t *testing.T) {
 		// Failure case
 		{
 			description: "Mix Validators error",
-			vs:          Validators{AlwaysValid, nil, AlwaysInvalid, Validators{AlwaysValid, nil, AlwaysInvalid}},
+			vs:          Validators{AlwaysValid(), nil, AlwaysInvalid(), Validators{AlwaysValid(), nil, AlwaysInvalid()}},
 			msg:         Message{Type: SimpleEventMessageType},
 			expectedErr: []error{ErrInvalidMsgType, ErrInvalidMsgType},
 		},
@@ -96,9 +96,9 @@ func TestTypeValidator(t *testing.T) {
 func ExampleNewTypeValidator() {
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
-		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid},
+		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid()},
 		// Validates unfound msg types
-		AlwaysInvalid)
+		AlwaysInvalid())
 	fmt.Printf("%v %T", err == nil, msgv)
 	// Output: true wrp.TypeValidator
 }
@@ -106,9 +106,9 @@ func ExampleNewTypeValidator() {
 func ExampleTypeValidator_Validate() {
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
-		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid},
+		map[MessageType]Validator{SimpleEventMessageType: AlwaysValid()},
 		// Validates unfound msg types
-		AlwaysInvalid)
+		AlwaysInvalid())
 	if err != nil {
 		return
 	}
@@ -131,22 +131,22 @@ func testTypeValidatorValidate(t *testing.T) {
 		{
 			description: "Found success",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysValid,
+				SimpleEventMessageType: AlwaysValid(),
 			},
 			msg: Message{Type: SimpleEventMessageType},
 		},
 		{
 			description: "Unfound success",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysInvalid,
+				SimpleEventMessageType: AlwaysInvalid(),
 			},
-			defaultValidator: AlwaysValid,
+			defaultValidator: AlwaysValid(),
 			msg:              Message{Type: CreateMessageType},
 		},
 		{
 			description: "Unfound success, nil list of default Validators",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysInvalid,
+				SimpleEventMessageType: AlwaysInvalid(),
 			},
 			defaultValidator: Validators{nil},
 			msg:              Message{Type: CreateMessageType},
@@ -154,7 +154,7 @@ func testTypeValidatorValidate(t *testing.T) {
 		{
 			description: "Unfound success, empty map of default Validators",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysInvalid,
+				SimpleEventMessageType: AlwaysInvalid(),
 			},
 			defaultValidator: Validators{},
 			msg:              Message{Type: CreateMessageType},
@@ -163,9 +163,9 @@ func testTypeValidatorValidate(t *testing.T) {
 		{
 			description: "Found error",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysInvalid,
+				SimpleEventMessageType: AlwaysInvalid(),
 			},
-			defaultValidator: AlwaysValid,
+			defaultValidator: AlwaysValid(),
 			msg:              Message{Type: SimpleEventMessageType},
 			expectedErr:      ErrInvalidMsgType,
 		},
@@ -180,7 +180,7 @@ func testTypeValidatorValidate(t *testing.T) {
 		{
 			description: "Unfound error",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysValid,
+				SimpleEventMessageType: AlwaysValid(),
 			},
 			msg:         Message{Type: CreateMessageType},
 			expectedErr: ErrInvalidMsgType,
@@ -188,7 +188,7 @@ func testTypeValidatorValidate(t *testing.T) {
 		{
 			description: "Unfound error, nil default Validators",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysInvalid,
+				SimpleEventMessageType: AlwaysInvalid(),
 			},
 			defaultValidator: nil,
 			msg:              Message{Type: CreateMessageType},
@@ -232,15 +232,15 @@ func testTypeValidatorFactory(t *testing.T) {
 		{
 			description: "Default Validators success",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysValid,
+				SimpleEventMessageType: AlwaysValid(),
 			},
-			defaultValidator: AlwaysValid,
+			defaultValidator: AlwaysValid(),
 			expectedErr:      nil,
 		},
 		{
 			description: "Omit default Validators success",
 			m: map[MessageType]Validator{
-				SimpleEventMessageType: AlwaysValid,
+				SimpleEventMessageType: AlwaysValid(),
 			},
 			expectedErr: nil,
 		},
@@ -248,7 +248,7 @@ func testTypeValidatorFactory(t *testing.T) {
 		{
 			description:      "Nil map of Validators error",
 			m:                nil,
-			defaultValidator: AlwaysValid,
+			defaultValidator: AlwaysValid(),
 			expectedErr:      ErrInvalidValidator,
 		},
 	}
@@ -307,7 +307,6 @@ func testAlwaysValid(t *testing.T) {
 				SessionID:               "sessionID123",
 			},
 		},
-		// Failure case
 		{
 			description: "Filled message success",
 			msg: Message{
@@ -348,7 +347,7 @@ func testAlwaysValid(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := AlwaysValid.Validate(tc.msg)
+			err := AlwaysValid().Validate(tc.msg)
 			assert.NoError(err)
 		})
 	}
@@ -430,7 +429,7 @@ func testAlwaysInvalid(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := AlwaysInvalid.Validate(tc.msg)
+			err := AlwaysInvalid().Validate(tc.msg)
 			assert.ErrorIs(err, ErrInvalidMsgType)
 		})
 	}
