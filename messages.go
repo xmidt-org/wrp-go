@@ -131,7 +131,8 @@ type Message struct {
 
 	// Metadata is the map of name/value pairs used by consumers of WRP messages for filtering & other purposes.
 	//
-	// example: {"/boot-time":1542834188,"/last-reconnect-reason":"spanish inquisition"}
+	// required: false
+	// example: {"/boot-time":"1542834188","/last-reconnect-reason":"spanish inquisition"}
 	Metadata map[string]string `json:"metadata,omitempty"`
 
 	// Spans is an array of arrays of timing values as a list in the format: "parent" (string), "name" (string),
