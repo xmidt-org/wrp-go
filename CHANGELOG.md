@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Add simple message types WRP validators [#85](https://github.com/xmidt-org/wrp-go/pull/85)
+- Add basic WRP spec validators [#84](https://github.com/xmidt-org/wrp-go/pull/84)
+- Introduce WRP Validation Framework [#80](https://github.com/xmidt-org/wrp-go/pull/80)
 
 ## [v3.1.3]
 - Fix `500 Invalid WRP content type` for invalid `Accept` headers [#74](https://github.com/xmidt-org/wrp-go/pull/74)
