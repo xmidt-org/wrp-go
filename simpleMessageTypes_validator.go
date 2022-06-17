@@ -34,6 +34,7 @@ var (
 
 // spanFormat is a simple map of allowed span format.
 var spanFormat = map[int]string{
+	// parent is the root parent for the spans below to link to
 	0: "parent",
 	// name is the name of the operation
 	1: "name",
@@ -86,7 +87,7 @@ func SpansValidator() ValidatorFunc {
 
 			for i, j := range spanFormat {
 				switch j {
-				// Any nonemtpy string is valid
+				// Any nonempty string is valid
 				case "parent", "name":
 					if len(s[i]) == 0 {
 						err = multierr.Append(err, fmt.Errorf("%w %v: invalid %v component '%v'", ErrorInvalidSpanFormat, s, j, s[i]))
