@@ -89,8 +89,9 @@ func TestNewValidatorError(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
+			require := require.New(t)
 			assert := assert.New(t)
-			assert.Error(tc.validatorError)
+			require.Error(tc.validatorError)
 			assert.NotEmpty(tc.validatorError.Error())
 			if tc.fails {
 				assert.ErrorIs(tc.validatorError, errorInvalidValidatorError)
