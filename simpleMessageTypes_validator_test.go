@@ -24,6 +24,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSimpleMessageTypesValidatorErrors(t *testing.T) {
+	tests := []struct {
+		description  string
+		validatorErr ValidatorError
+	}{
+		// Success case
+		{
+			description:  "ErrorNotSimpleResponseRequestType",
+			validatorErr: ErrorNotSimpleResponseRequestType,
+		},
+		{
+			description:  "ErrorNotSimpleEventType",
+			validatorErr: ErrorNotSimpleEventType,
+		},
+		{
+			description:  "ErrorInvalidSpanLength",
+			validatorErr: ErrorInvalidSpanLength,
+		},
+		{
+			description:  "ErrorInvalidSpanFormat",
+			validatorErr: ErrorInvalidSpanFormat,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			assert.NotErrorIs(tc.validatorErr, errorInvalidValidatorError)
+		})
+	}
+}
+
 func TestSimpleMessageTypesHelperValidators(t *testing.T) {
 	tests := []struct {
 		description string
@@ -129,8 +161,13 @@ func TestSimpleEventValidators(t *testing.T) {
 			err := SimpleEventValidators().Validate(tc.msg)
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
+					if ve, ok := e.(ValidatorError); ok {
+						e = ve.Err
+					}
+
 					assert.ErrorIs(err, e)
 				}
+
 				return
 			}
 
@@ -243,8 +280,13 @@ func TestSimpleResponseRequestValidators(t *testing.T) {
 			err := SimpleResponseRequestValidators().Validate(tc.msg)
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
+					if ve, ok := e.(ValidatorError); ok {
+						e = ve.Err
+					}
+
 					assert.ErrorIs(err, e)
 				}
+
 				return
 			}
 
@@ -261,7 +303,7 @@ func ExampleTypeValidator_Validate_simpleTypesValidators() {
 			SimpleRequestResponseMessageType: SimpleResponseRequestValidators(),
 		},
 		// Validates unfound msg types
-		AlwaysInvalid())
+		ValidatorFunc(AlwaysInvalid))
 	if err != nil {
 		return
 	}
@@ -374,9 +416,13 @@ func testSpansValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SpansValidator()(tc.msg)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			err := SpansValidator(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				if ve, ok := expectedErr.(ValidatorError); ok {
+					expectedErr = ve.Err
+				}
+
+				assert.ErrorIs(err, expectedErr)
 				return
 			}
 
@@ -477,9 +523,13 @@ func testSimpleEventTypeValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SimpleEventTypeValidator()(tc.msg)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			err := SimpleEventTypeValidator(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				if ve, ok := expectedErr.(ValidatorError); ok {
+					expectedErr = ve.Err
+				}
+
+				assert.ErrorIs(err, expectedErr)
 				return
 			}
 
@@ -580,9 +630,13 @@ func testSimpleResponseRequestTypeValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SimpleResponseRequestTypeValidator()(tc.msg)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			err := SimpleResponseRequestTypeValidator(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				if ve, ok := expectedErr.(ValidatorError); ok {
+					expectedErr = ve.Err
+				}
+
+				assert.ErrorIs(err, expectedErr)
 				return
 			}
 
