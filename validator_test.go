@@ -53,38 +53,42 @@ func TestValidatorErrors(t *testing.T) {
 
 func TestNewValidatorError(t *testing.T) {
 	tests := []struct {
-		description string
-		fields      []string
-		fails       bool
+		description    string
+		validatorError ValidatorError
+		fails          bool
 	}{
 		// Success case
 		{
-			description: "Valid feilds",
-			fields:      []string{"Type", "Source"},
+			description:    "Valid args",
+			validatorError: NewValidatorError(errors.New(""), []string{"Type", "Source"}, ""),
 		},
 		{
-			description: "No feilds",
-			fields:      []string{},
+			description:    "No Feilds",
+			validatorError: NewValidatorError(errors.New(""), nil, ""),
 		},
 		// Failure case
 		{
-			description: "Invalid feilds",
-			fields:      []string{"Type", "Source", "11:22:33:44:55:66", "%", "/", "+", ""},
-			fails:       true,
+			description:    "Invalid feilds error",
+			validatorError: NewValidatorError(errors.New(""), []string{"Type", "Source", "11:22:33:44:55:66", "%", "/", "+", ""}, ""),
+			fails:          true,
+		},
+		{
+			description:    "Nil Err and empty Message error",
+			validatorError: NewValidatorError(nil, nil, ""),
+			fails:          true,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			verr := NewValidatorError(errors.New(""), tc.fields, "")
-			assert.Error(verr)
+			assert.Error(tc.validatorError)
 			if tc.fails {
-				assert.ErrorIs(verr, errorInvalidValidatorError)
+				assert.ErrorIs(tc.validatorError, errorInvalidValidatorError)
 				return
 			}
 
-			assert.NotErrorIs(verr, errorInvalidValidatorError)
+			assert.NotErrorIs(tc.validatorError, errorInvalidValidatorError)
 		})
 	}
 }
