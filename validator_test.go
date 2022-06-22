@@ -60,11 +60,19 @@ func TestNewValidatorError(t *testing.T) {
 		// Success case
 		{
 			description:    "Valid args",
-			validatorError: NewValidatorError(errors.New(""), []string{"Type", "Source"}, ""),
+			validatorError: NewValidatorError(errors.New(""), []string{"Type", "Source"}, "extra message"),
 		},
 		{
 			description:    "No Feilds",
-			validatorError: NewValidatorError(errors.New(""), nil, ""),
+			validatorError: NewValidatorError(errors.New(""), nil, "extra message"),
+		},
+		{
+			description:    "Empty Message",
+			validatorError: NewValidatorError(errors.New(""), []string{"Type", "Source"}, ""),
+		},
+		{
+			description:    "Nil Err",
+			validatorError: NewValidatorError(nil, []string{"Type", "Source"}, "extra message"),
 		},
 		// Failure case
 		{
@@ -83,6 +91,7 @@ func TestNewValidatorError(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			assert.Error(tc.validatorError)
+			assert.NotEmpty(tc.validatorError.Error())
 			if tc.fails {
 				assert.ErrorIs(tc.validatorError, errorInvalidValidatorError)
 				return
