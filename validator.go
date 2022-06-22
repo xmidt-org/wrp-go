@@ -32,32 +32,6 @@ var (
 	errorInvalidValidatorError = errors.New("invalid validator error")
 )
 
-func NewValidatorError(err error, sf []string, m string) ValidatorError {
-	// Either Err or Message must be set.
-	if err == nil && len(m) == 0 {
-		return ValidatorError{Err: errorInvalidValidatorError}
-	}
-
-	var badFields string
-	verr := ValidatorError{Err: err, Fields: make([]reflect.StructField, 0, len(sf)), Message: m}
-	// Fields must exist.
-	for _, f := range sf {
-		ft, ok := messageReflectType.FieldByName(f)
-		if !ok {
-			badFields += fmt.Sprintf(",'%v'", f)
-			continue
-		}
-
-		verr.Fields = append(verr.Fields, ft)
-	}
-
-	if len(badFields) != 0 {
-		verr.Err = fmt.Errorf("%v: %w: following fields were not found %v", err, errorInvalidValidatorError, badFields)
-	}
-
-	return verr
-}
-
 type ValidatorError struct {
 	// Fields are the relevant fields involved in Err.
 	Fields []reflect.StructField
@@ -109,6 +83,32 @@ func (ve ValidatorError) Error() string {
 	}
 
 	return o.String()
+}
+
+func NewValidatorError(err error, sf []string, m string) ValidatorError {
+	// Either Err or Message must be set.
+	if err == nil && len(m) == 0 {
+		return ValidatorError{Err: errorInvalidValidatorError}
+	}
+
+	var badFields string
+	verr := ValidatorError{Err: err, Fields: make([]reflect.StructField, 0, len(sf)), Message: m}
+	// Fields must exist.
+	for _, f := range sf {
+		ft, ok := messageReflectType.FieldByName(f)
+		if !ok {
+			badFields += fmt.Sprintf(",'%v'", f)
+			continue
+		}
+
+		verr.Fields = append(verr.Fields, ft)
+	}
+
+	if len(badFields) != 0 {
+		verr.Err = fmt.Errorf("%v: %w: following fields were not found %v", err, errorInvalidValidatorError, badFields)
+	}
+
+	return verr
 }
 
 // Validator is a WRP validator that allows access to the Validate function.
