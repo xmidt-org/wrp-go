@@ -36,15 +36,15 @@ const (
 )
 
 var (
-	ErrorInvalidMessageEncoding = errors.New("invalid message encoding")
-	ErrorInvalidMessageType     = errors.New("invalid message type")
-	ErrorInvalidSource          = errors.New("invalid Source name")
-	ErrorInvalidDestination     = errors.New("invalid Destination name")
-	errInvalidUUID              = errors.New("invalid UUID")
-	errEmptyAuthority           = errors.New("invalid empty authority (ID)")
-	errInvalidMacLength         = errors.New("invalid mac length")
-	errInvalidCharacter         = errors.New("invalid character")
-	errInvalidLocatorPattern    = errors.New("value given doesn't match expected locator pattern")
+	ErrorInvalidMessageEncoding = NewValidatorError(errors.New("invalid message encoding"), nil, "")
+	ErrorInvalidMessageType     = NewValidatorError(errors.New("invalid message type"), []string{"Type"}, "")
+	ErrorInvalidSource          = NewValidatorError(errors.New("invalid Source name"), []string{"Source"}, "")
+	ErrorInvalidDestination     = NewValidatorError(errors.New("invalid Destination name"), []string{"Destination"}, "")
+	errorInvalidUUID            = errors.New("invalid UUID")
+	errorEmptyAuthority         = errors.New("invalid empty authority (ID)")
+	errorInvalidMacLength       = errors.New("invalid mac length")
+	errorInvalidCharacter       = errors.New("invalid character")
+	errorInvalidLocatorPattern  = errors.New("value given doesn't match expected locator pattern")
 )
 
 // locatorPattern is the precompiled regular expression that all source and dest locators must match.
@@ -53,64 +53,56 @@ var locatorPattern = regexp.MustCompile(
 	`^(?P<scheme>(?i)` + macPrefix + `|` + uuidPrefix + `|` + eventPrefix + `|` + dnsPrefix + `|` + serialPrefix + `):(?P<authority>[^/]+)?`,
 )
 
-// SpecValidators returns a WRP validator that ensures messages are valid based on
+// SpecValidators ensures messages are valid based on
 // each spec validator in the list. Only validates the opinionated portions of the spec.
 // SpecValidators validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
 func SpecValidators() Validators {
-	return Validators{UTF8Validator(), MessageTypeValidator(), SourceValidator(), DestinationValidator()}
+	return Validators{}.AddFunc(UTF8Validator, MessageTypeValidator, SourceValidator, DestinationValidator)
 }
 
-// UTF8Validator returns a WRP validator that takes messages and validates that it contains UTF-8 strings.
-func UTF8Validator() ValidatorFunc {
-	return func(m Message) error {
-		if err := UTF8(m); err != nil {
-			return fmt.Errorf("%w: %v", ErrorInvalidMessageEncoding, err)
-		}
-
-		return nil
+// UTF8Validator takes messages and validates that it contains UTF-8 strings.
+func UTF8Validator(m Message) error {
+	if err := UTF8(m); err != nil {
+		return fmt.Errorf("%w: %v", ErrorInvalidMessageEncoding, err)
 	}
+
+	return nil
 }
 
-// MessageTypeValidator returns a WRP validator that takes messages and validates their Type.
-func MessageTypeValidator() ValidatorFunc {
-	return func(m Message) error {
-		if m.Type < Invalid0MessageType || m.Type > lastMessageType {
-			return ErrorInvalidMessageType
-		}
-
-		switch m.Type {
-		case Invalid0MessageType, Invalid1MessageType, lastMessageType:
-			return ErrorInvalidMessageType
-		}
-
-		return nil
+// MessageTypeValidator takes messages and validates their Type.
+func MessageTypeValidator(m Message) error {
+	if m.Type < Invalid0MessageType || m.Type > lastMessageType {
+		return ErrorInvalidMessageType
 	}
+
+	switch m.Type {
+	case Invalid0MessageType, Invalid1MessageType, lastMessageType:
+		return ErrorInvalidMessageType
+	}
+
+	return nil
 }
 
-// SourceValidator returns a WRP validator that takes messages and validates their Source.
+// SourceValidator takes messages and validates their Source.
 // Only mac and uuid sources are validated. Serial, event and dns sources are
 // not validated.
-func SourceValidator() ValidatorFunc {
-	return func(m Message) error {
-		if err := validateLocator(m.Source); err != nil {
-			return fmt.Errorf("%w '%s': %v", ErrorInvalidSource, m.Source, err)
-		}
-
-		return nil
+func SourceValidator(m Message) error {
+	if err := validateLocator(m.Source); err != nil {
+		return fmt.Errorf("%w '%s': %v", ErrorInvalidSource, m.Source, err)
 	}
+
+	return nil
 }
 
-// DestinationValidator returns a WRP validator that takes messages and validates their Destination.
+// DestinationValidator takes messages and validates their Destination.
 // Only mac and uuid destinations are validated. Serial, event and dns destinations are
 // not validated.
-func DestinationValidator() ValidatorFunc {
-	return func(m Message) error {
-		if err := validateLocator(m.Destination); err != nil {
-			return fmt.Errorf("%w '%s': %v", ErrorInvalidDestination, m.Destination, err)
-		}
-
-		return nil
+func DestinationValidator(m Message) error {
+	if err := validateLocator(m.Destination); err != nil {
+		return fmt.Errorf("%w '%s': %v", ErrorInvalidDestination, m.Destination, err)
 	}
+
+	return nil
 }
 
 // validateLocator validates a given locator's scheme and authority (ID).
@@ -119,12 +111,12 @@ func DestinationValidator() ValidatorFunc {
 func validateLocator(l string) error {
 	match := locatorPattern.FindStringSubmatch(l)
 	if match == nil {
-		return errInvalidLocatorPattern
+		return errorInvalidLocatorPattern
 	}
 
 	idPart := match[2]
 	if len(idPart) == 0 {
-		return errEmptyAuthority
+		return errorEmptyAuthority
 	}
 
 	switch strings.ToLower(match[1]) {
@@ -146,13 +138,13 @@ func validateLocator(l string) error {
 		)
 
 		if invalidCharacter != -1 {
-			return fmt.Errorf("%w: %v", errInvalidCharacter, strconv.QuoteRune(invalidCharacter))
+			return fmt.Errorf("%w: %v", errorInvalidCharacter, strconv.QuoteRune(invalidCharacter))
 		} else if len(idPart) != macLength {
-			return errInvalidMacLength
+			return errorInvalidMacLength
 		}
 	case uuidPrefix:
 		if _, err := uuid.Parse(idPart); err != nil {
-			return fmt.Errorf("%w: %v", errInvalidUUID, err)
+			return fmt.Errorf("%w: %v", errorInvalidUUID, err)
 		}
 	}
 

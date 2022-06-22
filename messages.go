@@ -17,12 +17,17 @@
 
 package wrp
 
-import "regexp"
+import (
+	"reflect"
+	"regexp"
+)
 
 //go:generate go install github.com/ugorji/go/codec/codecgen@latest
 //go:generate codecgen -st "json" -o messages_codec.go messages.go
 
 var (
+	// messageReflectType is the cached reflection lookup for Message
+	messageReflectType = reflect.TypeOf(Message{})
 	// eventPattern is the precompiled regex that selects the top level event
 	// classifier
 	eventPattern = regexp.MustCompile(`^event:(?P<event>[^/]+)`)

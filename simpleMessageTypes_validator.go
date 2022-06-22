@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	ErrorNotSimpleResponseRequestType = errors.New("not simple response request message type")
-	ErrorNotSimpleEventType           = errors.New("not simple event message type")
-	ErrorInvalidSpanLength            = errors.New("invalid span length")
-	ErrorInvalidSpanFormat            = errors.New("invalid span format")
+	ErrorNotSimpleResponseRequestType = NewValidatorError(errors.New("not simple response request message type"), []string{"Type"}, "")
+	ErrorNotSimpleEventType           = NewValidatorError(errors.New("not simple event message type"), []string{"Type"}, "")
+	ErrorInvalidSpanLength            = NewValidatorError(errors.New("invalid span length"), []string{"Spans"}, "")
+	ErrorInvalidSpanFormat            = NewValidatorError(errors.New("invalid span format"), []string{"Spans"}, "")
 )
 
 // spanFormat is a simple map of allowed span format.
@@ -46,72 +46,66 @@ var spanFormat = map[int]string{
 	4: "status",
 }
 
-// SimpleEventValidators returns a WRP validator that ensures messages are valid based on
+// SimpleEventValidators ensures messages are valid based on
 // each validator in the list. SimpleEventValidators validates the following:
 // UTF8 (all string fields), MessageType is valid, Source, Destination, MessageType is of SimpleEventMessageType.
 func SimpleEventValidators() Validators {
-	return Validators{SpecValidators(), SimpleEventTypeValidator()}
+	return Validators{SpecValidators()}.AddFunc(SimpleEventTypeValidator)
 }
 
-// SimpleResponseRequestValidators returns a WRP validator that ensures messages are valid based on
+// SimpleResponseRequestValidators ensures messages are valid based on
 // each validator in the list. SimpleResponseRequestValidators validates the following:
 // UTF8 (all string fields), MessageType is valid, Source, Destination, Spans, MessageType is of
 // SimpleRequestResponseMessageType.
 func SimpleResponseRequestValidators() Validators {
-	return Validators{SpecValidators(), SimpleResponseRequestTypeValidator(), SpansValidator()}
+	return Validators{SpecValidators()}.AddFunc(SimpleResponseRequestTypeValidator, SpansValidator)
 }
 
-// SimpleResponseRequestTypeValidator returns a WRP validator that takes messages and validates their Type is of SimpleRequestResponseMessageType.
-func SimpleResponseRequestTypeValidator() ValidatorFunc {
-	return func(m Message) error {
-		if m.Type != SimpleRequestResponseMessageType {
-			return ErrorNotSimpleResponseRequestType
-		}
-
-		return nil
+// SimpleResponseRequestTypeValidator takes messages and validates their Type is of SimpleRequestResponseMessageType.
+func SimpleResponseRequestTypeValidator(m Message) error {
+	if m.Type != SimpleRequestResponseMessageType {
+		return ErrorNotSimpleResponseRequestType
 	}
+
+	return nil
 }
 
 // TODO Do we want to include SpanParentValidator? SpanParent currently doesn't exist in the Message Struct
 
-// SpansValidator returns a WRP validator that takes messages and validates their Spans.
-func SpansValidator() ValidatorFunc {
-	return func(m Message) error {
-		var err error
-		// Spans consist of individual Span(s), arrays of timing values.
-		for _, s := range m.Spans {
-			if len(s) != len(spanFormat) {
-				err = multierr.Append(err, ErrorInvalidSpanLength)
-				continue
-			}
+// SpansValidator takes messages and validates their Spans.
+func SpansValidator(m Message) error {
+	var err error
+	// Spans consist of individual Span(s), arrays of timing values.
+	for _, s := range m.Spans {
+		if len(s) != len(spanFormat) {
+			err = multierr.Append(err, ErrorInvalidSpanLength)
+			continue
+		}
 
-			for i, j := range spanFormat {
-				switch j {
-				// Any nonempty string is valid
-				case "parent", "name":
-					if len(s[i]) == 0 {
-						err = multierr.Append(err, fmt.Errorf("%w %v: invalid %v component '%v'", ErrorInvalidSpanFormat, s, j, s[i]))
-					}
-				// Must be an integer
-				case "start time", "duration", "status":
-					if _, atoiErr := strconv.Atoi(s[i]); atoiErr != nil {
-						err = multierr.Append(err, fmt.Errorf("%w %v: invalid %v component '%v': %v", ErrorInvalidSpanFormat, s, j, s[i], atoiErr))
-					}
+		for i, j := range spanFormat {
+			switch j {
+			// Any nonempty string is valid
+			case "parent", "name":
+				if len(s[i]) == 0 {
+					err = multierr.Append(err, fmt.Errorf("%w %v: invalid %v component '%v'", ErrorInvalidSpanFormat, s, j, s[i]))
+				}
+			// Must be an integer
+			case "start time", "duration", "status":
+				if _, atoiErr := strconv.Atoi(s[i]); atoiErr != nil {
+					err = multierr.Append(err, fmt.Errorf("%w %v: invalid %v component '%v': %v", ErrorInvalidSpanFormat, s, j, s[i], atoiErr))
 				}
 			}
 		}
-
-		return err
 	}
+
+	return err
 }
 
-// SimpleEventTypeValidator returns a WRP validator that takes messages and validates their Type is of SimpleEventMessageType.
-func SimpleEventTypeValidator() ValidatorFunc {
-	return func(m Message) error {
-		if m.Type != SimpleEventMessageType {
-			return ErrorNotSimpleEventType
-		}
-
-		return nil
+// SimpleEventTypeValidator takes messages and validates their Type is of SimpleEventMessageType.
+func SimpleEventTypeValidator(m Message) error {
+	if m.Type != SimpleEventMessageType {
+		return ErrorNotSimpleEventType
 	}
+
+	return nil
 }
