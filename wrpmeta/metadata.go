@@ -109,8 +109,10 @@ func (b *builder) Apply(source Source, fields ...Field) Builder {
 
 			if present {
 				b.product[to] = value
-			} else if len(f.Default) > 0 {
-				b.product[to] = f.Default
+			} else {
+				if len(f.Default) > 0 {
+					b.product[to] = f.Default
+				}
 				b.allFieldsPresent = false
 			}
 		}
