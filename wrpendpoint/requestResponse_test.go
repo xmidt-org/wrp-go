@@ -97,7 +97,7 @@ func testNoteEncodeUseMessage(t *testing.T) {
 	)
 
 	assert.NoError(note.Encode(&actual, wrp.JSON))
-	assert.JSONEq(`{"msg_type": 3, "source": "test", "dest": "test"}`, actual.String())
+	assert.JSONEq(`{"msg_type": 3, "source": "test", "dest": "test", "qos": 0}`, actual.String())
 }
 
 func testNoteEncodeBytesUseContents(t *testing.T) {
@@ -129,7 +129,7 @@ func testNoteEncodeBytesUseMessage(t *testing.T) {
 
 	actual, err := note.EncodeBytes(wrp.JSON)
 	assert.NoError(err)
-	assert.JSONEq(`{"msg_type": 3, "source": "test", "dest": "test"}`, string(actual))
+	assert.JSONEq(`{"msg_type": 3, "source": "test", "dest": "test", "qos": 0}`, string(actual))
 }
 
 func TestNote(t *testing.T) {
