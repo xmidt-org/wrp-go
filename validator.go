@@ -19,35 +19,28 @@ package wrp
 
 import (
 	"errors"
-	"fmt"
-	"reflect"
 	"strings"
 
 	"go.uber.org/multierr"
 )
 
 var (
-	ErrorInvalidValidator      = NewValidatorError(errors.New("invalid WRP message type validator"), nil, "")
-	ErrorInvalidMsgType        = NewValidatorError(errors.New("invalid WRP message type"), []string{"Type"}, "")
-	errorInvalidValidatorError = errors.New("invalid validator error")
+	ErrorInvalidValidator      = NewValidatorError(errors.New("invalid WRP message type validator"), "", nil)
+	ErrorInvalidMsgType        = NewValidatorError(errors.New("invalid WRP message type"), "", []string{"Type"})
+	ErrorInvalidValidatorError = errors.New("empty ValidatorError 'Err' and 'Message'")
 )
 
 type ValidatorError struct {
-	// Fields are the relevant fields involved in Err.
-	Fields []reflect.StructField
-
 	// Err is the cause of the error, e.g. invalid message type.
-	// Either Err or Message must be set.
+	// Either Err or Message must be set and nonempty, otherwise 'ValidatorError{}.Error()' will panic
 	Err error
 
 	// Message is a validation message in case the validator wants
 	// to communicate something beyond the Err cause.
 	Message string
-}
 
-// Is reports whether any error in e.err's chain matches target.
-func (ve ValidatorError) Is(target error) bool {
-	return errors.Is(ve.Err, target)
+	// Fields are the relevant fields involved in Err.
+	Fields []string
 }
 
 // Unwrap returns the ValidatorError's Error
@@ -66,7 +59,7 @@ func (ve ValidatorError) Error() string {
 				o.WriteRune(',')
 			}
 
-			o.WriteString(f.Name)
+			o.WriteString(f)
 		}
 
 		o.WriteRune(']')
@@ -85,30 +78,13 @@ func (ve ValidatorError) Error() string {
 	return o.String()
 }
 
-func NewValidatorError(err error, sf []string, m string) ValidatorError {
-	// Either Err or Message must be set.
-	if err == nil && len(m) == 0 {
-		return ValidatorError{Err: errorInvalidValidatorError}
+// NewValidatorError is a NewValidatorError factory.
+func NewValidatorError(err error, m string, f []string) ValidatorError {
+	if (err == nil || len(err.Error()) == 0) && len(m) == 0 {
+		panic(ErrorInvalidValidatorError)
 	}
 
-	var badFields string
-	verr := ValidatorError{Err: err, Fields: make([]reflect.StructField, 0, len(sf)), Message: m}
-	// Fields must exist.
-	for _, f := range sf {
-		ft, ok := messageReflectType.FieldByName(f)
-		if !ok {
-			badFields += fmt.Sprintf(",'%v'", f)
-			continue
-		}
-
-		verr.Fields = append(verr.Fields, ft)
-	}
-
-	if len(badFields) != 0 {
-		verr.Err = fmt.Errorf("%v: %w: following fields were not found %v", err, errorInvalidValidatorError, badFields)
-	}
-
-	return verr
+	return ValidatorError{err, m, f}
 }
 
 // Validator is a WRP validator that allows access to the Validate function.

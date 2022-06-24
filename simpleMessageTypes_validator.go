@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	ErrorNotSimpleResponseRequestType = NewValidatorError(errors.New("not simple response request message type"), []string{"Type"}, "")
-	ErrorNotSimpleEventType           = NewValidatorError(errors.New("not simple event message type"), []string{"Type"}, "")
-	ErrorInvalidSpanLength            = NewValidatorError(errors.New("invalid span length"), []string{"Spans"}, "")
-	ErrorInvalidSpanFormat            = NewValidatorError(errors.New("invalid span format"), []string{"Spans"}, "")
+	ErrorNotSimpleResponseRequestType = NewValidatorError(errors.New("not simple response request message type"), "", []string{"Type"})
+	ErrorNotSimpleEventType           = NewValidatorError(errors.New("not simple event message type"), "", []string{"Type"})
+	ErrorInvalidSpanLength            = NewValidatorError(errors.New("invalid span length"), "", []string{"Spans"})
+	ErrorInvalidSpanFormat            = NewValidatorError(errors.New("invalid span format"), "", []string{"Spans"})
 )
 
 // spanFormat is a simple map of allowed span format.

@@ -46,59 +46,79 @@ func TestValidatorErrors(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			assert.NotErrorIs(tc.validatorErr, errorInvalidValidatorError)
+			assert.NotEmpty(tc.validatorErr.Error())
 		})
 	}
 }
 
 func TestNewValidatorError(t *testing.T) {
 	tests := []struct {
-		description    string
-		validatorError ValidatorError
-		fails          bool
+		description string
+		err         error
+		m           string
+		f           []string
+		expectedErr error
 	}{
 		// Success case
 		{
-			description:    "Valid args",
-			validatorError: NewValidatorError(errors.New(""), []string{"Type", "Source"}, "extra message"),
+			description: "Valid args",
+			err:         errors.New("Test"),
+			m:           "extra message",
+			f:           []string{"Type", "Source", "PayloadRelatedField"},
 		},
 		{
-			description:    "No Feilds",
-			validatorError: NewValidatorError(errors.New(""), nil, "extra message"),
+			description: "No Feilds",
+			err:         errors.New("Test"),
+			m:           "extra message",
+			f:           nil,
 		},
 		{
-			description:    "Empty Message",
-			validatorError: NewValidatorError(errors.New(""), []string{"Type", "Source"}, ""),
+			description: "Nil Err",
+			err:         nil,
+			m:           "extra message",
+			f:           []string{"Type", "Source", "PayloadRelatedField"},
 		},
 		{
-			description:    "Nil Err",
-			validatorError: NewValidatorError(nil, []string{"Type", "Source"}, "extra message"),
+			description: "Empty Err",
+			err:         errors.New(""),
+			m:           "extra message",
+			f:           []string{"Type", "Source", "PayloadRelatedField"},
+		},
+		{
+			description: "Empty Message",
+			err:         errors.New("Test"),
+			m:           "",
+			f:           []string{"Type", "Source", "PayloadRelatedField"},
 		},
 		// Failure case
 		{
-			description:    "Invalid feilds error",
-			validatorError: NewValidatorError(errors.New(""), []string{"Type", "Source", "11:22:33:44:55:66", "%", "/", "+", ""}, ""),
-			fails:          true,
+			description: "Nil Err and empty Message panic",
+			err:         nil,
+			m:           "",
+			f:           nil,
+			expectedErr: ErrorInvalidValidatorError,
 		},
 		{
-			description:    "Nil Err and empty Message error",
-			validatorError: NewValidatorError(nil, nil, ""),
-			fails:          true,
+			description: "Empty Err and Message panic",
+			err:         errors.New(""),
+			m:           "",
+			f:           []string{"Type", "Source", "PayloadRelatedField"},
+			expectedErr: ErrorInvalidValidatorError,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			require := require.New(t)
 			assert := assert.New(t)
-			require.Error(tc.validatorError)
-			assert.NotEmpty(tc.validatorError.Error())
-			if tc.fails {
-				assert.ErrorIs(tc.validatorError, errorInvalidValidatorError)
+			require := require.New(t)
+			if tc.expectedErr != nil {
+				assert.PanicsWithError(tc.expectedErr.Error(), func() { _ = NewValidatorError(tc.err, tc.m, tc.f) })
 				return
 			}
 
-			assert.NotErrorIs(tc.validatorError, errorInvalidValidatorError)
+			require.NotPanics(func() { _ = NewValidatorError(tc.err, tc.m, tc.f) })
+			verr := NewValidatorError(tc.err, tc.m, tc.f)
+			assert.NotEmpty(verr.Error())
 		})
 	}
 }

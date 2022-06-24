@@ -36,10 +36,10 @@ const (
 )
 
 var (
-	ErrorInvalidMessageEncoding = NewValidatorError(errors.New("invalid message encoding"), nil, "")
-	ErrorInvalidMessageType     = NewValidatorError(errors.New("invalid message type"), []string{"Type"}, "")
-	ErrorInvalidSource          = NewValidatorError(errors.New("invalid Source name"), []string{"Source"}, "")
-	ErrorInvalidDestination     = NewValidatorError(errors.New("invalid Destination name"), []string{"Destination"}, "")
+	ErrorInvalidMessageEncoding = NewValidatorError(errors.New("invalid message encoding"), "", nil)
+	ErrorInvalidMessageType     = NewValidatorError(errors.New("invalid message type"), "", []string{"Type"})
+	ErrorInvalidSource          = NewValidatorError(errors.New("invalid Source name"), "", []string{"Source"})
+	ErrorInvalidDestination     = NewValidatorError(errors.New("invalid Destination name"), "", []string{"Destination"})
 	errorInvalidUUID            = errors.New("invalid UUID")
 	errorEmptyAuthority         = errors.New("invalid empty authority (ID)")
 	errorInvalidMacLength       = errors.New("invalid mac length")

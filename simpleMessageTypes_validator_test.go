@@ -51,7 +51,7 @@ func TestSimpleMessageTypesValidatorErrors(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			assert.NotErrorIs(tc.validatorErr, errorInvalidValidatorError)
+			assert.NotEmpty(tc.validatorErr.Error())
 		})
 	}
 }
