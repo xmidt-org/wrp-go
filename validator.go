@@ -32,7 +32,7 @@ var (
 
 type ValidatorError struct {
 	// Err is the cause of the error, e.g. invalid message type.
-	// Either Err or Message must be set and nonempty, otherwise 'ValidatorError{}.Error()' will panic
+	// Either Err or Message must be set and nonempty
 	Err error
 
 	// Message is a validation message in case the validator wants
@@ -78,7 +78,8 @@ func (ve ValidatorError) Error() string {
 	return o.String()
 }
 
-// NewValidatorError is a NewValidatorError factory.
+// NewValidatorError is a ValidatorError factory and will panic if
+// both 'err' and 'm' are empty or nil
 func NewValidatorError(err error, m string, f []string) ValidatorError {
 	if (err == nil || len(err.Error()) == 0) && len(m) == 0 {
 		panic(ErrorInvalidValidatorError)
