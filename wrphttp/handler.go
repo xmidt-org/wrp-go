@@ -23,6 +23,15 @@ import (
 	gokithttp "github.com/go-kit/kit/transport/http"
 )
 
+type wrpHandler struct {
+	handler           Handler
+	errorEncoder      gokithttp.ErrorEncoder
+	after             []MessageFunc
+	before            []MessageFunc
+	decoder           Decoder
+	newResponseWriter ResponseWriterFunc
+}
+
 // Handler is a WRP handler for messages over HTTP.  This is the analog of http.Handler.
 type Handler interface {
 	ServeWRP(ResponseWriter, *Request)
@@ -81,6 +90,12 @@ func WithBefore(funcs ...MessageFunc) Option {
 	}
 }
 
+func WithAfter(funcs ...MessageFunc) Option {
+	return func(wh *wrpHandler) {
+		wh.after = append(wh.after, funcs...)
+	}
+}
+
 // NewHTTPHandler creates an http.Handler that forwards WRP requests to the supplied WRP handler.
 func NewHTTPHandler(h Handler, options ...Option) http.Handler {
 	if h == nil {
@@ -99,14 +114,6 @@ func NewHTTPHandler(h Handler, options ...Option) http.Handler {
 	}
 
 	return wh
-}
-
-type wrpHandler struct {
-	handler           Handler
-	errorEncoder      gokithttp.ErrorEncoder
-	before            []MessageFunc
-	decoder           Decoder
-	newResponseWriter ResponseWriterFunc
 }
 
 func (wh *wrpHandler) ServeHTTP(httpResponse http.ResponseWriter, httpRequest *http.Request) {
