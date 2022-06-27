@@ -27,30 +27,6 @@ import (
 	"go.uber.org/multierr"
 )
 
-func TestValidatorErrors(t *testing.T) {
-	tests := []struct {
-		description  string
-		validatorErr ValidatorError
-	}{
-		// Success case
-		{
-			description:  "ErrorInvalidValidator",
-			validatorErr: ErrorInvalidValidator,
-		},
-		{
-			description:  "ErrorInvalidMsgType",
-			validatorErr: ErrorInvalidMsgType,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			assert := assert.New(t)
-			assert.NotEmpty(tc.validatorErr.Error())
-		})
-	}
-}
-
 func TestNewValidatorError(t *testing.T) {
 	tests := []struct {
 		description string

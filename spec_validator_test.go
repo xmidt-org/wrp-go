@@ -24,38 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSpecValidatorErrors(t *testing.T) {
-	tests := []struct {
-		description  string
-		validatorErr ValidatorError
-	}{
-		// Success case
-		{
-			description:  "ErrorInvalidMessageEncoding",
-			validatorErr: ErrorInvalidMessageEncoding,
-		},
-		{
-			description:  "ErrorInvalidMessageType",
-			validatorErr: ErrorInvalidMessageType,
-		},
-		{
-			description:  "ErrorInvalidSource",
-			validatorErr: ErrorInvalidSource,
-		},
-		{
-			description:  "ErrorInvalidDestination",
-			validatorErr: ErrorInvalidDestination,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			assert := assert.New(t)
-			assert.NotEmpty(tc.validatorErr.Error())
-		})
-	}
-}
-
 func TestSpecHelperValidators(t *testing.T) {
 	tests := []struct {
 		description string

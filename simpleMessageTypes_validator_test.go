@@ -24,38 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSimpleMessageTypesValidatorErrors(t *testing.T) {
-	tests := []struct {
-		description  string
-		validatorErr ValidatorError
-	}{
-		// Success case
-		{
-			description:  "ErrorNotSimpleResponseRequestType",
-			validatorErr: ErrorNotSimpleResponseRequestType,
-		},
-		{
-			description:  "ErrorNotSimpleEventType",
-			validatorErr: ErrorNotSimpleEventType,
-		},
-		{
-			description:  "ErrorInvalidSpanLength",
-			validatorErr: ErrorInvalidSpanLength,
-		},
-		{
-			description:  "ErrorInvalidSpanFormat",
-			validatorErr: ErrorInvalidSpanFormat,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			assert := assert.New(t)
-			assert.NotEmpty(tc.validatorErr.Error())
-		})
-	}
-}
-
 func TestSimpleMessageTypesHelperValidators(t *testing.T) {
 	tests := []struct {
 		description string
