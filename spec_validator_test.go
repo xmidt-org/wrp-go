@@ -127,8 +127,13 @@ func TestSpecValidators(t *testing.T) {
 			err := SpecValidators().Validate(tc.msg)
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
+					if ve, ok := e.(ValidatorError); ok {
+						e = ve.Err
+					}
+
 					assert.ErrorIs(err, e)
 				}
+
 				return
 			}
 
@@ -144,10 +149,10 @@ func ExampleTypeValidator_Validate_specValidators() {
 			// Validates opinionated portions of the spec
 			SimpleEventMessageType: SpecValidators(),
 			// Only validates Source and nothing else
-			SimpleRequestResponseMessageType: SourceValidator(),
+			SimpleRequestResponseMessageType: ValidatorFunc(SourceValidator),
 		},
 		// Validates unfound msg types
-		AlwaysInvalid())
+		ValidatorFunc(AlwaysInvalid))
 	if err != nil {
 		return
 	}
@@ -262,9 +267,13 @@ func testUTF8Validator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := UTF8Validator()(tc.msg)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			err := UTF8Validator(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				if ve, ok := expectedErr.(ValidatorError); ok {
+					expectedErr = ve.Err
+				}
+
+				assert.ErrorIs(err, expectedErr)
 				return
 			}
 
@@ -356,9 +365,13 @@ func testMessageTypeValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := MessageTypeValidator()(tc.msg)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			err := MessageTypeValidator(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				if ve, ok := expectedErr.(ValidatorError); ok {
+					expectedErr = ve.Err
+				}
+
+				assert.ErrorIs(err, expectedErr)
 				return
 			}
 
@@ -394,9 +407,13 @@ func testSourceValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SourceValidator()(tc.msg)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			err := SourceValidator(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				if ve, ok := expectedErr.(ValidatorError); ok {
+					expectedErr = ve.Err
+				}
+
+				assert.ErrorIs(err, expectedErr)
 				return
 			}
 
@@ -432,9 +449,13 @@ func testDestinationValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := DestinationValidator()(tc.msg)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			err := DestinationValidator(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				if ve, ok := expectedErr.(ValidatorError); ok {
+					expectedErr = ve.Err
+				}
+
+				assert.ErrorIs(err, expectedErr)
 				return
 			}
 
@@ -479,17 +500,17 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Mac ID error, invalid mac ID character",
 			value:       "MAC:invalid45566",
-			expectedErr: errInvalidCharacter,
+			expectedErr: errorInvalidCharacter,
 		},
 		{
 			description: "Mac ID error, invalid mac ID length",
 			value:       "mac:11-aa-BB-44-55",
-			expectedErr: errInvalidMacLength,
+			expectedErr: errorInvalidMacLength,
 		},
 		{
 			description: "Mac ID error, no ID",
 			value:       "mac:",
-			expectedErr: errEmptyAuthority,
+			expectedErr: errorEmptyAuthority,
 		},
 		// Serial success case
 		{
@@ -501,7 +522,7 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Invalid serial ID error, no ID",
 			value:       "serial:",
-			expectedErr: errEmptyAuthority,
+			expectedErr: errorEmptyAuthority,
 		},
 		// UUID success case
 		// The variant specified in RFC4122
@@ -547,22 +568,22 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Invalid UUID ID error",
 			value:       "uuid:invalid45566",
-			expectedErr: errInvalidUUID,
+			expectedErr: errorInvalidUUID,
 		},
 		{
 			description: "Invalid UUID ID error, with URN",
 			value:       "uuid:URN:UUID:invalid45566",
-			expectedErr: errInvalidUUID,
+			expectedErr: errorInvalidUUID,
 		},
 		{
 			description: "Invalid UUID ID error, with Microsoft encoding",
 			value:       "uuid:{invalid45566}",
-			expectedErr: errInvalidUUID,
+			expectedErr: errorInvalidUUID,
 		},
 		{
 			description: "Invalid UUID ID error, no ID",
 			value:       "uuid:",
-			expectedErr: errEmptyAuthority,
+			expectedErr: errorEmptyAuthority,
 		},
 		// Event success case
 		{
@@ -574,7 +595,7 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Invalid event ID error, no ID",
 			value:       "event:",
-			expectedErr: errEmptyAuthority,
+			expectedErr: errorEmptyAuthority,
 		},
 		// DNS success case
 		{
@@ -586,18 +607,18 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Invalid DNS ID error, no ID",
 			value:       "dns:",
-			expectedErr: errEmptyAuthority,
+			expectedErr: errorEmptyAuthority,
 		},
 		// Scheme failure case
 		{
 			description: "Invalid scheme error",
 			value:       "invalid:a-BB-44-55",
-			expectedErr: errInvalidLocatorPattern,
+			expectedErr: errorInvalidLocatorPattern,
 		},
 		{
 			description: "Invalid scheme error, empty string",
 			value:       "",
-			expectedErr: errInvalidLocatorPattern,
+			expectedErr: errorInvalidLocatorPattern,
 		},
 	}
 
@@ -605,8 +626,12 @@ func testValidateLocator(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			err := validateLocator(tc.value)
-			if tc.expectedErr != nil {
-				assert.ErrorIs(err, tc.expectedErr)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				if ve, ok := expectedErr.(ValidatorError); ok {
+					expectedErr = ve.Err
+				}
+
+				assert.ErrorIs(err, expectedErr)
 				return
 			}
 

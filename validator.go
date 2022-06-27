@@ -19,15 +19,74 @@ package wrp
 
 import (
 	"errors"
+	"strings"
 
 	"go.uber.org/multierr"
 )
 
 var (
-	ErrInvalidTypeValidator = errors.New("invalid TypeValidator")
-	ErrInvalidValidator     = errors.New("invalid WRP message type validator")
-	ErrInvalidMsgType       = errors.New("invalid WRP message type")
+	ErrorInvalidValidator      = NewValidatorError(errors.New("invalid WRP message type validator"), "", nil)
+	ErrorInvalidMsgType        = NewValidatorError(errors.New("invalid WRP message type"), "", []string{"Type"})
+	ErrorInvalidValidatorError = errors.New("empty ValidatorError 'Err' and 'Message'")
 )
+
+type ValidatorError struct {
+	// Err is the cause of the error, e.g. invalid message type.
+	// Either Err or Message must be set and nonempty
+	Err error
+
+	// Message is a validation message in case the validator wants
+	// to communicate something beyond the Err cause.
+	Message string
+
+	// Fields are the relevant fields involved in Err.
+	Fields []string
+}
+
+// Unwrap returns the ValidatorError's Error
+func (ve ValidatorError) Unwrap() error {
+	return ve.Err
+}
+
+func (ve ValidatorError) Error() string {
+	var o strings.Builder
+	o.WriteString("Validator error")
+
+	if len(ve.Fields) > 0 {
+		o.WriteString(" [")
+		for i, f := range ve.Fields {
+			if i > 0 {
+				o.WriteRune(',')
+			}
+
+			o.WriteString(f)
+		}
+
+		o.WriteRune(']')
+	}
+
+	if ve.Err != nil {
+		o.WriteString(" err=")
+		o.WriteString(ve.Err.Error())
+	}
+
+	if len(ve.Message) > 0 {
+		o.WriteString(" msg=")
+		o.WriteString(ve.Message)
+	}
+
+	return o.String()
+}
+
+// NewValidatorError is a ValidatorError factory and will panic if
+// both 'err' and 'm' are empty or nil
+func NewValidatorError(err error, m string, f []string) ValidatorError {
+	if (err == nil || len(err.Error()) == 0) && len(m) == 0 {
+		panic(ErrorInvalidValidatorError)
+	}
+
+	return ValidatorError{err, m, f}
+}
 
 // Validator is a WRP validator that allows access to the Validate function.
 type Validator interface {
@@ -51,14 +110,34 @@ func (vs Validators) Validate(m Message) error {
 	return err
 }
 
+// Add returns a new Validators with the appended Validator list
+func (vs Validators) Add(v ...Validator) Validators {
+	for _, v := range v {
+		if v != nil {
+			vs = append(vs, v)
+		}
+	}
+
+	return vs
+}
+
+// AddFunc returns a new Validators with the appended ValidatorFunc list
+func (vs Validators) AddFunc(vf ...ValidatorFunc) Validators {
+	for _, v := range vf {
+		if v != nil {
+			vs = append(vs, v)
+		}
+	}
+
+	return vs
+}
+
 // ValidatorFunc is a WRP validator that takes messages and validates them
 // against functions.
 type ValidatorFunc func(Message) error
 
 // Validate executes its own ValidatorFunc receiver and returns the result.
-func (vf ValidatorFunc) Validate(m Message) error {
-	return vf(m)
-}
+func (vf ValidatorFunc) Validate(m Message) error { return vf(m) }
 
 // TypeValidator is a WRP validator that validates based on message type
 // or using the defaultValidator if message type is unfound.
@@ -69,10 +148,10 @@ type TypeValidator struct {
 
 // Validate validates messages based on message type or using the defaultValidator
 // if message type is unfound.
-func (m TypeValidator) Validate(msg Message) error {
-	vs := m.m[msg.MessageType()]
+func (tv TypeValidator) Validate(msg Message) error {
+	vs := tv.m[msg.MessageType()]
 	if vs == nil {
-		return m.defaultValidator.Validate(msg)
+		return tv.defaultValidator.Validate(msg)
 	}
 
 	return vs.Validate(msg)
@@ -81,11 +160,11 @@ func (m TypeValidator) Validate(msg Message) error {
 // NewTypeValidator is a TypeValidator factory.
 func NewTypeValidator(m map[MessageType]Validator, defaultValidator Validator) (TypeValidator, error) {
 	if m == nil {
-		return TypeValidator{}, ErrInvalidValidator
+		return TypeValidator{}, ErrorInvalidValidator
 	}
 
 	if defaultValidator == nil {
-		defaultValidator = AlwaysInvalid()
+		defaultValidator = ValidatorFunc(AlwaysInvalid)
 	}
 
 	return TypeValidator{
@@ -94,12 +173,12 @@ func NewTypeValidator(m map[MessageType]Validator, defaultValidator Validator) (
 	}, nil
 }
 
-// AlwaysInvalid returns a WRP validator that doesn't validate anything about the message and always returns an error.
-func AlwaysInvalid() ValidatorFunc {
-	return func(_ Message) error { return ErrInvalidMsgType }
+// AlwaysInvalid doesn't validate anything about the message and always returns an error.
+func AlwaysInvalid(_ Message) error {
+	return ErrorInvalidMsgType
 }
 
-// AlwaysValid returns a WRP validator that doesn't validate anything about the message and always returns nil.
-func AlwaysValid() ValidatorFunc {
-	return func(_ Message) error { return nil }
+// AlwaysValid doesn't validate anything about the message and always returns nil.
+func AlwaysValid(_ Message) error {
+	return nil
 }
