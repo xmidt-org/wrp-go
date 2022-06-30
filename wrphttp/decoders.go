@@ -26,10 +26,14 @@ import (
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
+var defaultDecoder Decoder = DecodeEntity(wrp.Msgpack)
+
 // Decoder turns an HTTP request into a WRP entity.
 type Decoder func(context.Context, *http.Request) (*Entity, error)
 
-var defaultDecoder Decoder = DecodeEntity(wrp.Msgpack)
+// MessageFunc is a strategy for post-processing a WRP message, adding things to the
+// context or performing other processing on the message itself.
+type MessageFunc func(context.Context, *wrp.Message) context.Context
 
 func DefaultDecoder() Decoder {
 	return defaultDecoder
@@ -96,7 +100,3 @@ func DecodeRequestHeaders(ctx context.Context, original *http.Request) (*Entity,
 	err = wrp.NewEncoderBytes(&entity.Bytes, entity.Format).Encode(entity.Message)
 	return entity, err
 }
-
-// MessageFunc is a strategy for post-processing a WRP message, adding things to the
-// context or performing other processing on the message itself.
-type MessageFunc func(context.Context, *wrp.Message) context.Context
