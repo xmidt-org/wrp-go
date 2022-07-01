@@ -190,6 +190,35 @@ func TestWithBefore(t *testing.T) {
 	}
 }
 
+func TestWithAfter(t *testing.T) {
+	testData := [][]MessageFunc{
+		nil,
+		[]MessageFunc{},
+		[]MessageFunc{
+			func(context.Context, *wrp.Message) context.Context { return nil },
+		},
+		[]MessageFunc{
+			func(context.Context, *wrp.Message) context.Context { return nil },
+			func(context.Context, *wrp.Message) context.Context { return nil },
+			func(context.Context, *wrp.Message) context.Context { return nil },
+		},
+	}
+
+	for i, record := range testData {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			var (
+				assert = assert.New(t)
+				wh     = new(wrpHandler)
+			)
+
+			WithAfter(record...)(wh)
+			assert.Len(wh.after, len(record))
+			WithAfter(record...)(wh)
+			assert.Len(wh.after, 2*len(record))
+		})
+	}
+}
+
 func TestNewHTTPHandler(t *testing.T) {
 	assert := assert.New(t)
 	assert.Panics(func() {
