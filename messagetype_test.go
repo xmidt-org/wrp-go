@@ -73,11 +73,37 @@ func TestMessageTypeSupportsTransaction(t *testing.T) {
 			ServiceRegistrationMessageType:   false,
 			ServiceAliveMessageType:          false,
 			UnknownMessageType:               false,
+			lastMessageType:                  false,
 		}
 	)
 
 	for messageType, expected := range expectedSupportsTransaction {
 		assert.Equal(expected, messageType.SupportsTransaction())
+	}
+}
+
+func TestMessageTypeSupportsQOSAck(t *testing.T) {
+	var (
+		assert                 = assert.New(t)
+		expectedSupportsQOSAck = map[MessageType]bool{
+			Invalid0MessageType:              false,
+			Invalid1MessageType:              false,
+			AuthorizationMessageType:         false,
+			SimpleRequestResponseMessageType: false,
+			SimpleEventMessageType:           true,
+			CreateMessageType:                false,
+			RetrieveMessageType:              false,
+			UpdateMessageType:                false,
+			DeleteMessageType:                false,
+			ServiceRegistrationMessageType:   false,
+			ServiceAliveMessageType:          false,
+			UnknownMessageType:               false,
+			lastMessageType:                  false,
+		}
+	)
+
+	for messageType, expected := range expectedSupportsQOSAck {
+		assert.Equal(expected, messageType.SupportsQOSAck())
 	}
 }
 
