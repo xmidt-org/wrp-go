@@ -74,6 +74,7 @@ func TestMessageTypeSupportsTransaction(t *testing.T) {
 			ServiceAliveMessageType:          false,
 			UnknownMessageType:               false,
 			lastMessageType:                  false,
+			lastMessageType + 1:              false,
 		}
 	)
 
@@ -99,6 +100,7 @@ func TestMessageTypeSupportsQOSAck(t *testing.T) {
 			ServiceAliveMessageType:          false,
 			UnknownMessageType:               false,
 			lastMessageType:                  false,
+			lastMessageType + 1:              false,
 		}
 	)
 
