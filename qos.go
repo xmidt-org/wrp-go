@@ -16,6 +16,13 @@ const (
 // type determine what QOSLevel a message has.
 type QOSValue int
 
+const (
+	QOSLowValue QOSValue = iota * 25
+	QOSMediumValue
+	QOSHighValue
+	QOSCriticalValue
+)
+
 // Level determines the QOSLevel for this value.  Negative values are assumed
 // to be QOSLow.  Values higher than the highest value (99) are assumed to
 // be QOSCritical.

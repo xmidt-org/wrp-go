@@ -397,6 +397,117 @@ func testSimpleEventEncode(t *testing.T, f Format, original SimpleEvent) {
 	assert.Equal(original, decoded)
 }
 
+func TestIsQOSAckPart(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         Message
+		ack         bool
+	}{
+		// Ack case
+		{
+			description: "SimpleEventMessageType QOSMediumValue ack",
+			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSMediumValue},
+			ack:         true,
+		},
+		{
+			description: "SimpleEventMessageType QOSHighValue ack",
+			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSHighValue},
+			ack:         true,
+		},
+		{
+			description: "SimpleEventMessageType QOSCriticalValue ack",
+			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSCriticalValue},
+			ack:         true,
+		},
+		{
+			description: "SimpleEventMessageType above QOS range ack",
+			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSCriticalValue + 1},
+			ack:         true,
+		},
+		// No ack case
+		{
+			description: "SimpleEventMessageType below QOS range no ack",
+			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSLowValue - 1},
+		},
+		{
+			description: "SimpleEventMessageType QOSLowValue no ack",
+			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSLowValue},
+		},
+		{
+			description: "Invalid0MessageType no ack",
+			msg:         Message{Type: Invalid0MessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "SimpleRequestResponseMessageType no ack",
+			msg:         Message{Type: SimpleRequestResponseMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "CreateMessageType no ack",
+			msg:         Message{Type: CreateMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "RetrieveMessageType no ack",
+			msg:         Message{Type: RetrieveMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "UpdateMessageType no ack",
+			msg:         Message{Type: UpdateMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "DeleteMessageType no ack",
+			msg:         Message{Type: DeleteMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "ServiceRegistrationMessageType no ack",
+			msg:         Message{Type: ServiceRegistrationMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "ServiceAliveMessageType no ack",
+			msg:         Message{Type: ServiceAliveMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "UnknownMessageType no ack",
+			msg:         Message{Type: UnknownMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "AuthorizationMessageType no ack",
+			msg:         Message{Type: AuthorizationMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "Invalid0MessageType no ack",
+			msg:         Message{Type: Invalid0MessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "Invalid1MessageType no ack",
+			msg:         Message{Type: Invalid1MessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "lastMessageType no ack",
+			msg:         Message{Type: lastMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "Nonexistent negative MessageType no ack",
+			msg:         Message{Type: -10, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "Nonexistent positive MessageType no ack",
+			msg:         Message{Type: lastMessageType + 1, QualityOfService: QOSCriticalValue},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			if tc.ack {
+				assert.True(tc.msg.IsQOSAckPart())
+				return
+			}
+
+			assert.False(tc.msg.IsQOSAckPart())
+		})
+	}
+}
+
 func TestSimpleEvent(t *testing.T) {
 	var messages = []SimpleEvent{
 		{},
