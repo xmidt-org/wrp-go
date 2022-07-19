@@ -203,7 +203,6 @@ func (msg *Message) TransactionKey() string {
 
 // IsQOSAckPart determines whether or not a message can QOS ack.
 func (msg *Message) IsQOSAckPart() bool {
-	// TODO add tests
 	if !msg.Type.SupportsQOSAck() {
 		return false
 	}
