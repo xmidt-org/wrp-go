@@ -201,6 +201,21 @@ func (msg *Message) TransactionKey() string {
 	return msg.TransactionUUID
 }
 
+// IsQOSAckPart determines whether or not a message can QOS ack.
+func (msg *Message) IsQOSAckPart() bool {
+	if !msg.Type.SupportsQOSAck() {
+		return false
+	}
+
+	// https://xmidt.io/docs/wrp/basics/#qos-description-qos
+	switch msg.QualityOfService.Level() {
+	case QOSMedium, QOSHigh, QOSCritical:
+		return true
+	default:
+		return false
+	}
+}
+
 func (msg *Message) Response(newSource string, requestDeliveryResponse int64) Routable {
 	response := *msg
 	response.Destination = msg.Source

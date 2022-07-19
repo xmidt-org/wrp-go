@@ -49,22 +49,22 @@ const (
 // where applicable).
 func (mt MessageType) SupportsTransaction() bool {
 	switch mt {
-	case Invalid0MessageType:
-		return false
-	case Invalid1MessageType:
-		return false
-	case AuthorizationMessageType:
-		return false
-	case SimpleEventMessageType:
-		return false
-	case ServiceRegistrationMessageType:
-		return false
-	case ServiceAliveMessageType:
-		return false
-	case UnknownMessageType:
-		return false
-	default:
+	case SimpleRequestResponseMessageType, CreateMessageType, RetrieveMessageType, UpdateMessageType, DeleteMessageType:
 		return true
+	default:
+		return false
+	}
+}
+
+// SupportsQOSAck tests if messages of this type are allowed to participate in QOS Ack
+// as specified in https://xmidt.io/docs/wrp/basics/#qos-description-qos .
+// If this method returns false, QOS Ack is foregone.
+func (mt MessageType) SupportsQOSAck() bool {
+	switch mt {
+	case SimpleEventMessageType:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -114,7 +114,7 @@ func init() {
 func StringToMessageType(value string) (MessageType, error) {
 	mt, ok := stringToMessageType[value]
 	if !ok {
-		return MessageType(-1), fmt.Errorf("Invalid message type: %s", value)
+		return MessageType(-1), fmt.Errorf("invalid message type: %s", value)
 	}
 
 	return mt, nil

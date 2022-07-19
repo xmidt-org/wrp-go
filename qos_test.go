@@ -22,6 +22,22 @@ func TestQOSValue(t *testing.T) {
 			expected QOSLevel
 		}{
 			{
+				value:    QOSLowValue,
+				expected: QOSLow,
+			},
+			{
+				value:    QOSMediumValue,
+				expected: QOSMedium,
+			},
+			{
+				value:    QOSHighValue,
+				expected: QOSHigh,
+			},
+			{
+				value:    QOSCriticalValue,
+				expected: QOSCritical,
+			},
+			{
 				value:    -1,
 				expected: QOSLow,
 			},
