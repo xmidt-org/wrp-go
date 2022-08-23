@@ -93,6 +93,5 @@ Some common uses of this package include:
 
 		return buffer.Bytes(), nil
 	}
-
 */
 package wrp
