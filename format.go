@@ -93,7 +93,7 @@ func (f Format) ContentType() string {
 // the first fallback value is used.  The rest are ignored.  This approach allows
 // simple usages such as:
 //
-//   FormatFromContentType(header.Get("Content-Type"), wrp.Msgpack)
+//	FormatFromContentType(header.Get("Content-Type"), wrp.Msgpack)
 func FormatFromContentType(contentType string, fallback ...Format) (Format, error) {
 	if len(contentType) == 0 {
 		if len(fallback) > 0 {
