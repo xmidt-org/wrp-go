@@ -4,7 +4,6 @@ wrp-go provides a library implementing the [Web Routing Protocol](https://github
 structures and supporting utilities.
 
 [![Build Status](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml/badge.svg)](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml)
-[![Dependency Updateer](https://github.com/xmidt-org/wrp-go/actions/workflows/updater.yml/badge.svg)](https://github.com/xmidt-org/wrp-go/actions/workflows/updater.yml)
 [![codecov.io](http://codecov.io/github/xmidt-org/wrp-go/coverage.svg?branch=main)](http://codecov.io/github/xmidt-org/wrp-go?branch=main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xmidt-org_wrp-go&metric=alert_status)](https://sonarcloud.io/dashboard?id=xmidt-org_wrp-go)
