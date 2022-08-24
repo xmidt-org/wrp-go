@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [v3.1.4-dev.1]
+## [v3.1.4]
 - Add simple message types WRP validators [#85](https://github.com/xmidt-org/wrp-go/pull/85)
 - Add basic WRP spec validators [#84](https://github.com/xmidt-org/wrp-go/pull/84)
 - Introduce WRP Validation Framework [#80](https://github.com/xmidt-org/wrp-go/pull/80)
@@ -82,8 +82,8 @@ All changes included in [#47](https://github.com/xmidt-org/wrp-go/pull/47)
 ## [1.0.0]
 - This release is exactly the same as the last version from github.com/xmidt-org/webpa-common/wrp
 
-[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.1.4-dev.1...HEAD
-[v3.1.4-dev.1]: https://github.com/xmidt-org/wrp-go/compare/v3.1.3...v3.1.4-dev.1
+[Unreleased]: https://github.com/xmidt-org/wrp-go/compare/v3.1.4...HEAD
+[v3.1.4]: https://github.com/xmidt-org/wrp-go/compare/v3.1.3...v3.1.4
 [v3.1.3]: https://github.com/xmidt-org/wrp-go/compare/v3.1.2...v3.1.3
 [v3.1.2]: https://github.com/xmidt-org/wrp-go/compare/v3.1.1...v3.1.2
 [v3.1.1]: https://github.com/xmidt-org/wrp-go/compare/v3.1.0...v3.1.1
