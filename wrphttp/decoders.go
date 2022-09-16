@@ -20,7 +20,7 @@ package wrphttp
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/xmidt-org/wrp-go/v3"
@@ -51,7 +51,7 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 			return nil, fmt.Errorf("failed to determine format of Accept header: %v", err)
 		}
 
-		contents, err := ioutil.ReadAll(original.Body)
+		contents, err := io.ReadAll(original.Body)
 		if err != nil {
 			return nil, err
 		}

@@ -131,11 +131,10 @@ func TestValidators(t *testing.T) {
 			if tc.expectedErr != nil {
 				assert.Equal(multierr.Errors(err), tc.expectedErr)
 				for _, e := range tc.expectedErr {
-					if ve, ok := e.(ValidatorError); ok {
-						e = ve.Err
-					}
+					var targetErr ValidatorError
 
-					assert.ErrorIs(err, e)
+					assert.ErrorAs(e, &targetErr)
+					assert.ErrorIs(err, targetErr.Err)
 				}
 
 				return
@@ -293,11 +292,10 @@ func testTypeValidatorValidate(t *testing.T) {
 			assert.NotZero(msgv)
 			err = msgv.Validate(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				return
 			}
 
@@ -343,11 +341,10 @@ func testTypeValidatorFactory(t *testing.T) {
 			assert := assert.New(t)
 			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				// Zero asserts that msgv is the zero value for its type and not nil.
 				assert.Zero(msgv)
 				return

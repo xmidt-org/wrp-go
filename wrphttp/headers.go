@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -49,7 +48,7 @@ const (
 )
 
 var (
-	errMissingMessageTypeHeader = fmt.Errorf("Missing %s header", MessageTypeHeader)
+	errMissingMessageTypeHeader = fmt.Errorf("missing %s header", MessageTypeHeader)
 )
 
 // getMessageType extracts the wrp.MessageType from header.  This is a required field.
@@ -175,7 +174,7 @@ func readPayload(h http.Header, p io.Reader) ([]byte, string) {
 		return nil, ""
 	}
 
-	payload, err := ioutil.ReadAll(p)
+	payload, err := io.ReadAll(p)
 	if err != nil {
 		panic(err)
 	}
@@ -260,6 +259,8 @@ func SetMessageFromHeaders(h http.Header, m *wrp.Message) (err error) {
 	m.TransactionUUID = h.Get(TransactionUuidHeader)
 	m.Status = getIntHeader(h, StatusHeader)
 	m.RequestDeliveryResponse = getIntHeader(h, RequestDeliveryResponseHeader)
+	// TODO Remove along with `IncludeSpans`
+	// nolint:staticcheck
 	m.IncludeSpans = getBoolHeader(h, IncludeSpansHeader)
 	m.Spans = getSpans(h)
 	m.ContentType = h.Get("Content-Type")
@@ -300,6 +301,8 @@ func AddMessageHeaders(h http.Header, m *wrp.Message) {
 		h.Set(RequestDeliveryResponseHeader, strconv.FormatInt(*m.RequestDeliveryResponse, 10))
 	}
 
+	// TODO Remove along with `IncludeSpans`
+	// nolint:staticcheck
 	if m.IncludeSpans != nil {
 		h.Set(IncludeSpansHeader, strconv.FormatBool(*m.IncludeSpans))
 	}
@@ -355,7 +358,7 @@ func ReadPayload(h http.Header, p io.Reader, m *wrp.Message) (int, error) {
 	}
 
 	var err error
-	m.Payload, err = ioutil.ReadAll(p)
+	m.Payload, err = io.ReadAll(p)
 	if err != nil {
 		return 0, err
 	}

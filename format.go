@@ -56,6 +56,8 @@ func AllFormats() []Format {
 
 var (
 	jsonHandle = codec.JsonHandle{
+		// TODO replace `codec.BasicHandle` since it's not meant to be used directly
+		// nolint:staticcheck
 		BasicHandle: codec.BasicHandle{
 			TypeInfos: codec.NewTypeInfos([]string{"json"}),
 		},
@@ -67,6 +69,8 @@ var (
 	// See: http://ugorji.net/blog/go-codec-primer#format-specific-runtime-configuration
 	msgpackHandle = codec.MsgpackHandle{
 		WriteExt: true,
+		// TODO replace `codec.BasicHandle` since it's not meant to be used directly
+		// nolint:staticcheck
 		BasicHandle: codec.BasicHandle{
 			TypeInfos: codec.NewTypeInfos([]string{"json"}),
 		},

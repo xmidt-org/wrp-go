@@ -19,7 +19,7 @@ package wrpclient
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/stretchr/testify/mock"
@@ -33,6 +33,6 @@ func (m *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	args := m.Called(req)
 	return &http.Response{
 		StatusCode: args.Int(0),
-		Body:       ioutil.NopCloser(bytes.NewBuffer(args.Get(1).([]byte))),
+		Body:       io.NopCloser(bytes.NewBuffer(args.Get(1).([]byte))),
 	}, nil
 }
