@@ -19,9 +19,8 @@ package wrpendpoint
 
 import (
 	"io"
-	"io/ioutil"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/xmidt-org/webpa-common/tracing"
 	"github.com/xmidt-org/wrp-go/v3"
 )
@@ -145,7 +144,7 @@ func withLogger(logger log.Logger, m *wrp.Message, keyvals ...interface{}) log.L
 
 // DecodeRequest extracts a WRP request from the given source.
 func DecodeRequest(logger log.Logger, source io.Reader, format wrp.Format) (Request, error) {
-	contents, err := ioutil.ReadAll(source)
+	contents, err := io.ReadAll(source)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +217,7 @@ func (r *response) WithSpans(spans ...tracing.Span) interface{} {
 
 // DecodeResponse extracts a WRP response from the given source.
 func DecodeResponse(source io.Reader, format wrp.Format) (Response, error) {
-	contents, err := ioutil.ReadAll(source)
+	contents, err := io.ReadAll(source)
 	if err != nil {
 		return nil, err
 	}

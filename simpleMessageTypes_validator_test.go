@@ -129,11 +129,10 @@ func TestSimpleEventValidators(t *testing.T) {
 			err := SimpleEventValidators().Validate(tc.msg)
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
-					if ve, ok := e.(ValidatorError); ok {
-						e = ve.Err
-					}
+					var targetErr ValidatorError
 
-					assert.ErrorIs(err, e)
+					assert.ErrorAs(e, &targetErr)
+					assert.ErrorIs(err, targetErr.Err)
 				}
 
 				return
@@ -248,11 +247,10 @@ func TestSimpleResponseRequestValidators(t *testing.T) {
 			err := SimpleResponseRequestValidators().Validate(tc.msg)
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
-					if ve, ok := e.(ValidatorError); ok {
-						e = ve.Err
-					}
+					var targetErr ValidatorError
 
-					assert.ErrorIs(err, e)
+					assert.ErrorAs(e, &targetErr)
+					assert.ErrorIs(err, targetErr.Err)
 				}
 
 				return
@@ -386,11 +384,10 @@ func testSpansValidator(t *testing.T) {
 			assert := assert.New(t)
 			err := SpansValidator(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				return
 			}
 
@@ -493,11 +490,10 @@ func testSimpleEventTypeValidator(t *testing.T) {
 			assert := assert.New(t)
 			err := SimpleEventTypeValidator(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				return
 			}
 
@@ -600,11 +596,10 @@ func testSimpleResponseRequestTypeValidator(t *testing.T) {
 			assert := assert.New(t)
 			err := SimpleResponseRequestTypeValidator(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				return
 			}
 

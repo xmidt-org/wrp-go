@@ -127,11 +127,10 @@ func TestSpecValidators(t *testing.T) {
 			err := SpecValidators().Validate(tc.msg)
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
-					if ve, ok := e.(ValidatorError); ok {
-						e = ve.Err
-					}
+					var targetErr ValidatorError
 
-					assert.ErrorIs(err, e)
+					assert.ErrorAs(e, &targetErr)
+					assert.ErrorIs(err, targetErr.Err)
 				}
 
 				return
@@ -269,11 +268,10 @@ func testUTF8Validator(t *testing.T) {
 			assert := assert.New(t)
 			err := UTF8Validator(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				return
 			}
 
@@ -367,11 +365,10 @@ func testMessageTypeValidator(t *testing.T) {
 			assert := assert.New(t)
 			err := MessageTypeValidator(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				return
 			}
 
@@ -409,11 +406,10 @@ func testSourceValidator(t *testing.T) {
 			assert := assert.New(t)
 			err := SourceValidator(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				return
 			}
 
@@ -451,11 +447,10 @@ func testDestinationValidator(t *testing.T) {
 			assert := assert.New(t)
 			err := DestinationValidator(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
+				var targetErr ValidatorError
 
-				assert.ErrorIs(err, expectedErr)
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
 				return
 			}
 
@@ -627,10 +622,6 @@ func testValidateLocator(t *testing.T) {
 			assert := assert.New(t)
 			err := validateLocator(tc.value)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
-				if ve, ok := expectedErr.(ValidatorError); ok {
-					expectedErr = ve.Err
-				}
-
 				assert.ErrorIs(err, expectedErr)
 				return
 			}
