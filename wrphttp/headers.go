@@ -125,15 +125,13 @@ func getBoolHeader(h http.Header, n string) *bool {
 }
 
 func getSpans(h http.Header) [][]string {
-	var header string
+	header := SpanHeader
 	if len(h[SpanHeader]) == 0 {
 		if len(h[spansHeader]) == 0 {
 			return nil
 		}
 		header = spansHeader // alternative header version
 	}
-
-	header = SpanHeader
 
 	spans := make([][]string, len(h[header]))
 

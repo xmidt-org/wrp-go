@@ -57,6 +57,15 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 			},
 			{
 				header: http.Header{
+					msgTypeHeader: []string{"SimpleRequestResponse"},
+				},
+				payload: nil,
+				expected: wrp.Message{
+					Type: wrp.SimpleRequestResponseMessageType,
+				},
+			},
+			{
+				header: http.Header{
 					MessageTypeHeader: []string{"SimpleRequestResponse"},
 				},
 				payload: strings.NewReader(""),
@@ -83,6 +92,47 @@ func testNewMessageFromHeadersSuccess(t *testing.T) {
 					HeadersHeader:     []string{"head-1", "head-2"},
 					ServiceNameHeader: []string{"service"},
 					URLHeader:         []string{"anonspecialurl"},
+				},
+				payload: nil,
+				expected: wrp.Message{
+					Type:                    wrp.SimpleRequestResponseMessageType,
+					TransactionUUID:         "1234",
+					Source:                  "test",
+					Destination:             "mac:111122223333",
+					Status:                  &expectedStatus,
+					RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+					IncludeSpans:            &expectedIncludeSpans,
+					Spans: [][]string{
+						{"foo", "bar", "moo"},
+						{"goo", "gar", "hoo"},
+					},
+					Accept:      wrp.MimeTypeJson,
+					Path:        "/foo/bar",
+					SessionID:   "test123",
+					Headers:     []string{"head-1", "head-2"},
+					ServiceName: "service",
+					URL:         "anonspecialurl",
+				},
+			},
+			{
+				header: http.Header{
+					msgTypeHeader:         []string{"SimpleRequestResponse"},
+					transactionUuidHeader: []string{"1234"},
+					sourceHeader:          []string{"test"},
+					destinationHeader:     []string{"mac:111122223333"},
+					statusHeader:          []string{strconv.FormatInt(expectedStatus, 10)},
+					rDRHeader:             []string{strconv.FormatInt(expectedRequestDeliveryResponse, 10)},
+					includeSpansHeader:    []string{strconv.FormatBool(expectedIncludeSpans)},
+					spansHeader: []string{
+						"foo, bar, moo",
+						"goo, gar, hoo",
+					},
+					acceptHeader:      []string{wrp.MimeTypeJson},
+					pathHeader:        []string{"/foo/bar"},
+					sessionIdHeader:   []string{"test123"},
+					headersArrHeader:  []string{"head-1", "head-2"},
+					serviceNameHeader: []string{"service"},
+					urlHeader:         []string{"anonspecialurl"},
 				},
 				payload: nil,
 				expected: wrp.Message{
