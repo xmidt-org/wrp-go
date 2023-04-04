@@ -133,11 +133,11 @@ func DecodeRequest(r *http.Request, msg any) (*http.Request, error) {
 		return nil, fmt.Errorf("failed to determine format of Content-Type header: %v", err)
 	}
 
-	var decodedMessage *wrp.Message
+	var decodedMessage wrp.Message
 
 	// Try to decode the message using the HTTP Request headers
 	// If this doesn't work, decode the message as Msgpack or JSON format
-	if err = SetMessageFromHeaders(r.Header, decodedMessage); err != nil {
+	if err = SetMessageFromHeaders(r.Header, &decodedMessage); err != nil {
 		// Msgpack or JSON Format
 		bodyReader := r.Body
 		err = wrp.NewDecoder(bodyReader, format).Decode(&decodedMessage)
