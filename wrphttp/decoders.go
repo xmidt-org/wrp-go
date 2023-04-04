@@ -91,7 +91,7 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 
 func DecodeEntityFromSources(defaultFormat wrp.Format, allowHeaderSource bool) Decoder {
 	return func(ctx context.Context, original *http.Request) (*Entity, error) {
-		if allowHeaderSource && original.Header.Get(MessageTypeHeader) != "" {
+		if allowHeaderSource && (original.Header.Get(MessageTypeHeader) != "" || original.Header.Get(msgTypeHeader) != "") {
 			return DecodeRequestHeaders(ctx, original)
 		}
 		return DecodeEntity(defaultFormat)(ctx, original)
