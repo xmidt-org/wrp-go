@@ -322,7 +322,9 @@ func SetMessageFromHeaders(h http.Header, m *wrp.Message) (err error) {
 	// TODO Remove along with `IncludeSpans`
 	// nolint:staticcheck
 	m.IncludeSpans = getBoolHeader(h, IncludeSpansHeader)
+	// nolint:staticcheck
 	if m.IncludeSpans == nil {
+		// nolint:staticcheck
 		m.IncludeSpans = getBoolHeader(h, includeSpansHeader)
 	}
 	m.Spans = getSpans(h)
