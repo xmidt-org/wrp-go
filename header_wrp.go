@@ -17,19 +17,6 @@
 
 package wrp
 
-// Constant HTTP header strings representing WRP fields
-const (
-	MsgTypeHeader         = "X-Midt-Msg-Type"
-	TransactionUuidHeader = "X-Midt-Transaction-Uuid"
-	StatusHeader          = "X-Midt-Status"
-	RDRHeader             = "X-Midt-Request-Delivery-Response"
-	HeadersArrHeader      = "X-Midt-Headers"
-	IncludeSpansHeader    = "X-Midt-Include-Spans"
-	SpansHeader           = "X-Midt-Spans"
-	PathHeader            = "X-Midt-Path"
-	SourceHeader          = "X-Midt-Source"
-)
-
 // Map string to MessageType int
 /*
 func StringToMessageType(str string) MessageType {

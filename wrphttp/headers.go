@@ -28,6 +28,7 @@ import (
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
+// Constant HTTP header strings representing WRP fields
 const (
 	MessageTypeHeader             = "X-Xmidt-Message-Type"
 	TransactionUuidHeader         = "X-Xmidt-Transaction-Uuid"
@@ -47,6 +48,28 @@ const (
 	URLHeader                     = "X-Xmidt-Url"
 )
 
+// X-midt-* headers are deprecated and will stop being supported
+// Please use X-Xmidt-* headers instead
+const (
+	msgTypeHeader         = "X-Midt-Msg-Type"
+	transactionUuidHeader = "X-Midt-Transaction-Uuid"
+	statusHeader          = "X-Midt-Status"
+	rDRHeader             = "X-Midt-Request-Delivery-Response"
+	headersArrHeader      = "X-Midt-Headers"
+	includeSpansHeader    = "X-Midt-Include-Spans"
+	spansHeader           = "X-Midt-Spans"
+	pathHeader            = "X-Midt-Path"
+	sourceHeader          = "X-Midt-Source"
+	destinationHeader     = "X-Webpa-Device-Name"
+	acceptHeader          = "X-Midt-Accept"
+	metadataHeader        = "X-Midt-Metadata"
+	partnerIdHeader       = "X-Midt-Partner-Id"
+	sessionIdHeader       = "X-Midt-Session-Id"
+	headersHeader         = "X-Midt-Headers"
+	serviceNameHeader     = "X-Midt-Service-Name"
+	urlHeader             = "X-Midt-Url"
+)
+
 var (
 	errMissingMessageTypeHeader = fmt.Errorf("missing %s header", MessageTypeHeader)
 )
@@ -57,14 +80,17 @@ var (
 func getMessageType(h http.Header) wrp.MessageType {
 	value := h.Get(MessageTypeHeader)
 	if len(value) == 0 {
-		panic(errMissingMessageTypeHeader)
+		// check alternative header prefix
+		value = h.Get(msgTypeHeader)
+		if len(value) == 0 {
+			panic(errMissingMessageTypeHeader)
+		}
 	}
 
 	messageType, err := wrp.StringToMessageType(value)
 	if err != nil {
 		panic(err)
 	}
-
 	return messageType
 }
 
@@ -99,16 +125,20 @@ func getBoolHeader(h http.Header, n string) *bool {
 }
 
 func getSpans(h http.Header) [][]string {
+	header := SpanHeader
 	if len(h[SpanHeader]) == 0 {
-		return nil
+		if len(h[spansHeader]) == 0 {
+			return nil
+		}
+		header = spansHeader // alternative header version
 	}
 
-	spans := make([][]string, len(h[SpanHeader]))
+	spans := make([][]string, len(h[header]))
 
-	for i, value := range h[SpanHeader] {
+	for i, value := range h[header] {
 		fields := strings.Split(value, ",")
 		if len(fields) != 3 {
-			panic(fmt.Errorf("Invalid %s header: %s", SpanHeader, value))
+			panic(fmt.Errorf("invalid %s header: %s", header, value))
 		}
 
 		for j := 0; j < len(fields); j++ {
@@ -128,7 +158,11 @@ func getSpans(h http.Header) [][]string {
 func getMetadata(h http.Header) map[string]string {
 	headers, ok := h[MetadataHeader]
 	if !ok {
-		return nil
+		// Check alternative header version
+		headers, ok = h[metadataHeader]
+		if !ok {
+			return nil
+		}
 	}
 
 	meta := make(map[string]string)
@@ -144,7 +178,6 @@ func getMetadata(h http.Header) map[string]string {
 			}
 		}
 	}
-
 	return meta
 }
 
@@ -153,7 +186,12 @@ func getMetadata(h http.Header) map[string]string {
 func getPartnerIDs(h http.Header) []string {
 	headers, ok := h[PartnerIdHeader]
 	if !ok || len(headers) == 0 {
-		return nil
+		// Check alternative header version
+		headers, ok = h[partnerIdHeader]
+
+		if !ok || len(headers) == 0 {
+			return nil
+		}
 	}
 
 	partners := []string{}
@@ -196,7 +234,12 @@ func readPayload(h http.Header, p io.Reader) ([]byte, string) {
 func getHeaders(h http.Header) []string {
 	headers, ok := h[HeadersHeader]
 	if !ok || len(headers) == 0 {
-		return nil
+		// Check alternative header version
+		headers, ok = h[headersHeader]
+
+		if !ok || len(headers) == 0 {
+			return nil
+		}
 	}
 
 	hlist := []string{}
@@ -222,7 +265,7 @@ func NewMessageFromHeaders(h http.Header, p io.Reader) (message *wrp.Message, er
 			case error:
 				err = v
 			default:
-				err = fmt.Errorf("Unable to create WRP message: %s", v)
+				err = fmt.Errorf("unable to create WRP message: %s", v)
 			}
 		}
 	}()
@@ -255,23 +298,58 @@ func SetMessageFromHeaders(h http.Header, m *wrp.Message) (err error) {
 
 	m.Type = getMessageType(h)
 	m.Source = h.Get(SourceHeader)
+	if m.Source == "" {
+		m.Source = h.Get(sourceHeader)
+	}
 	m.Destination = h.Get(DestinationHeader)
+	if m.Destination == "" {
+		m.Destination = h.Get(destinationHeader)
+	}
 	m.TransactionUUID = h.Get(TransactionUuidHeader)
+	if m.TransactionUUID == "" {
+		m.TransactionUUID = h.Get(transactionUuidHeader)
+	}
 	m.Status = getIntHeader(h, StatusHeader)
+	if m.Status == nil {
+		m.Status = getIntHeader(h, statusHeader)
+	}
 	m.RequestDeliveryResponse = getIntHeader(h, RequestDeliveryResponseHeader)
+	if m.RequestDeliveryResponse == nil {
+		m.RequestDeliveryResponse = getIntHeader(h, rDRHeader)
+	}
 	// TODO Remove along with `IncludeSpans`
 	// nolint:staticcheck
 	m.IncludeSpans = getBoolHeader(h, IncludeSpansHeader)
+	// nolint:staticcheck
+	if m.IncludeSpans == nil {
+		// nolint:staticcheck
+		m.IncludeSpans = getBoolHeader(h, includeSpansHeader)
+	}
 	m.Spans = getSpans(h)
 	m.ContentType = h.Get("Content-Type")
 	m.Accept = h.Get(AcceptHeader)
+	if m.Accept == "" {
+		m.Accept = h.Get(acceptHeader)
+	}
 	m.Path = h.Get(PathHeader)
+	if m.Path == "" {
+		m.Path = h.Get(pathHeader)
+	}
 	m.Metadata = getMetadata(h)
 	m.PartnerIDs = getPartnerIDs(h)
 	m.SessionID = h.Get(SessionIdHeader)
+	if m.SessionID == "" {
+		m.SessionID = h.Get(sessionIdHeader)
+	}
 	m.Headers = getHeaders(h)
 	m.ServiceName = h.Get(ServiceNameHeader)
+	if m.ServiceName == "" {
+		m.ServiceName = h.Get(serviceNameHeader)
+	}
 	m.URL = h.Get(URLHeader)
+	if m.URL == "" {
+		m.URL = h.Get(urlHeader)
+	}
 	return
 }
 
