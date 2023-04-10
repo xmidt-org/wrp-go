@@ -19,42 +19,52 @@ package wrpcontext
 
 import (
 	"context"
-	"encoding/json"
+	"reflect"
 )
 
-type contextKey string
-
-func (c contextKey) String() string {
-	return "wrpcontext context key " + string(c)
-}
-
-var (
-	contextKeyWrpMessage = contextKey("wrp-message")
-)
+type contextKey struct{}
 
 // Set provides a standard way to add a wrp message to a context.Context. This supports not only wrp.Message
 // but also all the other message types, such as wrp.SimpleRequestResponse
 func Set(ctx context.Context, msg any) context.Context {
-	return context.WithValue(ctx, contextKeyWrpMessage, msg)
+	return context.WithValue(ctx, contextKey{}, msg)
 }
 
-// Get a wrp.Message from a context, nil means no value was associated with the key in the context
-func Get(ctx context.Context) any {
-	return ctx.Value(contextKeyWrpMessage)
-}
+// Get a message from a context and return it as type T
+func Get[T any](ctx context.Context) (dest T, ok bool) {
+	src := ctx.Value(contextKey{})
+	if src == nil {
+		return
+	}
 
-// Get a message from a context and store it in the value pointed to by msg
-func GetAs(ctx context.Context, msg any) bool {
-	msgVal := Get(ctx)
-	if msgVal == nil {
-		return false
+	// if src and dest are the exact same type
+	if dest, ok = src.(T); ok {
+		return
 	}
-	jsonBytes, err := json.Marshal(msgVal)
-	if err != nil {
-		return false
+
+	// if src is a pointer to the same type as the value of dest
+	var srcptr *T
+	if srcptr, ok = src.(*T); ok {
+		if srcptr == nil {
+			ok = false
+		} else {
+			dest = *srcptr
+		}
+		return
 	}
-	if err := json.Unmarshal(jsonBytes, msg); err != nil {
-		return false
+
+	// if src is a value, and dest is a pointer to the same type as src
+	srcValue := reflect.ValueOf(src)
+	destType := reflect.TypeOf((*T)(nil)).Elem()
+	ok = (srcValue.Kind() != reflect.Ptr) && (destType.Kind() == reflect.Ptr) && srcValue.Type().ConvertibleTo(destType.Elem())
+
+	if ok {
+		// use reflect to create a pointer to T's element type, which will allocate memory
+		// then we copy src to that memory
+		destValue := reflect.New(destType.Elem())
+		destValue.Elem().Set(srcValue)
+		dest = destValue.Interface().(T)
 	}
-	return msg != nil
+
+	return
 }

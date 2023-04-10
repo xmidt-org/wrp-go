@@ -56,8 +56,8 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 
 		// Check if the context already contains a message
 		// If so, return the original request's message as an entity
-		var msg *wrp.Message
-		if wrpcontext.GetAs(original.Context(), &msg) {
+		msg, ok := wrpcontext.Get[*wrp.Message](original.Context())
+		if ok {
 			jsonBytes, err := json.Marshal(msg)
 			if err != nil {
 				return nil, err
@@ -123,7 +123,8 @@ func DecodeRequestHeaders(ctx context.Context, original *http.Request) (*Entity,
 // DecodeRequest is a Decoder that provides lower-level way of decoding an *http.Request
 // Can work for servers that don't use a wrp.Handler
 func DecodeRequest(r *http.Request, msg any) (*http.Request, error) {
-	if wrpcontext.GetAs(r.Context(), msg) {
+
+	if _, ok := wrpcontext.Get[*wrp.Message](r.Context()); ok {
 		// Context already contains a message, so just return the original request
 		return r, nil
 	}

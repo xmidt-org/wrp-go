@@ -262,8 +262,9 @@ func testDecodeRequestSuccess(t *testing.T) {
 
 		var msg wrp.Message
 		actual, err := DecodeRequest(request, &msg)
-		wrpcontext.GetAs(actual.Context(), &msg)
+		msg, ok := wrpcontext.Get[wrp.Message](actual.Context())
 
+		assert.True(ok)
 		assert.Nil(err)
 		require.NotNil(actual)
 		require.NotNil(actual.Context())
