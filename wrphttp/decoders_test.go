@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xmidt-org/wrp-go/v3"
+	"github.com/xmidt-org/wrp-go/v3/wrpcontext"
 )
 
 func TestDefaultDecoder(t *testing.T) {
@@ -195,4 +196,133 @@ func testDecodeRequestHeadersInvalid(t *testing.T) {
 func TestDecodeRequestHeaders(t *testing.T) {
 	t.Run("Success", testDecodeRequestHeadersSuccess)
 	t.Run("Invalid", testDecodeRequestHeadersInvalid)
+}
+
+func testDecodeRequestSuccess(t *testing.T) {
+	testData := []struct {
+		bodyFormat       wrp.Format
+		contentType      string
+		accept           string
+		msgType          wrp.MessageType
+		msgTypeString    string
+		httpHeaderFormat bool
+	}{
+		{ // Msgpack
+			bodyFormat:       wrp.Msgpack,
+			contentType:      wrp.Msgpack.ContentType(),
+			accept:           wrp.Msgpack.ContentType(),
+			httpHeaderFormat: false,
+		},
+		{ // JSON
+			bodyFormat:       wrp.JSON,
+			contentType:      wrp.JSON.ContentType(),
+			accept:           wrp.JSON.ContentType(),
+			httpHeaderFormat: false,
+		},
+		{ // HTTP Header Format
+			bodyFormat:       wrp.JSON,
+			contentType:      wrp.JSON.ContentType(),
+			accept:           wrp.JSON.ContentType(),
+			msgType:          wrp.SimpleEventMessageType,
+			msgTypeString:    "SimpleEvent",
+			httpHeaderFormat: true,
+		},
+		{ // HTTP Header Format, Simple Request Response
+			bodyFormat:       wrp.JSON,
+			contentType:      wrp.JSON.ContentType(),
+			accept:           wrp.JSON.ContentType(),
+			msgType:          wrp.SimpleRequestResponseMessageType,
+			msgTypeString:    "SimpleRequestResponse",
+			httpHeaderFormat: true,
+		},
+	}
+
+	for _, record := range testData {
+		var (
+			assert   = assert.New(t)
+			require  = require.New(t)
+			expected = &wrp.Message{
+				ContentType: record.contentType,
+			}
+			body []byte
+		)
+
+		require.NoError(
+			wrp.NewEncoderBytes(&body, record.bodyFormat).Encode(&expected),
+		)
+
+		request := httptest.NewRequest("POST", "/", bytes.NewBuffer(body))
+		request.Header.Set("Content-Type", record.contentType)
+		request.Header.Set("Accept", record.accept)
+
+		if record.httpHeaderFormat {
+			request.Header.Set(MessageTypeHeader, record.msgTypeString)
+			expected.Type = record.msgType
+		}
+
+		var msg wrp.Message
+		actual, err := DecodeRequest(request, &msg)
+		msg, ok := wrpcontext.Get[wrp.Message](actual.Context())
+
+		assert.True(ok)
+		assert.Nil(err)
+		require.NotNil(actual)
+		require.NotNil(actual.Context())
+		assert.Equal(expected, &msg)
+
+	}
+}
+
+func testDecodeRequestInvalid(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+
+		testData = []struct {
+			bodyFormat  wrp.Format
+			contentType string
+			accept      string
+			decodeError bool
+		}{
+			{
+				bodyFormat:  wrp.JSON,
+				contentType: "BAD CONTENT TYPE",
+				accept:      wrp.JSON.ContentType(),
+			},
+			{
+				bodyFormat:  wrp.JSON,
+				contentType: wrp.JSON.ContentType(),
+				accept:      wrp.JSON.ContentType(),
+				decodeError: true,
+			},
+		}
+	)
+
+	for _, record := range testData {
+
+		var body []byte
+		if !record.decodeError {
+			expected := &wrp.Message{}
+			require.NoError(
+				wrp.NewEncoderBytes(&body, record.bodyFormat).Encode(&expected),
+			)
+
+		}
+
+		request := httptest.NewRequest("POST", "/", bytes.NewBuffer(body))
+		request.Header.Set("Content-Type", record.contentType)
+		request.Header.Set("Accept", record.accept)
+
+		var msg wrp.Message
+		actual, err := DecodeRequest(request, &msg)
+
+		assert.Error(err)
+		require.Nil(actual)
+
+	}
+}
+
+func TestDecodeRequest(t *testing.T) {
+	t.Run("Success", testDecodeRequestSuccess)
+	t.Run("Invalid", testDecodeRequestInvalid)
 }

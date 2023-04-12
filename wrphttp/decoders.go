@@ -19,11 +19,13 @@ package wrphttp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/xmidt-org/wrp-go/v3"
+	"github.com/xmidt-org/wrp-go/v3/wrpcontext"
 )
 
 var defaultDecoder Decoder = DecodeEntity(wrp.Msgpack)
@@ -41,6 +43,7 @@ func DefaultDecoder() Decoder {
 
 func DecodeEntity(defaultFormat wrp.Format) Decoder {
 	return func(ctx context.Context, original *http.Request) (*Entity, error) {
+
 		format, err := DetermineFormat(defaultFormat, original.Header, "Content-Type")
 		if err != nil {
 			return nil, fmt.Errorf("failed to determine format of Content-Type header: %v", err)
@@ -49,6 +52,22 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 		_, err = DetermineFormat(defaultFormat, original.Header, "Accept")
 		if err != nil {
 			return nil, fmt.Errorf("failed to determine format of Accept header: %v", err)
+		}
+
+		// Check if the context already contains a message
+		// If so, return the original request's message as an entity
+		msg, ok := wrpcontext.Get[*wrp.Message](original.Context())
+		if ok {
+			jsonBytes, err := json.Marshal(msg)
+			if err != nil {
+				return nil, err
+			}
+			entity := &Entity{
+				Message: *msg,
+				Format:  format,
+				Bytes:   jsonBytes,
+			}
+			return entity, nil
 		}
 
 		contents, err := io.ReadAll(original.Body)
@@ -99,4 +118,37 @@ func DecodeRequestHeaders(ctx context.Context, original *http.Request) (*Entity,
 
 	err = wrp.NewEncoderBytes(&entity.Bytes, entity.Format).Encode(entity.Message)
 	return entity, err
+}
+
+// DecodeRequest is a Decoder that provides lower-level way of decoding an *http.Request
+// Can work for servers that don't use a wrp.Handler
+func DecodeRequest(r *http.Request, msg any) (*http.Request, error) {
+
+	if _, ok := wrpcontext.Get[*wrp.Message](r.Context()); ok {
+		// Context already contains a message, so just return the original request
+		return r, nil
+	}
+
+	format, err := DetermineFormat(wrp.JSON, r.Header, "Content-Type")
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine format of Content-Type header: %v", err)
+	}
+
+	var decodedMessage wrp.Message
+
+	// Try to decode the message using the HTTP Request headers
+	// If this doesn't work, decode the message as Msgpack or JSON format
+	if err = SetMessageFromHeaders(r.Header, &decodedMessage); err != nil {
+		// Msgpack or JSON Format
+		bodyReader := r.Body
+		err = wrp.NewDecoder(bodyReader, format).Decode(&decodedMessage)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode wrp message: %v", err)
+		}
+	}
+
+	ctx := wrpcontext.Set(r.Context(), &decodedMessage)
+
+	// Return a new request with the new context, containing the decoded message
+	return r.WithContext(ctx), nil
 }
