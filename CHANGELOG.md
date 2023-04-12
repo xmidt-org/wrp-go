@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v3.1.5]
+- Add a wrpcontext subpackage and standard way of decoding an http.request into a wrp message [#116](https://github.com/xmidt-org/wrp-go/pull/116)
+
 ## [v3.1.4]
 - Add simple message types WRP validators [#85](https://github.com/xmidt-org/wrp-go/pull/85)
 - Add basic WRP spec validators [#84](https://github.com/xmidt-org/wrp-go/pull/84)
