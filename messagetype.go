@@ -44,10 +44,10 @@ const (
 	lastMessageType
 )
 
-// SupportsTransaction tests if messages of this type are allowed to participate in transactions.
+// RequiresTransaction tests if messages of this type are allowed to participate in transactions.
 // If this method returns false, the TransactionUUID field should be ignored (but passed through
-// where applicable).
-func (mt MessageType) SupportsTransaction() bool {
+// where applicable). If this method returns true, TransactionUUID must be included in request.
+func (mt MessageType) RequiresTransaction() bool {
 	switch mt {
 	case SimpleRequestResponseMessageType, CreateMessageType, RetrieveMessageType, UpdateMessageType, DeleteMessageType:
 		return true

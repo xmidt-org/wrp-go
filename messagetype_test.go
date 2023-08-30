@@ -79,7 +79,7 @@ func TestMessageTypeSupportsTransaction(t *testing.T) {
 	)
 
 	for messageType, expected := range expectedSupportsTransaction {
-		assert.Equal(expected, messageType.SupportsTransaction())
+		assert.Equal(expected, messageType.RequiresTransaction())
 	}
 }
 

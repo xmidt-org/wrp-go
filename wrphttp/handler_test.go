@@ -19,6 +19,7 @@ package wrphttp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -270,6 +271,58 @@ func testWRPHandlerDecodeError(t *testing.T) {
 	wrpHandler.AssertExpectations(t)
 }
 
+func testTransactionUUIDError(t *testing.T) {
+	var (
+		assert  = assert.New(t)
+		require = require.New(t)
+
+		msg = wrp.Message{
+			Type: wrp.SimpleRequestResponseMessageType,
+		}
+		msgBytes, _ = json.Marshal(msg)
+		entity      = &Entity{
+			Message: msg,
+			Bytes:   msgBytes,
+		}
+
+		expectedError = httpError{
+			err:  fmt.Errorf("%s", string(entity.Bytes)),
+			code: http.StatusBadRequest,
+		}
+		decoder = func(_ context.Context, _ *http.Request) (*Entity, error) {
+			return entity, nil
+		}
+
+		errorEncoderCalled = false
+		httpResponse       = httptest.NewRecorder()
+	)
+
+	httpRequest := httptest.NewRequest("POST", "/", nil)
+
+	errorEncoder := func(_ context.Context, actualErr error, _ http.ResponseWriter) {
+		errorEncoderCalled = true
+		assert.Equal(expectedError, actualErr)
+
+		var actualErrorHTTP httpError
+		if assert.ErrorAs(actualErr, &actualErrorHTTP,
+			fmt.Errorf("error [%v] doesn't contain error [%v] in its err chain",
+				actualErr, actualErrorHTTP)) {
+			assert.Equal(expectedError.code, actualErrorHTTP.code)
+		}
+	}
+
+	wrpHandler := new(MockHandler)
+	httpHandler := NewHTTPHandler(wrpHandler,
+		WithDecoder(decoder),
+		WithErrorEncoder(errorEncoder))
+
+	require.NotNil(httpHandler)
+	httpHandler.ServeHTTP(httpResponse, httpRequest)
+
+	assert.True(errorEncoderCalled)
+
+}
+
 func testWRPHandlerResponseWriterError(t *testing.T) {
 	var (
 		assert  = assert.New(t)
@@ -386,5 +439,6 @@ func TestWRPHandler(t *testing.T) {
 		t.Run("DecodeError", testWRPHandlerDecodeError)
 		t.Run("ResponseWriterError", testWRPHandlerResponseWriterError)
 		t.Run("Success", testWRPHandlerSuccess)
+		t.Run("TransactionUUIDError", testTransactionUUIDError)
 	})
 }

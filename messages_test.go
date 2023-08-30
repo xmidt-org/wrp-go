@@ -114,7 +114,7 @@ func testMessageRoutable(t *testing.T, original Message) {
 	assert.Equal(original.Source, original.From())
 	assert.Equal(original.TransactionUUID, original.TransactionKey())
 	assert.Equal(
-		original.Type.SupportsTransaction() && len(original.TransactionUUID) > 0,
+		original.Type.RequiresTransaction() && len(original.TransactionUUID) > 0,
 		original.IsTransactionPart(),
 	)
 

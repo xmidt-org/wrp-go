@@ -129,7 +129,7 @@ func (wh *wrpHandler) ServeHTTP(httpResponse http.ResponseWriter, httpRequest *h
 		return
 	}
 
-	if entity.Message.Type == 3 && entity.Message.TransactionUUID == "" {
+	if entity.Message.Type.RequiresTransaction() && entity.Message.TransactionUUID == "" {
 		wrappedErr := httpError{
 			err:  fmt.Errorf("%s", string(entity.Bytes)),
 			code: http.StatusBadRequest,
