@@ -1,6 +1,6 @@
 module github.com/xmidt-org/wrp-go/v3
 
-go 1.19
+go 1.21
 
 require (
 	github.com/davecgh/go-spew v1.1.1
