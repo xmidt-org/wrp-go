@@ -18,6 +18,7 @@
 package wrphttp
 
 import (
+	"fmt"
 	"net/http"
 
 	gokithttp "github.com/go-kit/kit/transport/http"
@@ -122,6 +123,15 @@ func (wh *wrpHandler) ServeHTTP(httpResponse http.ResponseWriter, httpRequest *h
 	if err != nil {
 		wrappedErr := httpError{
 			err:  err,
+			code: http.StatusBadRequest,
+		}
+		wh.errorEncoder(ctx, wrappedErr, httpResponse)
+		return
+	}
+
+	if entity.Message.Type.RequiresTransaction() && entity.Message.TransactionUUID == "" {
+		wrappedErr := httpError{
+			err:  fmt.Errorf("%s", string(entity.Bytes)),
 			code: http.StatusBadRequest,
 		}
 		wh.errorEncoder(ctx, wrappedErr, httpResponse)

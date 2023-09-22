@@ -194,7 +194,7 @@ func (msg *Message) From() string {
 }
 
 func (msg *Message) IsTransactionPart() bool {
-	return msg.Type.SupportsTransaction() && len(msg.TransactionUUID) > 0
+	return msg.Type.RequiresTransaction() && len(msg.TransactionUUID) > 0
 }
 
 func (msg *Message) TransactionKey() string {
