@@ -28,24 +28,91 @@ func TestParseDeviceID(t *testing.T) {
 	testData := []struct {
 		id           string
 		expected     DeviceID
+		prefix       string
+		literalID    string
 		expectsError bool
 	}{
-		{"MAC:11:22:33:44:55:66", "mac:112233445566", false},
-		{"MAC:11aaBB445566", "mac:11aabb445566", false},
-		{"mac:11-aa-BB-44-55-66", "mac:11aabb445566", false},
-		{"mac:11,aa,BB,44,55,66", "mac:11aabb445566", false},
-		{"uuid:anything Goes!", "uuid:anything Goes!", false},
-		{"dns:anything Goes!", "dns:anything Goes!", false},
-		{"serial:1234", "serial:1234", false},
-		{"mac:11-aa-BB-44-55-66/service", "mac:11aabb445566", false},
-		{"mac:11-aa-BB-44-55-66/service/", "mac:11aabb445566", false},
-		{"mac:11-aa-BB-44-55-66/service/ignoreMe", "mac:11aabb445566", false},
-		{"mac:11-aa-BB-44-55-66/service/foo/bar", "mac:11aabb445566", false},
-		{"invalid:a-BB-44-55", "", true},
-		{"mac:11-aa-BB-44-55", "", true},
-		{"MAC:invalid45566", "", true},
-		{"mac:481d70187fef", "mac:481d70187fef", false},
-		{"mac:481d70187fef/parodus/tag/test0", "mac:481d70187fef", false},
+		{
+			id:        "MAC:11:22:33:44:55:66",
+			expected:  "mac:112233445566",
+			prefix:    "mac",
+			literalID: "112233445566",
+		}, {
+			id:        "MAC:11aaBB445566",
+			expected:  "mac:11aabb445566",
+			prefix:    "mac",
+			literalID: "11aabb445566",
+		}, {
+			id:        "mac:11-aa-BB-44-55-66",
+			expected:  "mac:11aabb445566",
+			prefix:    "mac",
+			literalID: "11aabb445566",
+		}, {
+			id:        "mac:11,aa,BB,44,55,66",
+			expected:  "mac:11aabb445566",
+			prefix:    "mac",
+			literalID: "11aabb445566",
+		}, {
+			id:        "uuid:anything Goes!",
+			expected:  "uuid:anything Goes!",
+			prefix:    "uuid",
+			literalID: "anything Goes!",
+		}, {
+			id:        "dns:anything Goes!",
+			expected:  "dns:anything Goes!",
+			prefix:    "dns",
+			literalID: "anything Goes!",
+		}, {
+			id:        "serial:1234",
+			expected:  "serial:1234",
+			prefix:    "serial",
+			literalID: "1234",
+		}, {
+			id:        "mac:11-aa-BB-44-55-66/service",
+			expected:  "mac:11aabb445566",
+			prefix:    "mac",
+			literalID: "11aabb445566",
+		}, {
+			id:        "mac:11-aa-BB-44-55-66/service/",
+			expected:  "mac:11aabb445566",
+			prefix:    "mac",
+			literalID: "11aabb445566",
+		}, {
+			id:        "MAC:11-aa-BB-44-55-66/service/ignoreMe",
+			expected:  "mac:11aabb445566",
+			prefix:    "mac",
+			literalID: "11aabb445566",
+		}, {
+			id:        "mac:11-aa-BB-44-55-66/service/foo/bar",
+			expected:  "mac:11aabb445566",
+			prefix:    "mac",
+			literalID: "11aabb445566",
+		}, {
+			id:           "invalid:a-BB-44-55",
+			expectsError: true,
+		}, {
+			id:           "mac:11-aa-BB-44-55",
+			expectsError: true,
+		}, {
+			id:           "MAC:invalid45566",
+			expectsError: true,
+		}, {
+			id:           "invalid:random stuff",
+			expectsError: true,
+		}, {
+			id:           "mac:11223344556w",
+			expectsError: true,
+		}, {
+			id:        "mac:481d70187fef",
+			expected:  "mac:481d70187fef",
+			prefix:    "mac",
+			literalID: "481d70187fef",
+		}, {
+			id:        "mac:481d70187fef/parodus/tag/test0",
+			expected:  "mac:481d70187fef",
+			prefix:    "mac",
+			literalID: "481d70187fef",
+		},
 	}
 
 	for _, record := range testData {
@@ -54,6 +121,8 @@ func TestParseDeviceID(t *testing.T) {
 			assert.Equal(record.expected, id)
 			assert.Equal(record.expectsError, err != nil)
 			assert.Equal([]byte(record.expected), id.Bytes())
+			assert.Equal(record.prefix, id.Prefix())
+			assert.Equal(record.literalID, id.ID())
 		})
 	}
 }
