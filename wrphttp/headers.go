@@ -31,7 +31,7 @@ import (
 // Constant HTTP header strings representing WRP fields
 const (
 	MessageTypeHeader             = "X-Xmidt-Message-Type"
-	TransactionUuidHeader         = "X-Xmidt-Transaction-Uuid"
+	TransactionUuidHeader         = "X-Xmidt-Transaction-Uuid" // nolint:gosec
 	StatusHeader                  = "X-Xmidt-Status"
 	RequestDeliveryResponseHeader = "X-Xmidt-Request-Delivery-Response"
 	IncludeSpansHeader            = "X-Xmidt-Include-Spans"

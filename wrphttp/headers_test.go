@@ -400,7 +400,8 @@ func TestAddMessageHeaders(t *testing.T) {
 
 		expected := record.expected
 		actual := make(http.Header)
-		AddMessageHeaders(actual, &record.message)
+		message := record.message
+		AddMessageHeaders(actual, &message)
 
 		for _, header := range regularHeaders {
 			assert.Equal(expected[header], actual[header])
