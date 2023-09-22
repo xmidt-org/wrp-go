@@ -165,11 +165,11 @@ func TestWithDecoder(t *testing.T) {
 func TestWithBefore(t *testing.T) {
 	testData := [][]MessageFunc{
 		nil,
-		[]MessageFunc{},
-		[]MessageFunc{
+		{},
+		{
 			func(context.Context, *wrp.Message) context.Context { return nil },
 		},
-		[]MessageFunc{
+		{
 			func(context.Context, *wrp.Message) context.Context { return nil },
 			func(context.Context, *wrp.Message) context.Context { return nil },
 			func(context.Context, *wrp.Message) context.Context { return nil },
@@ -194,11 +194,11 @@ func TestWithBefore(t *testing.T) {
 func TestWithAfter(t *testing.T) {
 	testData := [][]MessageFunc{
 		nil,
-		[]MessageFunc{},
-		[]MessageFunc{
+		{},
+		{
 			func(context.Context, *wrp.Message) context.Context { return nil },
 		},
-		[]MessageFunc{
+		{
 			func(context.Context, *wrp.Message) context.Context { return nil },
 			func(context.Context, *wrp.Message) context.Context { return nil },
 			func(context.Context, *wrp.Message) context.Context { return nil },
