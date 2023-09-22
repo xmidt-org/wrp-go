@@ -52,6 +52,29 @@ func (id DeviceID) Bytes() []byte {
 	return []byte(id)
 }
 
+// String is a convenience function to obtain the string representation of the
+// prefix portion of the ID.
+func (id DeviceID) Prefix() string {
+	prefix, _ := id.split()
+	return prefix
+}
+
+// ID is a convenience function to obtain the string representation of the
+// identifier portion of the ID.
+func (id DeviceID) ID() string {
+	_, idPart := id.split()
+	return idPart
+}
+
+func (id DeviceID) split() (prefix, idPart string) {
+	parts := strings.SplitN(string(id), ":", 2)
+	if len(parts) != 2 {
+		return parts[0], ""
+	}
+
+	return parts[0], parts[1]
+}
+
 // ParseID parses a raw device name into a canonicalized identifier.
 func ParseDeviceID(deviceName string) (DeviceID, error) {
 	match := DeviceIDPattern.FindStringSubmatch(deviceName)
