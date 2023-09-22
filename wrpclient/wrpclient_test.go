@@ -173,7 +173,9 @@ func TestSendWRP(t *testing.T) {
 				client.httpClient = m
 			}
 
-			err = client.SendWRP(ctx, &tc.response, &tc.request)
+			response := tc.response
+			request := tc.request
+			err = client.SendWRP(ctx, &response, &request)
 			if tc.useMockHTTPClient {
 				m.AssertExpectations(t)
 			}
