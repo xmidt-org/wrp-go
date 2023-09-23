@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build go1.6
 // +build go1.6
 
@@ -7,10 +10,11 @@ package wrp
 
 import (
 	"errors"
-	codec1978 "github.com/ugorji/go/codec"
 	"runtime"
 	"sort"
 	"strconv"
+
+	codec1978 "github.com/ugorji/go/codec"
 )
 
 const (
