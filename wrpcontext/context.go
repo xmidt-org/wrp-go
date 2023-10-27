@@ -8,21 +8,8 @@ import (
 	"reflect"
 )
 
-type contextKey struct{}
-
-// Set provides a standard way to add a wrp message to a context.Context. This supports not only wrp.Message
-// but also all the other message types, such as wrp.SimpleRequestResponse
-func Set(ctx context.Context, msg any) context.Context {
-	return context.WithValue(ctx, contextKey{}, msg)
-}
-
 // Get a message from a context and return it as type T
-func Get[T any](ctx context.Context) (dest T, ok bool) {
-	src := ctx.Value(contextKey{})
-	if src == nil {
-		return
-	}
-
+func get[T any](ctx context.Context, src any) (dest T, ok bool) {
 	// if src and dest are the exact same type
 	if dest, ok = src.(T); ok {
 		return

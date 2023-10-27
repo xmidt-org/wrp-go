@@ -5,7 +5,6 @@ package wrphttp
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,7 +28,6 @@ func DefaultDecoder() Decoder {
 
 func DecodeEntity(defaultFormat wrp.Format) Decoder {
 	return func(ctx context.Context, original *http.Request) (*Entity, error) {
-
 		format, err := DetermineFormat(defaultFormat, original.Header, "Content-Type")
 		if err != nil {
 			return nil, fmt.Errorf("failed to determine format of Content-Type header: %v", err)
@@ -40,35 +38,25 @@ func DecodeEntity(defaultFormat wrp.Format) Decoder {
 			return nil, fmt.Errorf("failed to determine format of Accept header: %v", err)
 		}
 
-		// Check if the context already contains a message
-		// If so, return the original request's message as an entity
-		msg, ok := wrpcontext.Get[*wrp.Message](original.Context())
-		if ok {
-			jsonBytes, err := json.Marshal(msg)
+		entity := &Entity{Format: format}
+		if contents, ok := wrpcontext.GetContents(original.Context()); ok {
+			entity.Bytes = contents
+		} else {
+			contents, err := io.ReadAll(original.Body)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to read request body: %v", err)
 			}
-			entity := &Entity{
-				Message: *msg,
-				Format:  format,
-				Bytes:   jsonBytes,
+
+			entity.Bytes = contents
+		}
+
+		if msg, ok := wrpcontext.GetMessage(original.Context()); ok {
+			entity.Message = *msg
+		} else {
+			err = wrp.NewDecoderBytes(entity.Bytes, format).Decode(&entity.Message)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode wrp: %v", err)
 			}
-			return entity, nil
-		}
-
-		contents, err := io.ReadAll(original.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		entity := &Entity{
-			Format: format,
-			Bytes:  contents,
-		}
-
-		err = wrp.NewDecoderBytes(contents, format).Decode(&entity.Message)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode wrp: %v", err)
 		}
 
 		return entity, err
@@ -110,7 +98,7 @@ func DecodeRequestHeaders(ctx context.Context, original *http.Request) (*Entity,
 // Can work for servers that don't use a wrp.Handler
 func DecodeRequest(r *http.Request, msg any) (*http.Request, error) {
 
-	if _, ok := wrpcontext.Get[*wrp.Message](r.Context()); ok {
+	if _, ok := wrpcontext.GetMessage(r.Context()); ok {
 		// Context already contains a message, so just return the original request
 		return r, nil
 	}
@@ -122,18 +110,23 @@ func DecodeRequest(r *http.Request, msg any) (*http.Request, error) {
 
 	var decodedMessage wrp.Message
 
+	contents, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read request body: %v", err)
+	}
+
 	// Try to decode the message using the HTTP Request headers
 	// If this doesn't work, decode the message as Msgpack or JSON format
 	if err = SetMessageFromHeaders(r.Header, &decodedMessage); err != nil {
 		// Msgpack or JSON Format
-		bodyReader := r.Body
-		err = wrp.NewDecoder(bodyReader, format).Decode(&decodedMessage)
+		err = wrp.NewDecoderBytes(contents, format).Decode(&decodedMessage)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode wrp message: %v", err)
 		}
 	}
 
-	ctx := wrpcontext.Set(r.Context(), &decodedMessage)
+	ctx := wrpcontext.SetMessage(r.Context(), &decodedMessage)
+	ctx = wrpcontext.SetContents(ctx, contents)
 
 	// Return a new request with the new context, containing the decoded message
 	return r.WithContext(ctx), nil
