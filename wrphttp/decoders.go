@@ -96,7 +96,7 @@ func DecodeRequestHeaders(ctx context.Context, original *http.Request) (*Entity,
 
 // DecodeRequest is a Decoder that provides lower-level way of decoding an *http.Request
 // Can work for servers that don't use a wrp.Handler
-func DecodeRequest(r *http.Request, msg any) (*http.Request, error) {
+func DecodeRequest(r *http.Request, _ any) (*http.Request, error) {
 
 	if _, ok := wrpcontext.GetMessage(r.Context()); ok {
 		// Context already contains a message, so just return the original request
