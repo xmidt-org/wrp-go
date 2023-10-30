@@ -234,7 +234,7 @@ func testDecodeRequestSuccess(t *testing.T) {
 		)
 
 		require.NoError(
-			wrp.NewEncoderBytes(&body, record.bodyFormat).Encode(&expected),
+			wrp.NewEncoderBytes(&body, record.bodyFormat).Encode(expected),
 		)
 
 		request := httptest.NewRequest("POST", "/", bytes.NewBuffer(body))
@@ -246,15 +246,14 @@ func testDecodeRequestSuccess(t *testing.T) {
 			expected.Type = record.msgType
 		}
 
-		var msg wrp.Message
-		actual, err := DecodeRequest(request, &msg)
-		msg, ok := wrpcontext.Get[wrp.Message](actual.Context())
+		actual, err := DecodeRequest(request, nil)
+		msg, ok := wrpcontext.GetMessage(actual.Context())
 
 		assert.True(ok)
 		assert.Nil(err)
 		require.NotNil(actual)
 		require.NotNil(actual.Context())
-		assert.Equal(expected, &msg)
+		assert.Equal(expected, msg)
 
 	}
 }
