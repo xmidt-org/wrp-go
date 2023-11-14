@@ -72,12 +72,14 @@ func getMessageType(h http.Header) wrp.MessageType {
 			panic(errMissingMessageTypeHeader)
 		}
 	}
-
-	messageType, err := wrp.StringToMessageType(value)
+	//Only Validate if the MessageTypeHeader value can be converted from a string to an interger
+	//To validate if the MessageTypeHeader is a valid MessageType use WRPValidators
+	i, err := strconv.Atoi(value)
 	if err != nil {
 		panic(err)
 	}
-	return messageType
+	i64 := int64(i)
+	return wrp.MessageType(i64)
 }
 
 // getIntHeader returns the header as a int64, or returns nil if the header is absent.
