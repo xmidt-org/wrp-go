@@ -4,7 +4,6 @@
 package wrp
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -97,11 +96,11 @@ func init() {
 // If the value equals the friendly name of a type, e.g. "Auth" for AuthMessageType,
 // that type is returned.  Otherwise, the value is converted to an integer and looked up,
 // with an error being returned in the event the integer value is not valid.
-func StringToMessageType(value string) (MessageType, error) {
+func StringToMessageType(value string) MessageType {
 	mt, ok := stringToMessageType[value]
 	if !ok {
-		return MessageType(-1), fmt.Errorf("invalid message type: %s", value)
+		return UnknownMessageType
 	}
 
-	return mt, nil
+	return mt
 }
