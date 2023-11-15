@@ -101,25 +101,21 @@ func testStringToMessageTypeValid(t *testing.T, expected MessageType) {
 		expectedString = expected.String()
 	)
 
-	actual, err := StringToMessageType(expectedString)
+	actual := StringToMessageType(expectedString)
 	assert.Equal(expected, actual)
-	assert.NoError(err)
 
-	actual, err = StringToMessageType(expectedString[0 : len(expectedString)-len("MessageType")])
+	actual = StringToMessageType(expectedString[0 : len(expectedString)-len("MessageType")])
 	assert.Equal(expected, actual)
-	assert.NoError(err)
 
-	actual, err = StringToMessageType(strconv.Itoa(int(expected)))
+	actual = StringToMessageType(strconv.Itoa(int(expected)))
 	assert.Equal(expected, actual)
-	assert.NoError(err)
 }
 
 func testStringToMessageTypeInvalid(t *testing.T, invalid string) {
 	assert := assert.New(t)
 
-	actual, err := StringToMessageType(invalid)
-	assert.Equal(MessageType(-1), actual)
-	assert.Error(err)
+	actual := StringToMessageType(invalid)
+	assert.Equal(UnknownMessageType, actual)
 }
 
 func TestStringToMessageType(t *testing.T) {

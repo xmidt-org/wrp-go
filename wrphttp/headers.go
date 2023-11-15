@@ -73,10 +73,7 @@ func getMessageType(h http.Header) wrp.MessageType {
 		}
 	}
 
-	messageType, err := wrp.StringToMessageType(value)
-	if err != nil {
-		panic(err)
-	}
+	messageType := wrp.StringToMessageType(value)
 	return messageType
 }
 
