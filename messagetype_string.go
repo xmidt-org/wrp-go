@@ -20,7 +20,7 @@ func _() {
 	_ = x[ServiceRegistrationMessageType-9]
 	_ = x[ServiceAliveMessageType-10]
 	_ = x[UnknownMessageType-11]
-	_ = x[lastMessageType-12]
+	_ = x[LastMessageType-12]
 }
 
 const _MessageType_name = "Invalid0MessageTypeInvalid1MessageTypeAuthorizationMessageTypeSimpleRequestResponseMessageTypeSimpleEventMessageTypeCreateMessageTypeRetrieveMessageTypeUpdateMessageTypeDeleteMessageTypeServiceRegistrationMessageTypeServiceAliveMessageTypeUnknownMessageTypelastMessageType"

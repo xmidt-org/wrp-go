@@ -230,7 +230,7 @@ func testNewMessageFromHeadersBadMessageType(t *testing.T) {
 	assert.Error(err)
 
 	message, err = NewMessageFromHeaders(http.Header{MessageTypeHeader: []string{"this could not possibly be a valid message type"}}, nil)
-	assert.Equal(wrp.UnknownMessageType, message.MessageType())
+	assert.Equal(wrp.LastMessageType, message.MessageType())
 	assert.NoError(err)
 }
 

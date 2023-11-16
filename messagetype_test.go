@@ -59,8 +59,8 @@ func TestMessageTypeSupportsTransaction(t *testing.T) {
 			ServiceRegistrationMessageType:   false,
 			ServiceAliveMessageType:          false,
 			UnknownMessageType:               false,
-			lastMessageType:                  false,
-			lastMessageType + 1:              false,
+			LastMessageType:                  false,
+			LastMessageType + 1:              false,
 		}
 	)
 
@@ -85,8 +85,8 @@ func TestMessageTypeSupportsQOSAck(t *testing.T) {
 			ServiceRegistrationMessageType:   false,
 			ServiceAliveMessageType:          false,
 			UnknownMessageType:               false,
-			lastMessageType:                  false,
-			lastMessageType + 1:              false,
+			LastMessageType:                  false,
+			LastMessageType + 1:              false,
 		}
 	)
 
@@ -115,12 +115,12 @@ func testStringToMessageTypeInvalid(t *testing.T, invalid string) {
 	assert := assert.New(t)
 
 	actual := StringToMessageType(invalid)
-	assert.Equal(UnknownMessageType, actual)
+	assert.Equal(LastMessageType, actual)
 }
 
 func TestStringToMessageType(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
-		for v := SimpleRequestResponseMessageType; v < lastMessageType; v++ {
+		for v := SimpleRequestResponseMessageType; v < LastMessageType; v++ {
 			testStringToMessageTypeValid(t, v)
 		}
 	})

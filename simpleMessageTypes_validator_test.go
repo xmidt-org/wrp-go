@@ -101,7 +101,7 @@ func TestSimpleEventValidators(t *testing.T) {
 		{
 			description: "Invaild simple event message error, nonexistent MessageType",
 			msg: Message{
-				Type:        lastMessageType + 1,
+				Type:        LastMessageType + 1,
 				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
@@ -219,7 +219,7 @@ func TestSimpleResponseRequestValidators(t *testing.T) {
 		{
 			description: "Invaild simple request response message error, nonexistent MessageType",
 			msg: Message{
-				Type:        lastMessageType + 1,
+				Type:        LastMessageType + 1,
 				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
@@ -456,7 +456,7 @@ func testSimpleEventTypeValidator(t *testing.T) {
 		},
 		{
 			description: "lastMessageType error",
-			msg:         Message{Type: lastMessageType},
+			msg:         Message{Type: LastMessageType},
 			expectedErr: ErrorNotSimpleEventType,
 		},
 		{
@@ -466,7 +466,7 @@ func testSimpleEventTypeValidator(t *testing.T) {
 		},
 		{
 			description: "Nonexistent positive MessageType error",
-			msg:         Message{Type: lastMessageType + 1},
+			msg:         Message{Type: LastMessageType + 1},
 			expectedErr: ErrorNotSimpleEventType,
 		},
 	}
@@ -562,7 +562,7 @@ func testSimpleResponseRequestTypeValidator(t *testing.T) {
 		},
 		{
 			description: "lastMessageType error",
-			msg:         Message{Type: lastMessageType},
+			msg:         Message{Type: LastMessageType},
 			expectedErr: ErrorNotSimpleResponseRequestType,
 		},
 		{
@@ -572,7 +572,7 @@ func testSimpleResponseRequestTypeValidator(t *testing.T) {
 		},
 		{
 			description: "Nonexistent positive MessageType error",
-			msg:         Message{Type: lastMessageType + 1},
+			msg:         Message{Type: LastMessageType + 1},
 			expectedErr: ErrorNotSimpleResponseRequestType,
 		},
 	}
