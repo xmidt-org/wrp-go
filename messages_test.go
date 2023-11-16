@@ -469,7 +469,7 @@ func TestIsQOSAckPart(t *testing.T) {
 		},
 		{
 			description: "lastMessageType no ack",
-			msg:         Message{Type: lastMessageType, QualityOfService: QOSCriticalValue},
+			msg:         Message{Type: LastMessageType, QualityOfService: QOSCriticalValue},
 		},
 		{
 			description: "Nonexistent negative MessageType no ack",
@@ -477,7 +477,7 @@ func TestIsQOSAckPart(t *testing.T) {
 		},
 		{
 			description: "Nonexistent positive MessageType no ack",
-			msg:         Message{Type: lastMessageType + 1, QualityOfService: QOSCriticalValue},
+			msg:         Message{Type: LastMessageType + 1, QualityOfService: QOSCriticalValue},
 		},
 	}
 

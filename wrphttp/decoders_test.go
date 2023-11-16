@@ -175,7 +175,7 @@ func testDecodeRequestHeadersInvalid(t *testing.T) {
 
 	request.Header.Set(MessageTypeHeader, "askdjfa;skdjfasdf")
 	entity, err := DecodeRequestHeaders(context.Background(), request)
-	assert.Equal(wrp.UnknownMessageType, entity.Message.Type)
+	assert.Equal(wrp.LastMessageType, entity.Message.Type)
 	assert.NoError(err)
 }
 

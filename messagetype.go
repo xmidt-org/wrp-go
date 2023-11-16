@@ -26,7 +26,7 @@ const (
 	ServiceRegistrationMessageType
 	ServiceAliveMessageType
 	UnknownMessageType
-	lastMessageType
+	LastMessageType
 )
 
 // RequiresTransaction tests if messages of this type are allowed to participate in transactions.
@@ -69,8 +69,8 @@ var (
 )
 
 func init() {
-	stringToMessageType = make(map[string]MessageType, lastMessageType-1)
-	friendlyNames = make(map[MessageType]string, lastMessageType-1)
+	stringToMessageType = make(map[string]MessageType, LastMessageType-1)
+	friendlyNames = make(map[MessageType]string, LastMessageType-1)
 	suffixLength := len("MessageType")
 
 	// for each MessageType, allow the following string representations:
@@ -78,7 +78,7 @@ func init() {
 	// The integral value of the constant
 	// The String() value
 	// The String() value minus the MessageType suffix
-	for v := SimpleRequestResponseMessageType; v < lastMessageType; v++ {
+	for v := SimpleRequestResponseMessageType; v < LastMessageType; v++ {
 		stringToMessageType[strconv.Itoa(int(v))] = v
 
 		vs := v.String()
@@ -99,7 +99,7 @@ func init() {
 func StringToMessageType(value string) MessageType {
 	mt, ok := stringToMessageType[value]
 	if !ok {
-		return UnknownMessageType
+		return LastMessageType
 	}
 
 	return mt

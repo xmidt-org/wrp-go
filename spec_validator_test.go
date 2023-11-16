@@ -99,7 +99,7 @@ func TestSpecValidators(t *testing.T) {
 		{
 			description: "Invaild spec error, nonexistent MessageType",
 			msg: Message{
-				Type:        lastMessageType + 1,
+				Type:        LastMessageType + 1,
 				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
@@ -331,7 +331,7 @@ func testMessageTypeValidator(t *testing.T) {
 		},
 		{
 			description: "lastMessageType error",
-			msg:         Message{Type: lastMessageType},
+			msg:         Message{Type: LastMessageType},
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
@@ -341,7 +341,7 @@ func testMessageTypeValidator(t *testing.T) {
 		},
 		{
 			description: "Nonexistent positive MessageType error",
-			msg:         Message{Type: lastMessageType + 1},
+			msg:         Message{Type: LastMessageType + 1},
 			expectedErr: ErrorInvalidMessageType,
 		},
 	}

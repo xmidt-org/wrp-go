@@ -57,12 +57,12 @@ func UTF8Validator(m Message) error {
 
 // MessageTypeValidator takes messages and validates their Type.
 func MessageTypeValidator(m Message) error {
-	if m.Type < Invalid0MessageType || m.Type > lastMessageType {
+	if m.Type < Invalid0MessageType || m.Type > LastMessageType {
 		return ErrorInvalidMessageType
 	}
 
 	switch m.Type {
-	case Invalid0MessageType, Invalid1MessageType, lastMessageType:
+	case Invalid0MessageType, Invalid1MessageType, LastMessageType:
 		return ErrorInvalidMessageType
 	}
 

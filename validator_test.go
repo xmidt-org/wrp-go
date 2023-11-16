@@ -409,7 +409,7 @@ func testAlwaysValid(t *testing.T) {
 		{
 			description: "Bad message type success",
 			msg: Message{
-				Type:        lastMessageType + 1,
+				Type:        LastMessageType + 1,
 				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
@@ -491,7 +491,7 @@ func testAlwaysInvalid(t *testing.T) {
 		{
 			description: "Bad message type error",
 			msg: Message{
-				Type:        lastMessageType + 1,
+				Type:        LastMessageType + 1,
 				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
