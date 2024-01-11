@@ -48,6 +48,8 @@ var locatorPattern = regexp.MustCompile(
 // SpecValidators validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
 func SpecValidators() Validators {
 	return Validators{}.AddFunc(UTF8Validator, MessageTypeValidator, SourceValidator, DestinationValidator)
+}
+
 func SpecValidatorsWithMetrics(f *touchstone.Factory, labelNames ...string) (Validators, error) {
 	var errs error
 	utf8, err := NewUTF8Validator(f, labelNames...)
