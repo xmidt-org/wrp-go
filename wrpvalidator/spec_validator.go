@@ -86,7 +86,7 @@ func MessageTypeValidator(m wrp.Message) error {
 	}
 
 	switch m.Type {
-	case wrp.Invalid0MessageType, Invalid1MessageType, LastMessageType:
+	case Invalid0MessageType, Invalid1MessageType, LastMessageType:
 		return ErrorInvalidMessageType
 	}
 
