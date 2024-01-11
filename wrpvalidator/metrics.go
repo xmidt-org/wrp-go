@@ -17,6 +17,8 @@ const (
 
 	// utf8ValidatorHelp is the help text for the UTF8 Validator metric.
 	utf8ValidatorHelp = "the total number of UTF8 Validator metric"
+)
+
 func NewUTF8ValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
 	return f.NewCounterVec(
 		prometheus.CounterOpts{
