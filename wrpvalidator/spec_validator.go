@@ -12,6 +12,7 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/xmidt-org/wrp-go/v3"
 )
 
 const (
@@ -47,7 +48,7 @@ func SpecValidators() Validators {
 }
 
 // UTF8Validator takes messages and validates that it contains UTF-8 strings.
-func UTF8Validator(m Message) error {
+func UTF8Validator(m wrp.Message) error {
 	if err := UTF8(m); err != nil {
 		return fmt.Errorf("%w: %v", ErrorInvalidMessageEncoding, err)
 	}
@@ -56,7 +57,7 @@ func UTF8Validator(m Message) error {
 }
 
 // MessageTypeValidator takes messages and validates their Type.
-func MessageTypeValidator(m Message) error {
+func MessageTypeValidator(m wrp.Message) error {
 	if m.Type < Invalid0MessageType || m.Type > LastMessageType {
 		return ErrorInvalidMessageType
 	}
@@ -72,7 +73,7 @@ func MessageTypeValidator(m Message) error {
 // SourceValidator takes messages and validates their Source.
 // Only mac and uuid sources are validated. Serial, event and dns sources are
 // not validated.
-func SourceValidator(m Message) error {
+func SourceValidator(m wrp.Message) error {
 	if err := validateLocator(m.Source); err != nil {
 		return fmt.Errorf("%w '%s': %v", ErrorInvalidSource, m.Source, err)
 	}
@@ -83,7 +84,7 @@ func SourceValidator(m Message) error {
 // DestinationValidator takes messages and validates their Destination.
 // Only mac and uuid destinations are validated. Serial, event and dns destinations are
 // not validated.
-func DestinationValidator(m Message) error {
+func DestinationValidator(m wrp.Message) error {
 	if err := validateLocator(m.Destination); err != nil {
 		return fmt.Errorf("%w '%s': %v", ErrorInvalidDestination, m.Destination, err)
 	}

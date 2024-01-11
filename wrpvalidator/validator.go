@@ -7,6 +7,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/xmidt-org/wrp-go/v3"
 	"go.uber.org/multierr"
 )
 
@@ -76,7 +77,7 @@ func NewValidatorError(err error, m string, f []string) ValidatorError {
 
 // Validator is a WRP validator that allows access to the Validate function.
 type Validator interface {
-	Validate(m Message) error
+	Validate(m wrp.Message) error
 }
 
 // Validators is a WRP validator that ensures messages are valid based on
@@ -85,7 +86,7 @@ type Validators []Validator
 
 // Validate runs messages through each validator in the validators list.
 // It returns as soon as the message is considered invalid, otherwise returns nil if valid.
-func (vs Validators) Validate(m Message) error {
+func (vs Validators) Validate(m wrp.Message) error {
 	var err error
 	for _, v := range vs {
 		if v != nil {
@@ -120,10 +121,10 @@ func (vs Validators) AddFunc(vf ...ValidatorFunc) Validators {
 
 // ValidatorFunc is a WRP validator that takes messages and validates them
 // against functions.
-type ValidatorFunc func(Message) error
+type ValidatorFunc func(wrp.Message) error
 
 // Validate executes its own ValidatorFunc receiver and returns the result.
-func (vf ValidatorFunc) Validate(m Message) error { return vf(m) }
+func (vf ValidatorFunc) Validate(m wrp.Message) error { return vf(m) }
 
 // TypeValidator is a WRP validator that validates based on message type
 // or using the defaultValidator if message type is unfound.

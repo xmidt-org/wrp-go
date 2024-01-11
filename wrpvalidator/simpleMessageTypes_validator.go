@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/xmidt-org/wrp-go/v3"
 	"go.uber.org/multierr"
 )
 
@@ -48,7 +49,7 @@ func SimpleResponseRequestValidators() Validators {
 }
 
 // SimpleResponseRequestTypeValidator takes messages and validates their Type is of SimpleRequestResponseMessageType.
-func SimpleResponseRequestTypeValidator(m Message) error {
+func SimpleResponseRequestTypeValidator(m wrp.Message) error {
 	if m.Type != SimpleRequestResponseMessageType {
 		return ErrorNotSimpleResponseRequestType
 	}
@@ -59,7 +60,7 @@ func SimpleResponseRequestTypeValidator(m Message) error {
 // TODO Do we want to include SpanParentValidator? SpanParent currently doesn't exist in the Message Struct
 
 // SpansValidator takes messages and validates their Spans.
-func SpansValidator(m Message) error {
+func SpansValidator(m wrp.Message) error {
 	var err error
 	// Spans consist of individual Span(s), arrays of timing values.
 	for _, s := range m.Spans {
@@ -88,7 +89,7 @@ func SpansValidator(m Message) error {
 }
 
 // SimpleEventTypeValidator takes messages and validates their Type is of SimpleEventMessageType.
-func SimpleEventTypeValidator(m Message) error {
+func SimpleEventTypeValidator(m wrp.Message) error {
 	if m.Type != SimpleEventMessageType {
 		return ErrorNotSimpleEventType
 	}
