@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package wrp
+package validators
 
 import (
 	"errors"
@@ -12,6 +12,10 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xmidt-org/touchstone"
+	"github.com/xmidt-org/wrp-go/v3"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -19,6 +23,13 @@ const (
 	uuidPrefix   = "uuid"
 	eventPrefix  = "event"
 	dnsPrefix    = "dns"
+	macPrefix    = "mac"
+)
+
+const (
+	hexDigits     = "0123456789abcdefABCDEF"
+	macDelimiters = ":-.,"
+	macLength     = 12
 )
 
 var (
@@ -42,13 +53,42 @@ var locatorPattern = regexp.MustCompile(
 // SpecValidators ensures messages are valid based on
 // each spec validator in the list. Only validates the opinionated portions of the spec.
 // SpecValidators validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
-func SpecValidators() Validators {
-	return Validators{}.AddFunc(UTF8Validator, MessageTypeValidator, SourceValidator, DestinationValidator)
+func SpecValidators(f *touchstone.Factory, labelNames ...string) Validators {
+	return Validators{}.AddFunc(
+		UTF8Validator,
+		MessageTypeValidator,
+		SourceValidator,
+		DestinationValidator)
+}
+
+// SpecValidators ensures messages are valid based on
+// each spec validator in the list. Only validates the opinionated portions of the spec.
+// SpecValidators validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
+func SpecValidatorsWithMetrics(f *touchstone.Factory, labelNames ...string) (Validators, error) {
+	var errs error
+	utf8, err := NewUTF8Validator(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	return Validators{}.AddFuncWithMetrics(utf8), errs
+}
+
+func NewUTF8Validator(f *touchstone.Factory, labelNames ...string) (ValidatorWithMetricsFunc, error) {
+	m, err := NewUTF8ValidatorErrorTotal(f, labelNames...)
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := UTF8Validator(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
 }
 
 // UTF8Validator takes messages and validates that it contains UTF-8 strings.
-func UTF8Validator(m Message) error {
-	if err := UTF8(m); err != nil {
+func UTF8Validator(m wrp.Message) error {
+	if err := wrp.UTF8(m); err != nil {
 		return fmt.Errorf("%w: %v", ErrorInvalidMessageEncoding, err)
 	}
 
@@ -56,13 +96,13 @@ func UTF8Validator(m Message) error {
 }
 
 // MessageTypeValidator takes messages and validates their Type.
-func MessageTypeValidator(m Message) error {
-	if m.Type < Invalid0MessageType || m.Type > LastMessageType {
+func MessageTypeValidator(m wrp.Message) error {
+	if m.Type < wrp.Invalid0MessageType || m.Type > wrp.LastMessageType {
 		return ErrorInvalidMessageType
 	}
 
 	switch m.Type {
-	case Invalid0MessageType, Invalid1MessageType, LastMessageType:
+	case wrp.Invalid0MessageType, wrp.Invalid1MessageType, wrp.LastMessageType:
 		return ErrorInvalidMessageType
 	}
 
@@ -72,7 +112,7 @@ func MessageTypeValidator(m Message) error {
 // SourceValidator takes messages and validates their Source.
 // Only mac and uuid sources are validated. Serial, event and dns sources are
 // not validated.
-func SourceValidator(m Message) error {
+func SourceValidator(m wrp.Message) error {
 	if err := validateLocator(m.Source); err != nil {
 		return fmt.Errorf("%w '%s': %v", ErrorInvalidSource, m.Source, err)
 	}
@@ -83,7 +123,7 @@ func SourceValidator(m Message) error {
 // DestinationValidator takes messages and validates their Destination.
 // Only mac and uuid destinations are validated. Serial, event and dns destinations are
 // not validated.
-func DestinationValidator(m Message) error {
+func DestinationValidator(m wrp.Message) error {
 	if err := validateLocator(m.Destination); err != nil {
 		return fmt.Errorf("%w '%s': %v", ErrorInvalidDestination, m.Destination, err)
 	}

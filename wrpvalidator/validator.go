@@ -1,12 +1,14 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package wrp
+package validators
 
 import (
 	"errors"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xmidt-org/wrp-go/v3"
 	"go.uber.org/multierr"
 )
 
@@ -76,7 +78,8 @@ func NewValidatorError(err error, m string, f []string) ValidatorError {
 
 // Validator is a WRP validator that allows access to the Validate function.
 type Validator interface {
-	Validate(m Message) error
+	Validate(m wrp.Message) error
+	ValidateWithMetrics(wrp.Message, prometheus.Labels) error
 }
 
 // Validators is a WRP validator that ensures messages are valid based on
@@ -85,11 +88,22 @@ type Validators []Validator
 
 // Validate runs messages through each validator in the validators list.
 // It returns as soon as the message is considered invalid, otherwise returns nil if valid.
-func (vs Validators) Validate(m Message) error {
+func (vs Validators) Validate(m wrp.Message) error {
 	var err error
 	for _, v := range vs {
 		if v != nil {
 			err = multierr.Append(err, v.Validate(m))
+		}
+	}
+
+	return err
+}
+
+func (vs Validators) ValidateWithMetrics(m wrp.Message, ls prometheus.Labels) error {
+	var err error
+	for _, v := range vs {
+		if v != nil {
+			err = multierr.Append(err, v.ValidateWithMetrics(m, ls))
 		}
 	}
 
@@ -118,23 +132,47 @@ func (vs Validators) AddFunc(vf ...ValidatorFunc) Validators {
 	return vs
 }
 
+func (vs Validators) AddFuncWithMetrics(vf ...ValidatorWithMetricsFunc) Validators {
+	for _, v := range vf {
+		if v != nil {
+			vs = append(vs, v)
+		}
+	}
+
+	return vs
+}
+
 // ValidatorFunc is a WRP validator that takes messages and validates them
 // against functions.
-type ValidatorFunc func(Message) error
+type ValidatorFunc func(wrp.Message) error
 
 // Validate executes its own ValidatorFunc receiver and returns the result.
-func (vf ValidatorFunc) Validate(m Message) error { return vf(m) }
+func (vf ValidatorFunc) Validate(m wrp.Message) error { return vf(m) }
+
+func (vf ValidatorFunc) ValidateWithMetrics(m wrp.Message, _ prometheus.Labels) error {
+	return vf(m)
+}
+
+type ValidatorWithMetricsFunc func(wrp.Message, prometheus.Labels) error
+
+func (vf ValidatorWithMetricsFunc) Validate(m wrp.Message) error {
+	return vf(m, prometheus.Labels{})
+}
+
+func (vf ValidatorWithMetricsFunc) ValidateWithMetrics(m wrp.Message, ls prometheus.Labels) error {
+	return vf(m, ls)
+}
 
 // TypeValidator is a WRP validator that validates based on message type
 // or using the defaultValidator if message type is unfound.
 type TypeValidator struct {
-	m                map[MessageType]Validator
+	m                map[wrp.MessageType]Validator
 	defaultValidator Validator
 }
 
 // Validate validates messages based on message type or using the defaultValidator
 // if message type is unfound.
-func (tv TypeValidator) Validate(msg Message) error {
+func (tv TypeValidator) Validate(msg wrp.Message) error {
 	vs := tv.m[msg.MessageType()]
 	if vs == nil {
 		return tv.defaultValidator.Validate(msg)
@@ -144,7 +182,7 @@ func (tv TypeValidator) Validate(msg Message) error {
 }
 
 // NewTypeValidator is a TypeValidator factory.
-func NewTypeValidator(m map[MessageType]Validator, defaultValidator Validator) (TypeValidator, error) {
+func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validator) (TypeValidator, error) {
 	if m == nil {
 		return TypeValidator{}, ErrorInvalidValidator
 	}
@@ -160,11 +198,11 @@ func NewTypeValidator(m map[MessageType]Validator, defaultValidator Validator) (
 }
 
 // AlwaysInvalid doesn't validate anything about the message and always returns an error.
-func AlwaysInvalid(_ Message) error {
+func AlwaysInvalid(_ wrp.Message) error {
 	return ErrorInvalidMsgType
 }
 
 // AlwaysValid doesn't validate anything about the message and always returns nil.
-func AlwaysValid(_ Message) error {
+func AlwaysValid(_ wrp.Message) error {
 	return nil
 }

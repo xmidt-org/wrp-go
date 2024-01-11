@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package wrp
+package validators
 
 import (
 	"errors"
 	"fmt"
 	"strconv"
 
+	"github.com/xmidt-org/wrp-go/v3"
 	"go.uber.org/multierr"
 )
 
@@ -36,7 +37,7 @@ var spanFormat = map[int]string{
 // each validator in the list. SimpleEventValidators validates the following:
 // UTF8 (all string fields), MessageType is valid, Source, Destination, MessageType is of SimpleEventMessageType.
 func SimpleEventValidators() Validators {
-	return Validators{SpecValidators()}.AddFunc(SimpleEventTypeValidator)
+	return Validators{SpecValidators()}.AddFunc(SimpleEventTypeValidator, SpansValidator)
 }
 
 // SimpleResponseRequestValidators ensures messages are valid based on
@@ -48,8 +49,8 @@ func SimpleResponseRequestValidators() Validators {
 }
 
 // SimpleResponseRequestTypeValidator takes messages and validates their Type is of SimpleRequestResponseMessageType.
-func SimpleResponseRequestTypeValidator(m Message) error {
-	if m.Type != SimpleRequestResponseMessageType {
+func SimpleResponseRequestTypeValidator(m wrp.Message) error {
+	if m.Type != wrp.SimpleRequestResponseMessageType {
 		return ErrorNotSimpleResponseRequestType
 	}
 
@@ -59,7 +60,7 @@ func SimpleResponseRequestTypeValidator(m Message) error {
 // TODO Do we want to include SpanParentValidator? SpanParent currently doesn't exist in the Message Struct
 
 // SpansValidator takes messages and validates their Spans.
-func SpansValidator(m Message) error {
+func SpansValidator(m wrp.Message) error {
 	var err error
 	// Spans consist of individual Span(s), arrays of timing values.
 	for _, s := range m.Spans {
@@ -88,8 +89,8 @@ func SpansValidator(m Message) error {
 }
 
 // SimpleEventTypeValidator takes messages and validates their Type is of SimpleEventMessageType.
-func SimpleEventTypeValidator(m Message) error {
-	if m.Type != SimpleEventMessageType {
+func SimpleEventTypeValidator(m wrp.Message) error {
+	if m.Type != wrp.SimpleEventMessageType {
 		return ErrorNotSimpleEventType
 	}
 
