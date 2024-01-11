@@ -7,7 +7,13 @@ import (
 	"fmt"
 	"testing"
 
+	prometheus "command-line-arguments/Users/odc/go/pkg/mod/github.com/prometheus/client_golang@v1.11.1/prometheus/counter.go"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
+	"github.com/xmidt-org/sallust"
+	"github.com/xmidt-org/touchstone"
+	"github.com/xmidt-org/wrp-go/v3"
 )
 
 func TestSpecHelperValidators(t *testing.T) {
@@ -184,6 +190,33 @@ func ExampleTypeValidator_Validate_specValidators() {
 	unfoundErrFailure := msgv.Validate(Message{Type: CreateMessageType}) // Unfound error
 	fmt.Println(foundErrFailure == nil, foundErrSuccess1 == nil, foundErrSuccess2 == nil, unfoundErrFailure == nil)
 	// Output: false true true false
+}
+
+func ExampleTypeValidator_Validate_specValidators() {
+
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	utf8ValidatorWithMetric, err := NewUTF8Validator(f, "sat_client_id", "foo")
+
+	if err != nil {
+		return
+	}
+
+	_ = utf8ValidatorWithMetric.ValidateWithMetrics(wrp.Message{}, prometheus.Labels{"sat_client_id": "123", "foo": "bar"})
+	// for backwards compatibility and if the client doesn't want metrics for this validator
+	_ = utf8ValidatorWithMetric.Validate(wrp.Message{})
+
+	// using the version of UTF8Validator that has no metric middle ware
+	utf8ValidatorWithOutMetric := ValidatorFunc(UTF8Validator)
+
+	_ = utf8ValidatorWithOutMetric.Validate(wrp.Message{})
+	// the prometheus labels are ignoreed
+	_ = utf8ValidatorWithOutMetric.ValidateWithMetrics(wrp.Message{}, prometheus.Labels{"sat_client_id": "123", "foo": "bar"}) // Found error
+
 }
 
 func testUTF8Validator(t *testing.T) {
