@@ -72,7 +72,7 @@ func NewUTF8Validator(f *touchstone.Factory, labelNames ...string) (ValidatorWit
 
 // UTF8Validator takes messages and validates that it contains UTF-8 strings.
 func UTF8Validator(m wrp.Message) error {
-	if err := wrp.UTF8(m); err != nil {
+	if err := UTF8(m); err != nil {
 		return fmt.Errorf("%w: %v", ErrorInvalidMessageEncoding, err)
 	}
 
@@ -81,12 +81,12 @@ func UTF8Validator(m wrp.Message) error {
 
 // MessageTypeValidator takes messages and validates their Type.
 func MessageTypeValidator(m wrp.Message) error {
-	if m.Type < wrp.Invalid0MessageType || m.Type > wrp.LastMessageType {
+	if m.Type < Invalid0MessageType || m.Type > LastMessageType {
 		return ErrorInvalidMessageType
 	}
 
 	switch m.Type {
-	case wrp.Invalid0MessageType, wrp.Invalid1MessageType, wrp.LastMessageType:
+	case wrp.Invalid0MessageType, Invalid1MessageType, LastMessageType:
 		return ErrorInvalidMessageType
 	}
 
