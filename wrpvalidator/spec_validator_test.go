@@ -215,7 +215,7 @@ func ExampleTypeValidator_Validate_specValidators() {
 
 	_ = utf8ValidatorWithOutMetric.Validate(wrp.Message{})
 	// the prometheus labels are ignoreed
-	_ = utf8ValidatorWithOutMetric.ValidateWithMetrics(wrp.Message{}, prometheus.Labels{"sat_client_id": "123", "foo": "bar"}) // Found error
+	_ = utf8ValidatorWithOutMetric.ValidateWithMetrics(wrp.Message{}, prometheus.Labels{"sat_client_id": "123", "foo": "bar"})
 
 }
 
