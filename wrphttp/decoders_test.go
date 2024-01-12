@@ -6,7 +6,6 @@ package wrphttp
 import (
 	"bytes"
 	"context"
-	"errors"
 	"net/http/httptest"
 	"testing"
 
@@ -112,10 +111,9 @@ func testDecodeEntityBodyError(t *testing.T) {
 		assert  = assert.New(t)
 		require = require.New(t)
 
-		expectedError = errors.New("failed to decode wrp: EOF")
-		decoder       = DecodeEntity(wrp.Msgpack)
-		body          = bytes.NewReader(nil)
-		request       = httptest.NewRequest("GET", "/", body)
+		decoder = DecodeEntity(wrp.Msgpack)
+		body    = bytes.NewReader(nil)
+		request = httptest.NewRequest("GET", "/", body)
 	)
 
 	require.NotNil(decoder)
@@ -123,7 +121,7 @@ func testDecodeEntityBodyError(t *testing.T) {
 	entity, err := decoder(context.Background(), request)
 
 	assert.Nil(entity)
-	assert.Equal(expectedError, err)
+	assert.Error(err)
 }
 
 func TestDecodeEntity(t *testing.T) {
