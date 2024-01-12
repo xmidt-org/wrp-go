@@ -8,7 +8,7 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/google/uuid v1.5.0
 	github.com/stretchr/testify v1.8.4
-	github.com/ugorji/go/codec v1.2.11
+	github.com/ugorji/go/codec v1.2.12
 	github.com/xmidt-org/httpaux v0.4.0
 	github.com/xmidt-org/webpa-common v1.11.9
 	go.uber.org/multierr v1.11.0

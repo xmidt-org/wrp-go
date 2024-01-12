@@ -23,7 +23,7 @@ func _() {
 	_ = x[LastMessageType-12]
 }
 
-const _MessageType_name = "Invalid0MessageTypeInvalid1MessageTypeAuthorizationMessageTypeSimpleRequestResponseMessageTypeSimpleEventMessageTypeCreateMessageTypeRetrieveMessageTypeUpdateMessageTypeDeleteMessageTypeServiceRegistrationMessageTypeServiceAliveMessageTypeUnknownMessageTypelastMessageType"
+const _MessageType_name = "Invalid0MessageTypeInvalid1MessageTypeAuthorizationMessageTypeSimpleRequestResponseMessageTypeSimpleEventMessageTypeCreateMessageTypeRetrieveMessageTypeUpdateMessageTypeDeleteMessageTypeServiceRegistrationMessageTypeServiceAliveMessageTypeUnknownMessageTypeLastMessageType"
 
 var _MessageType_index = [...]uint16{0, 19, 38, 62, 94, 116, 133, 152, 169, 186, 216, 239, 257, 272}
 
