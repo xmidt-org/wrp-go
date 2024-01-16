@@ -149,10 +149,10 @@ type TypeValidator struct {
 func (tv TypeValidator) Validate(m wrp.Message, ls prometheus.Labels) error {
 	vs := tv.m[m.MessageType()]
 	if vs == nil {
-		return tv.defaultValidator.ValidateWithMetrics(m, ls)
+		return tv.defaultValidator.Validate(m, ls)
 	}
 
-	return vs.ValidateWithMetrics(m, ls)
+	return vs.Validate(m, ls)
 }
 
 // NewTypeValidator is a TypeValidator factory.
