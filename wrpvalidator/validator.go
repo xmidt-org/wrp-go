@@ -120,16 +120,6 @@ func (vs Validators) AddFunc(vf ...ValidatorFunc) Validators {
 	return vs
 }
 
-func (vs Validators) AddFuncWithMetrics(vf ...ValidatorWithMetricsFunc) Validators {
-	for _, v := range vf {
-		if v != nil {
-			vs = append(vs, v)
-		}
-	}
-
-	return vs
-}
-
 // ValidatorFunc is a WRP validator that takes messages and validates them
 // against functions.
 type ValidatorFunc func(wrp.Message, prometheus.Labels) error
