@@ -91,7 +91,7 @@ func (vs Validators) Validate(m wrp.Message, ls prometheus.Labels) error {
 	var err error
 	for _, v := range vs {
 		if v != nil {
-			err = multierr.Append(err, v.ValidateWithMetrics(m, ls))
+			err = multierr.Append(err, v.Validate(m, ls))
 		}
 	}
 
