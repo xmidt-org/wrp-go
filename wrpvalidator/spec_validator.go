@@ -53,10 +53,10 @@ func SpecValidators(f *touchstone.Factory, labelNames ...string) (Validators, er
 		errs = multierr.Append(errs, err)
 	}
 
-	return Validators{}.AddFuncWithMetrics(utf8), errs
+	return Validators{}.AddFunc(utf8), errs
 }
 
-func NewUTF8Validator(f *touchstone.Factory, labelNames ...string) (ValidatorWithMetricsFunc, error) {
+func NewUTF8Validator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := NewUTF8ValidatorErrorTotal(f, labelNames...)
 	return func(msg wrp.Message, ls prometheus.Labels) error {
 		err := UTF8Validator(msg)
