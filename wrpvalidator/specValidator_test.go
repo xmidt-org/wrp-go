@@ -160,7 +160,13 @@ func ExampleTypeValidator_Validate_specValidators() {
 		panic(err)
 	}
 
-	sv, err := NewSourceValidator(f)
+	_, pr2, err := touchstone.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
+	sv, err := NewSourceValidator(f2)
 	if err != nil {
 		panic(err)
 	}
