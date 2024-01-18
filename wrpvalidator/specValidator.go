@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package validators
+package wrpvalidator
 
 import (
 	"errors"
@@ -50,34 +50,82 @@ var locatorPattern = regexp.MustCompile(
 	`^(?P<scheme>(?i)` + macPrefix + `|` + uuidPrefix + `|` + eventPrefix + `|` + dnsPrefix + `|` + serialPrefix + `):(?P<authority>[^/]+)?`,
 )
 
-// SpecValidators ensures messages are valid based on
-// each spec validator in the list. Only validates the opinionated portions of the spec.
+// SpecValidators ensures messages are valid based on each spec validator in the list.
+// Only validates the opinionated portions of the spec.
 // SpecValidators validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
-func SpecValidators(f *touchstone.Factory, labelNames ...string) Validators {
-	return Validators{}.AddFunc(
-		UTF8Validator,
-		MessageTypeValidator,
-		SourceValidator,
-		DestinationValidator)
-}
-
-// SpecValidators ensures messages are valid based on
-// each spec validator in the list. Only validates the opinionated portions of the spec.
-// SpecValidators validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
-func SpecValidatorsWithMetrics(f *touchstone.Factory, labelNames ...string) (Validators, error) {
+func SpecValidators(f *touchstone.Factory, labelNames ...string) (Validators, error) {
 	var errs error
-	utf8, err := NewUTF8Validator(f, labelNames...)
+	utf8v, err := NewUTF8Validator(f, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
 
-	return Validators{}.AddFuncWithMetrics(utf8), errs
+	mtv, err := NewMessageTypeValidator(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	sv, err := NewSourceValidator(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	dv, err := NewDestinationValidator(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	return Validators{}.AddFunc(utf8v, mtv, sv, dv), errs
 }
 
-func NewUTF8Validator(f *touchstone.Factory, labelNames ...string) (ValidatorWithMetricsFunc, error) {
-	m, err := NewUTF8ValidatorErrorTotal(f, labelNames...)
+// NewUTF8Validator is the metric variant of UTF8Validator
+func NewUTF8Validator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newUTF8ValidatorErrorTotal(f, labelNames...)
+
 	return func(msg wrp.Message, ls prometheus.Labels) error {
 		err := UTF8Validator(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
+}
+
+// NewMessageTypeValidator is the metric variant of MessageTypeValidator
+func NewMessageTypeValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newMessageTypeValidatorErrorTotal(f, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := MessageTypeValidator(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
+}
+
+// NewSourceValidator is the metric variant of SourceValidator
+func NewSourceValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newSourceValidatorErrorTotal(f, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := SourceValidator(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
+}
+
+// NewDestinationValidator is the metric variant of DestinationValidator
+func NewDestinationValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newDestinationValidatorErrorTotal(f, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := DestinationValidator(msg)
 		if err != nil {
 			m.With(ls).Add(1.0)
 		}

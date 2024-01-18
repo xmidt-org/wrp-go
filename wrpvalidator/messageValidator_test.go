@@ -1,13 +1,17 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package validators
+package wrpvalidator
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/sallust"
+	"github.com/xmidt-org/touchstone"
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
@@ -113,7 +117,18 @@ func TestSimpleEventValidators(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SimpleEventValidators().Validate(tc.msg)
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			sev, err := SimpleEventValidators(f)
+			require.NoError(err)
+			err = sev.Validate(tc.msg, prometheus.Labels{})
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
 					var targetErr ValidatorError
@@ -231,7 +246,18 @@ func TestSimpleResponseRequestValidators(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SimpleResponseRequestValidators().Validate(tc.msg)
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			srv, err := SimpleResponseRequestValidators(f)
+			require.NoError(err)
+			err = srv.Validate(tc.msg, prometheus.Labels{})
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
 					var targetErr ValidatorError
@@ -249,14 +275,46 @@ func TestSimpleResponseRequestValidators(t *testing.T) {
 }
 
 func ExampleTypeValidator_Validate_simpleTypesValidators() {
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	sev, err := SimpleEventValidators(f)
+	if err != nil {
+		panic(err)
+	}
+
+	_, pr2, err := touchstone.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
+	srv, err := SimpleResponseRequestValidators(f2)
+	if err != nil {
+		panic(err)
+	}
+
+	aiv, err := NewAlwaysInvalid(f)
+	if err != nil {
+		panic(err)
+	}
+
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
 		map[wrp.MessageType]Validator{
-			wrp.SimpleEventMessageType:           SimpleEventValidators(),
-			wrp.SimpleRequestResponseMessageType: SimpleResponseRequestValidators(),
+			wrp.SimpleEventMessageType:           sev,
+			wrp.SimpleRequestResponseMessageType: srv,
 		},
 		// Validates unfound msg types
-		ValidatorFunc(AlwaysInvalid))
+		aiv,
+		f)
 	if err != nil {
 		return
 	}
@@ -297,19 +355,19 @@ func ExampleTypeValidator_Validate_simpleTypesValidators() {
 		URL:        "someURL\xed\xbf\xbf.com",
 		PartnerIDs: []string{"foo"},
 		SessionID:  "sessionID123",
-	}) // Found error
+	}, prometheus.Labels{}) // Found error
 	foundErrSuccess1 := msgv.Validate(wrp.Message{
 		Type:        wrp.SimpleRequestResponseMessageType,
 		Source:      "MAC:11:22:33:44:55:66",
 		Destination: "MAC:11:22:33:44:55:61",
-	}) // Found success
+	}, prometheus.Labels{}) // Found success
 	foundErrSuccess2 := msgv.Validate(wrp.Message{
 		Type:   wrp.SimpleEventMessageType,
 		Source: "MAC:11:22:33:44:55:66",
 		// Invalid Destination
 		Destination: "invalid:a-BB-44-55",
-	}) // Found error
-	unfoundErrFailure := msgv.Validate(wrp.Message{Type: wrp.CreateMessageType}) // Unfound error
+	}, prometheus.Labels{}) // Found error
+	unfoundErrFailure := msgv.Validate(wrp.Message{Type: wrp.CreateMessageType}, prometheus.Labels{}) // Unfound error
 	fmt.Println(foundErrFailure == nil, foundErrSuccess1 == nil, foundErrSuccess2 == nil, unfoundErrFailure == nil)
 	// Output: false true false false
 }

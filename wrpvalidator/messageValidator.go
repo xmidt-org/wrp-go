@@ -1,13 +1,15 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package validators
+package wrpvalidator
 
 import (
 	"errors"
 	"fmt"
 	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xmidt-org/touchstone"
 	"github.com/xmidt-org/wrp-go/v3"
 	"go.uber.org/multierr"
 )
@@ -36,22 +38,100 @@ var spanFormat = map[int]string{
 // SimpleEventValidators ensures messages are valid based on
 // each validator in the list. SimpleEventValidators validates the following:
 // UTF8 (all string fields), MessageType is valid, Source, Destination, MessageType is of SimpleEventMessageType.
-func SimpleEventValidators() Validators {
-	return Validators{SpecValidators()}.AddFunc(SimpleEventTypeValidator, SpansValidator)
+func SimpleEventValidators(f *touchstone.Factory, labelNames ...string) (Validators, error) {
+	var errs error
+	sv, err := SpecValidators(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	stv, err := NewSimpleEventTypeValidator(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	return sv.AddFunc(stv), errs
 }
 
 // SimpleResponseRequestValidators ensures messages are valid based on
 // each validator in the list. SimpleResponseRequestValidators validates the following:
 // UTF8 (all string fields), MessageType is valid, Source, Destination, Spans, MessageType is of
 // SimpleRequestResponseMessageType.
-func SimpleResponseRequestValidators() Validators {
-	return Validators{SpecValidators()}.AddFunc(SimpleResponseRequestTypeValidator, SpansValidator)
+func SimpleResponseRequestValidators(f *touchstone.Factory, labelNames ...string) (Validators, error) {
+	var errs error
+	sv, err := SpecValidators(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	stv, err := NewSimpleResponseRequestTypeValidator(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	spv, err := NewSpansValidator(f, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	return sv.AddFunc(stv, spv), errs
+}
+
+// NewSimpleResponseRequestTypeValidator is the metric variant of SimpleResponseRequestTypeValidator
+func NewSimpleResponseRequestTypeValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newSimpleRequestResponseMessageTypeValidatorErrorTotal(f, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := SimpleResponseRequestTypeValidator(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
+}
+
+// NewSimpleEventTypeValidator is the metric variant of SimpleEventTypeValidator
+func NewSimpleEventTypeValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newSimpleEventTypeValidatorErrorTotal(f, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := SimpleEventTypeValidator(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
+}
+
+// NewSpansValidator is the metric variant of SpansValidator
+func NewSpansValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newSpansValidatorErrorTotal(f, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := SpansValidator(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
 }
 
 // SimpleResponseRequestTypeValidator takes messages and validates their Type is of SimpleRequestResponseMessageType.
 func SimpleResponseRequestTypeValidator(m wrp.Message) error {
 	if m.Type != wrp.SimpleRequestResponseMessageType {
 		return ErrorNotSimpleResponseRequestType
+	}
+
+	return nil
+}
+
+// SimpleEventTypeValidator takes messages and validates their Type is of SimpleEventMessageType.
+func SimpleEventTypeValidator(m wrp.Message) error {
+	if m.Type != wrp.SimpleEventMessageType {
+		return ErrorNotSimpleEventType
 	}
 
 	return nil
@@ -86,13 +166,4 @@ func SpansValidator(m wrp.Message) error {
 	}
 
 	return err
-}
-
-// SimpleEventTypeValidator takes messages and validates their Type is of SimpleEventMessageType.
-func SimpleEventTypeValidator(m wrp.Message) error {
-	if m.Type != wrp.SimpleEventMessageType {
-		return ErrorNotSimpleEventType
-	}
-
-	return nil
 }

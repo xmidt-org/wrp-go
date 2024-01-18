@@ -1,13 +1,17 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package validators
+package wrpvalidator
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/sallust"
+	"github.com/xmidt-org/touchstone"
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
@@ -111,7 +115,19 @@ func TestSpecValidators(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SpecValidators().Validate(tc.msg)
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			sv, err := SpecValidators(f)
+			require.NoError(err)
+
+			err = sv.Validate(tc.msg, prometheus.Labels{})
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
 					var targetErr ValidatorError
@@ -129,16 +145,42 @@ func TestSpecValidators(t *testing.T) {
 }
 
 func ExampleTypeValidator_Validate_specValidators() {
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	specv, err := SpecValidators(f)
+	if err != nil {
+		panic(err)
+	}
+
+	sv, err := NewSourceValidator(f)
+	if err != nil {
+		panic(err)
+	}
+
+	ai, err := NewAlwaysInvalid(f)
+	if err != nil {
+		panic(err)
+	}
+
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
 		map[wrp.MessageType]Validator{
 			// Validates opinionated portions of the spec
-			wrp.SimpleEventMessageType: SpecValidators(),
+			wrp.SimpleEventMessageType: specv,
 			// Only validates Source and nothing else
-			wrp.SimpleRequestResponseMessageType: ValidatorFunc(SourceValidator),
+			wrp.SimpleRequestResponseMessageType: sv,
 		},
 		// Validates unfound msg types
-		ValidatorFunc(AlwaysInvalid))
+		ai,
+		f)
 	if err != nil {
 		return
 	}
@@ -171,18 +213,18 @@ func ExampleTypeValidator_Validate_specValidators() {
 		URL:        "someURL\xed\xbf\xbf.com",
 		PartnerIDs: []string{"foo"},
 		SessionID:  "sessionID123",
-	}) // Found error
+	}, prometheus.Labels{}) // Found error
 	foundErrSuccess1 := msgv.Validate(wrp.Message{
 		Type:        wrp.SimpleEventMessageType,
 		Source:      "MAC:11:22:33:44:55:66",
 		Destination: "MAC:11:22:33:44:55:61",
-	}) // Found success
+	}, prometheus.Labels{}) // Found success
 	foundErrSuccess2 := msgv.Validate(wrp.Message{
 		Type:        wrp.SimpleRequestResponseMessageType,
 		Source:      "MAC:11:22:33:44:55:66",
 		Destination: "invalid:a-BB-44-55",
-	}) // Found success
-	unfoundErrFailure := msgv.Validate(wrp.Message{Type: wrp.CreateMessageType}) // Unfound error
+	}, prometheus.Labels{}) // Found success
+	unfoundErrFailure := msgv.Validate(wrp.Message{Type: wrp.CreateMessageType}, prometheus.Labels{}) // Unfound error
 	fmt.Println(foundErrFailure == nil, foundErrSuccess1 == nil, foundErrSuccess2 == nil, unfoundErrFailure == nil)
 	// Output: false true true false
 }
