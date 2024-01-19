@@ -1,12 +1,15 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package wrp
+package wrpvalidator
 
 import (
 	"errors"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/xmidt-org/touchstone"
+	"github.com/xmidt-org/wrp-go/v3"
 	"go.uber.org/multierr"
 )
 
@@ -76,7 +79,7 @@ func NewValidatorError(err error, m string, f []string) ValidatorError {
 
 // Validator is a WRP validator that allows access to the Validate function.
 type Validator interface {
-	Validate(m Message) error
+	Validate(wrp.Message, prometheus.Labels) error
 }
 
 // Validators is a WRP validator that ensures messages are valid based on
@@ -85,11 +88,11 @@ type Validators []Validator
 
 // Validate runs messages through each validator in the validators list.
 // It returns as soon as the message is considered invalid, otherwise returns nil if valid.
-func (vs Validators) Validate(m Message) error {
+func (vs Validators) Validate(m wrp.Message, ls prometheus.Labels) error {
 	var err error
 	for _, v := range vs {
 		if v != nil {
-			err = multierr.Append(err, v.Validate(m))
+			err = multierr.Append(err, v.Validate(m, ls))
 		}
 	}
 
@@ -120,37 +123,42 @@ func (vs Validators) AddFunc(vf ...ValidatorFunc) Validators {
 
 // ValidatorFunc is a WRP validator that takes messages and validates them
 // against functions.
-type ValidatorFunc func(Message) error
+type ValidatorFunc func(wrp.Message, prometheus.Labels) error
 
 // Validate executes its own ValidatorFunc receiver and returns the result.
-func (vf ValidatorFunc) Validate(m Message) error { return vf(m) }
+func (vf ValidatorFunc) Validate(m wrp.Message, ls prometheus.Labels) error { return vf(m, ls) }
 
 // TypeValidator is a WRP validator that validates based on message type
 // or using the defaultValidator if message type is unfound.
 type TypeValidator struct {
-	m                map[MessageType]Validator
+	m                map[wrp.MessageType]Validator
 	defaultValidator Validator
 }
 
 // Validate validates messages based on message type or using the defaultValidator
 // if message type is unfound.
-func (tv TypeValidator) Validate(msg Message) error {
-	vs := tv.m[msg.MessageType()]
+func (tv TypeValidator) Validate(m wrp.Message, ls prometheus.Labels) error {
+	vs := tv.m[m.MessageType()]
 	if vs == nil {
-		return tv.defaultValidator.Validate(msg)
+		return tv.defaultValidator.Validate(m, ls)
 	}
 
-	return vs.Validate(msg)
+	return vs.Validate(m, ls)
 }
 
 // NewTypeValidator is a TypeValidator factory.
-func NewTypeValidator(m map[MessageType]Validator, defaultValidator Validator) (TypeValidator, error) {
+func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validator, f *touchstone.Factory, labelNames ...string) (TypeValidator, error) {
 	if m == nil {
 		return TypeValidator{}, ErrorInvalidValidator
 	}
 
 	if defaultValidator == nil {
-		defaultValidator = ValidatorFunc(AlwaysInvalid)
+		v, err := NewAlwaysInvalid(f, labelNames...)
+		if err != nil {
+			return TypeValidator{}, err
+		}
+
+		defaultValidator = v
 	}
 
 	return TypeValidator{
@@ -159,12 +167,31 @@ func NewTypeValidator(m map[MessageType]Validator, defaultValidator Validator) (
 	}, nil
 }
 
+func NewAlwaysInvalid(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newAlwaysInvalidValidatorErrorTotal(f, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := AlwaysInvalid(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
+}
+
+func NewAlwaysValid(_ *touchstone.Factory, _ ...string) (ValidatorFunc, error) {
+	return func(msg wrp.Message, _ prometheus.Labels) error {
+		return AlwaysValid(msg)
+	}, nil
+}
+
 // AlwaysInvalid doesn't validate anything about the message and always returns an error.
-func AlwaysInvalid(_ Message) error {
+func AlwaysInvalid(_ wrp.Message) error {
 	return ErrorInvalidMsgType
 }
 
 // AlwaysValid doesn't validate anything about the message and always returns nil.
-func AlwaysValid(_ Message) error {
+func AlwaysValid(_ wrp.Message) error {
 	return nil
 }

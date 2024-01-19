@@ -1,15 +1,19 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package wrp
+package wrpvalidator
 
 import (
 	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/sallust"
+	"github.com/xmidt-org/touchstone"
+	"github.com/xmidt-org/wrp-go/v3"
 	"go.uber.org/multierr"
 )
 
@@ -86,26 +90,41 @@ func TestNewValidatorError(t *testing.T) {
 }
 
 func TestValidators(t *testing.T) {
-	subvs := Validators{}.AddFunc(AlwaysValid, nil, AlwaysInvalid)
-	vs := Validators{}.AddFunc(AlwaysValid, nil, AlwaysInvalid)
+	require := require.New(t)
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	require.NoError(err)
+
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	av, err := NewAlwaysValid(f)
+	require.NoError(err)
+
+	ai, err := NewAlwaysInvalid(f)
+	require.NoError(err)
+
+	subvs := Validators{}.AddFunc(av, nil, ai)
+	vs := Validators{}.AddFunc(av, nil, ai)
 	vs = vs.Add(subvs, nil)
 	tests := []struct {
 		description string
 		vs          Validators
-		msg         Message
+		msg         wrp.Message
 		expectedErr []error
 	}{
 		// Success case
 		{
 			description: "Empty Validators success",
 			vs:          Validators{},
-			msg:         Message{Type: SimpleEventMessageType},
+			msg:         wrp.Message{Type: wrp.SimpleEventMessageType},
 		},
 		// Failure case
 		{
 			description: "Mix Validators error",
 			vs:          vs,
-			msg:         Message{Type: SimpleEventMessageType},
+			msg:         wrp.Message{Type: wrp.SimpleEventMessageType},
 			expectedErr: []error{ErrorInvalidMsgType, ErrorInvalidMsgType},
 		},
 	}
@@ -113,7 +132,7 @@ func TestValidators(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := tc.vs.Validate(tc.msg)
+			err := tc.vs.Validate(tc.msg, prometheus.Labels{})
 			if tc.expectedErr != nil {
 				assert.Equal(multierr.Errors(err), tc.expectedErr)
 				for _, e := range tc.expectedErr {
@@ -159,111 +178,193 @@ func TestTypeValidator(t *testing.T) {
 	}
 }
 
+func TestTypeValidatorBadTouchStoneFactory(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         wrp.Message
+		expectedErr []error
+	}{
+		// Failure case
+		{
+			description: "Invaild touchstone factory",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			ai, err := NewAlwaysInvalid(f)
+			require.NoError(err)
+			_, err = NewTypeValidator(map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: ai,
+			}, nil, f)
+			require.Error(err)
+		})
+	}
+}
+
 func ExampleNewTypeValidator() {
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	ai, err := NewAlwaysInvalid(f)
+	if err != nil {
+		panic(err)
+	}
+
+	av, err := NewAlwaysValid(f)
+	if err != nil {
+		panic(err)
+	}
+
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
-		map[MessageType]Validator{SimpleEventMessageType: ValidatorFunc(AlwaysValid)},
+		map[wrp.MessageType]Validator{wrp.SimpleEventMessageType: av},
 		// Validates unfound msg types
-		ValidatorFunc(AlwaysInvalid))
+		ai,
+		f)
 	fmt.Printf("%v %T", err == nil, msgv)
-	// Output: true wrp.TypeValidator
+	// Output: true wrpvalidator.TypeValidator
 }
 
 func ExampleTypeValidator_Validate() {
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	ai, err := NewAlwaysInvalid(f)
+	if err != nil {
+		panic(err)
+	}
+
+	av, err := NewAlwaysValid(f)
+	if err != nil {
+		panic(err)
+	}
+
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
-		map[MessageType]Validator{SimpleEventMessageType: ValidatorFunc(AlwaysValid)},
+		map[wrp.MessageType]Validator{wrp.SimpleEventMessageType: av},
 		// Validates unfound msg types
-		ValidatorFunc(AlwaysInvalid))
+		ai,
+		f)
 	if err != nil {
 		return
 	}
 
-	foundErr := msgv.Validate(Message{Type: SimpleEventMessageType}) // Found success
-	unfoundErr := msgv.Validate(Message{Type: CreateMessageType})    // Unfound error
+	foundErr := msgv.Validate(wrp.Message{Type: wrp.SimpleEventMessageType}, prometheus.Labels{}) // Found success
+	unfoundErr := msgv.Validate(wrp.Message{Type: wrp.CreateMessageType}, prometheus.Labels{})    // Unfound error
 	fmt.Println(foundErr == nil, unfoundErr == nil)
 	// Output: true false
 }
 
 func testTypeValidatorValidate(t *testing.T) {
+	r := require.New(t)
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	r.NoError(err)
+
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	av, err := NewAlwaysValid(f)
+	r.NoError(err)
+
+	ai, err := NewAlwaysInvalid(f)
+	r.NoError(err)
+
 	tests := []struct {
 		description      string
-		m                map[MessageType]Validator
+		m                map[wrp.MessageType]Validator
 		defaultValidator Validator
-		msg              Message
+		msg              wrp.Message
 		expectedErr      error
 	}{
 		// Success case
 		{
 			description: "Found success",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysValid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: av,
 			},
-			msg: Message{Type: SimpleEventMessageType},
+			msg: wrp.Message{Type: wrp.SimpleEventMessageType},
 		},
 		{
 			description: "Unfound success",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysInvalid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: ai,
 			},
-			defaultValidator: ValidatorFunc(AlwaysValid),
-			msg:              Message{Type: CreateMessageType},
+			defaultValidator: av,
+			msg:              wrp.Message{Type: wrp.CreateMessageType},
 		},
 		{
 			description: "Unfound success, nil list of default Validators",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysInvalid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: ai,
 			},
 			defaultValidator: Validators{nil},
-			msg:              Message{Type: CreateMessageType},
+			msg:              wrp.Message{Type: wrp.CreateMessageType},
 		},
 		{
 			description: "Unfound success, empty map of default Validators",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysInvalid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: ai,
 			},
 			defaultValidator: Validators{},
-			msg:              Message{Type: CreateMessageType},
+			msg:              wrp.Message{Type: wrp.CreateMessageType},
 		},
 		// Failure case
 		{
 			description: "Found error",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysInvalid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: ai,
 			},
-			defaultValidator: ValidatorFunc(AlwaysValid),
-			msg:              Message{Type: SimpleEventMessageType},
+			defaultValidator: av,
+			msg:              wrp.Message{Type: wrp.SimpleEventMessageType},
 			expectedErr:      ErrorInvalidMsgType,
 		},
 		{
 			description: "Found error, nil Validator",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: nil,
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: nil,
 			},
-			msg:         Message{Type: SimpleEventMessageType},
+			msg:         wrp.Message{Type: wrp.SimpleEventMessageType},
 			expectedErr: ErrorInvalidMsgType,
 		},
 		{
 			description: "Unfound error",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysValid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: av,
 			},
-			msg:         Message{Type: CreateMessageType},
+			msg:         wrp.Message{Type: wrp.CreateMessageType},
 			expectedErr: ErrorInvalidMsgType,
 		},
 		{
 			description: "Unfound error, nil default Validators",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysInvalid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: ai,
 			},
 			defaultValidator: nil,
-			msg:              Message{Type: CreateMessageType},
+			msg:              wrp.Message{Type: wrp.CreateMessageType},
 			expectedErr:      ErrorInvalidMsgType,
 		},
 		{
 			description: "Unfound error, empty map of Validators",
-			m:           map[MessageType]Validator{},
-			msg:         Message{Type: CreateMessageType},
+			m:           map[wrp.MessageType]Validator{},
+			msg:         wrp.Message{Type: wrp.CreateMessageType},
 			expectedErr: ErrorInvalidMsgType,
 		},
 	}
@@ -272,11 +373,14 @@ func testTypeValidatorValidate(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
-			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator)
+			_, pr, err := touchstone.New(cfg)
+			r.NoError(err)
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator, f)
 			require.NoError(err)
 			require.NotNil(msgv)
 			assert.NotZero(msgv)
-			err = msgv.Validate(tc.msg)
+			err = msgv.Validate(tc.msg, prometheus.Labels{})
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 
@@ -291,25 +395,37 @@ func testTypeValidatorValidate(t *testing.T) {
 }
 
 func testTypeValidatorFactory(t *testing.T) {
+	require := require.New(t)
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	require.NoError(err)
+
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	av, err := NewAlwaysValid(f)
+	require.NoError(err)
+
 	tests := []struct {
 		description      string
-		m                map[MessageType]Validator
+		m                map[wrp.MessageType]Validator
 		defaultValidator Validator
 		expectedErr      error
 	}{
 		// Success case
 		{
 			description: "Default Validators success",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysValid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: av,
 			},
-			defaultValidator: ValidatorFunc(AlwaysValid),
+			defaultValidator: av,
 			expectedErr:      nil,
 		},
 		{
 			description: "Omit default Validators success",
-			m: map[MessageType]Validator{
-				SimpleEventMessageType: ValidatorFunc(AlwaysValid),
+			m: map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: av,
 			},
 			expectedErr: nil,
 		},
@@ -317,7 +433,7 @@ func testTypeValidatorFactory(t *testing.T) {
 		{
 			description:      "Nil map of Validators error",
 			m:                nil,
-			defaultValidator: ValidatorFunc(AlwaysValid),
+			defaultValidator: av,
 			expectedErr:      ErrorInvalidValidator,
 		},
 	}
@@ -325,7 +441,7 @@ func testTypeValidatorFactory(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator)
+			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator, f)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 
@@ -351,14 +467,14 @@ func testAlwaysValid(t *testing.T) {
 	)
 	tests := []struct {
 		description string
-		msg         Message
+		msg         wrp.Message
 		expectedErr []error
 	}{
 		// Success case
 		{
 			description: "Not UTF8 success",
-			msg: Message{
-				Type:   SimpleRequestResponseMessageType,
+			msg: wrp.Message{
+				Type:   wrp.SimpleRequestResponseMessageType,
 				Source: "dns:external.com",
 				// Not UFT8 Destination string
 				Destination:             "mac:\xed\xbf\xbf",
@@ -381,8 +497,8 @@ func testAlwaysValid(t *testing.T) {
 		},
 		{
 			description: "Filled message success",
-			msg: Message{
-				Type:                    SimpleRequestResponseMessageType,
+			msg: wrp.Message{
+				Type:                    wrp.SimpleRequestResponseMessageType,
 				Source:                  "dns:external.com",
 				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
@@ -404,12 +520,12 @@ func testAlwaysValid(t *testing.T) {
 		},
 		{
 			description: "Empty message success",
-			msg:         Message{},
+			msg:         wrp.Message{},
 		},
 		{
 			description: "Bad message type success",
-			msg: Message{
-				Type:        LastMessageType + 1,
+			msg: wrp.Message{
+				Type:        wrp.LastMessageType + 1,
 				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
@@ -433,14 +549,14 @@ func testAlwaysInvalid(t *testing.T) {
 	)
 	tests := []struct {
 		description string
-		msg         Message
+		msg         wrp.Message
 		expectedErr []error
 	}{
 		// Failure case
 		{
 			description: "Not UTF8 error",
-			msg: Message{
-				Type:   SimpleRequestResponseMessageType,
+			msg: wrp.Message{
+				Type:   wrp.SimpleRequestResponseMessageType,
 				Source: "dns:external.com",
 				// Not UFT8 Destination string
 				Destination:             "mac:\xed\xbf\xbf",
@@ -463,8 +579,8 @@ func testAlwaysInvalid(t *testing.T) {
 		},
 		{
 			description: "Filled message error",
-			msg: Message{
-				Type:                    SimpleRequestResponseMessageType,
+			msg: wrp.Message{
+				Type:                    wrp.SimpleRequestResponseMessageType,
 				Source:                  "dns:external.com",
 				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
@@ -486,12 +602,12 @@ func testAlwaysInvalid(t *testing.T) {
 		},
 		{
 			description: "Empty message error",
-			msg:         Message{},
+			msg:         wrp.Message{},
 		},
 		{
 			description: "Bad message type error",
-			msg: Message{
-				Type:        LastMessageType + 1,
+			msg: wrp.Message{
+				Type:        wrp.LastMessageType + 1,
 				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},

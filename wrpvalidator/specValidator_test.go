@@ -1,13 +1,18 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package wrp
+package wrpvalidator
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/xmidt-org/sallust"
+	"github.com/xmidt-org/touchstone"
+	"github.com/xmidt-org/wrp-go/v3"
 )
 
 func TestSpecHelperValidators(t *testing.T) {
@@ -36,14 +41,14 @@ func TestSpecValidators(t *testing.T) {
 
 	tests := []struct {
 		description string
-		msg         Message
+		msg         wrp.Message
 		expectedErr []error
 	}{
 		// Success case
 		{
 			description: "Valid spec success",
-			msg: Message{
-				Type:                    SimpleRequestResponseMessageType,
+			msg: wrp.Message{
+				Type:                    wrp.SimpleRequestResponseMessageType,
 				Source:                  "dns:external.com",
 				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
@@ -65,9 +70,36 @@ func TestSpecValidators(t *testing.T) {
 		},
 		// Failure case
 		{
+			description: "Invaild touchstone factory",
+			msg: wrp.Message{
+				Type: wrp.Invalid0MessageType,
+				// Missing scheme
+				Source: "external.com",
+				// Invalid Mac
+				Destination:             "MAC:+++BB-44-55",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
+				// Not UFT8 URL string
+				URL:        "someURL\xed\xbf\xbf.com",
+				PartnerIDs: []string{"foo"},
+				SessionID:  "sessionID123",
+			},
+			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination, ErrorInvalidMessageEncoding},
+		},
+		{
 			description: "Invaild spec error",
-			msg: Message{
-				Type: Invalid0MessageType,
+			msg: wrp.Message{
+				Type: wrp.Invalid0MessageType,
 				// Missing scheme
 				Source: "external.com",
 				// Invalid Mac
@@ -93,13 +125,13 @@ func TestSpecValidators(t *testing.T) {
 		},
 		{
 			description: "Invaild spec error, empty message",
-			msg:         Message{},
+			msg:         wrp.Message{},
 			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination},
 		},
 		{
-			description: "Invaild spec error, nonexistent MessageType",
-			msg: Message{
-				Type:        LastMessageType + 1,
+			description: "Invaild spec error, nonexistent wrp.MessageType",
+			msg: wrp.Message{
+				Type:        wrp.LastMessageType + 1,
 				Source:      "dns:external.com",
 				Destination: "MAC:11:22:33:44:55:66",
 			},
@@ -110,7 +142,19 @@ func TestSpecValidators(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SpecValidators().Validate(tc.msg)
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			sv, err := SpecValidators(f)
+			require.NoError(err)
+
+			err = sv.Validate(tc.msg, prometheus.Labels{})
 			if tc.expectedErr != nil {
 				for _, e := range tc.expectedErr {
 					var targetErr ValidatorError
@@ -127,17 +171,107 @@ func TestSpecValidators(t *testing.T) {
 	}
 }
 
+func TestSpecValidatorsBadTouchStoneFactory(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         wrp.Message
+		expectedErr []error
+	}{
+		// Failure case
+		{
+			description: "Invaild touchstone factory",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			_, err = NewUTF8Validator(f)
+			require.NoError(err)
+			_, err = SpecValidators(f)
+			require.Error(err)
+
+			_, pr2, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
+			_, err = NewMessageTypeValidator(f2)
+			require.NoError(err)
+			_, err = SpecValidators(f2)
+			require.Error(err)
+
+			_, pr3, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f3 := touchstone.NewFactory(cfg, sallust.Default(), pr3)
+			_, err = NewSourceValidator(f3)
+			require.NoError(err)
+			_, err = SpecValidators(f3)
+			require.Error(err)
+
+			_, pr4, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f4 := touchstone.NewFactory(cfg, sallust.Default(), pr4)
+			_, err = NewDestinationValidator(f4)
+			require.NoError(err)
+			_, err = SpecValidators(f4)
+			require.Error(err)
+		})
+	}
+}
+
 func ExampleTypeValidator_Validate_specValidators() {
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	specv, err := SpecValidators(f)
+	if err != nil {
+		panic(err)
+	}
+
+	_, pr2, err := touchstone.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
+	sv, err := NewSourceValidator(f2)
+	if err != nil {
+		panic(err)
+	}
+
+	ai, err := NewAlwaysInvalid(f)
+	if err != nil {
+		panic(err)
+	}
+
 	msgv, err := NewTypeValidator(
 		// Validates found msg types
-		map[MessageType]Validator{
+		map[wrp.MessageType]Validator{
 			// Validates opinionated portions of the spec
-			SimpleEventMessageType: SpecValidators(),
+			wrp.SimpleEventMessageType: specv,
 			// Only validates Source and nothing else
-			SimpleRequestResponseMessageType: ValidatorFunc(SourceValidator),
+			wrp.SimpleRequestResponseMessageType: sv,
 		},
 		// Validates unfound msg types
-		ValidatorFunc(AlwaysInvalid))
+		ai,
+		f)
 	if err != nil {
 		return
 	}
@@ -147,8 +281,8 @@ func ExampleTypeValidator_Validate_specValidators() {
 		expectedRequestDeliveryResponse int64 = 34
 		expectedIncludeSpans            bool  = true
 	)
-	foundErrFailure := msgv.Validate(Message{
-		Type: SimpleEventMessageType,
+	foundErrFailure := msgv.Validate(wrp.Message{
+		Type: wrp.SimpleEventMessageType,
 		// Missing scheme
 		Source: "external.com",
 		// Invalid Mac
@@ -170,18 +304,18 @@ func ExampleTypeValidator_Validate_specValidators() {
 		URL:        "someURL\xed\xbf\xbf.com",
 		PartnerIDs: []string{"foo"},
 		SessionID:  "sessionID123",
-	}) // Found error
-	foundErrSuccess1 := msgv.Validate(Message{
-		Type:        SimpleEventMessageType,
+	}, prometheus.Labels{}) // Found error
+	foundErrSuccess1 := msgv.Validate(wrp.Message{
+		Type:        wrp.SimpleEventMessageType,
 		Source:      "MAC:11:22:33:44:55:66",
 		Destination: "MAC:11:22:33:44:55:61",
-	}) // Found success
-	foundErrSuccess2 := msgv.Validate(Message{
-		Type:        SimpleRequestResponseMessageType,
+	}, prometheus.Labels{}) // Found success
+	foundErrSuccess2 := msgv.Validate(wrp.Message{
+		Type:        wrp.SimpleRequestResponseMessageType,
 		Source:      "MAC:11:22:33:44:55:66",
 		Destination: "invalid:a-BB-44-55",
-	}) // Found success
-	unfoundErrFailure := msgv.Validate(Message{Type: CreateMessageType}) // Unfound error
+	}, prometheus.Labels{}) // Found success
+	unfoundErrFailure := msgv.Validate(wrp.Message{Type: wrp.CreateMessageType}, prometheus.Labels{}) // Unfound error
 	fmt.Println(foundErrFailure == nil, foundErrSuccess1 == nil, foundErrSuccess2 == nil, unfoundErrFailure == nil)
 	// Output: false true true false
 }
@@ -195,14 +329,14 @@ func testUTF8Validator(t *testing.T) {
 
 	tests := []struct {
 		description string
-		msg         Message
+		msg         wrp.Message
 		expectedErr error
 	}{
 		// Success case
 		{
 			description: "UTF8 success",
-			msg: Message{
-				Type:                    SimpleRequestResponseMessageType,
+			msg: wrp.Message{
+				Type:                    wrp.SimpleRequestResponseMessageType,
 				Source:                  "dns:external.com",
 				Destination:             "MAC:11:22:33:44:55:66",
 				TransactionUUID:         "DEADBEEF",
@@ -224,8 +358,8 @@ func testUTF8Validator(t *testing.T) {
 		},
 		{
 			description: "Not UTF8 error",
-			msg: Message{
-				Type:   SimpleRequestResponseMessageType,
+			msg: wrp.Message{
+				Type:   wrp.SimpleRequestResponseMessageType,
 				Source: "dns:external.com",
 				// Not UFT8 Destination string
 				Destination:             "MAC:\xed\xbf\xbf",
@@ -269,79 +403,79 @@ func testUTF8Validator(t *testing.T) {
 func testMessageTypeValidator(t *testing.T) {
 	tests := []struct {
 		description string
-		msg         Message
+		msg         wrp.Message
 		expectedErr error
 	}{
 		// Success case
 		{
 			description: "AuthorizationMessageType success",
-			msg:         Message{Type: AuthorizationMessageType},
+			msg:         wrp.Message{Type: wrp.AuthorizationMessageType},
 		},
 		{
 			description: "SimpleRequestResponseMessageType success",
-			msg:         Message{Type: SimpleRequestResponseMessageType},
+			msg:         wrp.Message{Type: wrp.SimpleRequestResponseMessageType},
 		},
 		{
 			description: "SimpleEventMessageType success",
-			msg:         Message{Type: SimpleEventMessageType},
+			msg:         wrp.Message{Type: wrp.SimpleEventMessageType},
 		},
 		{
 			description: "CreateMessageType success",
-			msg:         Message{Type: CreateMessageType},
+			msg:         wrp.Message{Type: wrp.CreateMessageType},
 		},
 		{
 			description: "RetrieveMessageType success",
-			msg:         Message{Type: RetrieveMessageType},
+			msg:         wrp.Message{Type: wrp.RetrieveMessageType},
 		},
 		{
 			description: "UpdateMessageType success",
-			msg:         Message{Type: UpdateMessageType},
+			msg:         wrp.Message{Type: wrp.UpdateMessageType},
 		},
 		{
 			description: "DeleteMessageType success",
-			msg:         Message{Type: DeleteMessageType},
+			msg:         wrp.Message{Type: wrp.DeleteMessageType},
 		},
 		{
 			description: "ServiceRegistrationMessageType success",
-			msg:         Message{Type: ServiceRegistrationMessageType},
+			msg:         wrp.Message{Type: wrp.ServiceRegistrationMessageType},
 		},
 		{
 			description: "ServiceAliveMessageType success",
-			msg:         Message{Type: ServiceAliveMessageType},
+			msg:         wrp.Message{Type: wrp.ServiceAliveMessageType},
 		},
 		{
 			description: "UnknownMessageType success",
-			msg:         Message{Type: UnknownMessageType},
+			msg:         wrp.Message{Type: wrp.UnknownMessageType},
 		},
 		// Failure case
 		{
 			description: "Invalid0MessageType error",
-			msg:         Message{Type: Invalid0MessageType},
+			msg:         wrp.Message{Type: wrp.Invalid0MessageType},
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
 			description: "Invalid0MessageType error",
-			msg:         Message{Type: Invalid0MessageType},
+			msg:         wrp.Message{Type: wrp.Invalid0MessageType},
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
 			description: "Invalid1MessageType error",
-			msg:         Message{Type: Invalid1MessageType},
+			msg:         wrp.Message{Type: wrp.Invalid1MessageType},
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
 			description: "lastMessageType error",
-			msg:         Message{Type: LastMessageType},
+			msg:         wrp.Message{Type: wrp.LastMessageType},
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
-			description: "Nonexistent negative MessageType error",
-			msg:         Message{Type: -10},
+			description: "Nonexistent negative wrp.MessageType error",
+			msg:         wrp.Message{Type: -10},
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
-			description: "Nonexistent positive MessageType error",
-			msg:         Message{Type: LastMessageType + 1},
+			description: "Nonexistent positive wrp.MessageType error",
+			msg:         wrp.Message{Type: wrp.LastMessageType + 1},
 			expectedErr: ErrorInvalidMessageType,
 		},
 	}
@@ -371,18 +505,18 @@ func testSourceValidator(t *testing.T) {
 
 	tests := []struct {
 		description string
-		msg         Message
+		msg         wrp.Message
 		expectedErr error
 	}{
 		// Success case
 		{
 			description: "Source success",
-			msg:         Message{Source: "MAC:11:22:33:44:55:66"},
+			msg:         wrp.Message{Source: "MAC:11:22:33:44:55:66"},
 		},
 		// Failures
 		{
 			description: "Source error",
-			msg:         Message{Source: "invalid:a-BB-44-55"},
+			msg:         wrp.Message{Source: "invalid:a-BB-44-55"},
 			expectedErr: ErrorInvalidSource,
 		},
 	}
@@ -412,18 +546,18 @@ func testDestinationValidator(t *testing.T) {
 
 	tests := []struct {
 		description string
-		msg         Message
+		msg         wrp.Message
 		expectedErr error
 	}{
 		// Success case
 		{
 			description: "Destination success",
-			msg:         Message{Destination: "MAC:11:22:33:44:55:66"},
+			msg:         wrp.Message{Destination: "MAC:11:22:33:44:55:66"},
 		},
 		// Failures
 		{
 			description: "Destination error",
-			msg:         Message{Destination: "invalid:a-BB-44-55"},
+			msg:         wrp.Message{Destination: "invalid:a-BB-44-55"},
 			expectedErr: ErrorInvalidDestination,
 		},
 	}
