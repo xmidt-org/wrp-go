@@ -102,7 +102,7 @@ func TestSpecValidators(t *testing.T) {
 			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination},
 		},
 		{
-			description: "Invaild spec error, nonexistentwrp.MessageType",
+			description: "Invaild spec error, nonexistent wrp.MessageType",
 			msg: wrp.Message{
 				Type:        wrp.LastMessageType + 1,
 				Source:      "dns:external.com",
@@ -384,12 +384,12 @@ func testMessageTypeValidator(t *testing.T) {
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
-			description: "Nonexistent negativewrp.MessageType error",
+			description: "Nonexistent negative wrp.MessageType error",
 			msg:         wrp.Message{Type: -10},
 			expectedErr: ErrorInvalidMessageType,
 		},
 		{
-			description: "Nonexistent positivewrp.MessageType error",
+			description: "Nonexistent positive wrp.MessageType error",
 			msg:         wrp.Message{Type: wrp.LastMessageType + 1},
 			expectedErr: ErrorInvalidMessageType,
 		},

@@ -79,7 +79,7 @@ func NewValidatorError(err error, m string, f []string) ValidatorError {
 
 // Validator is a WRP validator that allows access to the Validate function.
 type Validator interface {
-	Validate(m wrp.Message, ls prometheus.Labels) error
+	Validate(wrp.Message, prometheus.Labels) error
 }
 
 // Validators is a WRP validator that ensures messages are valid based on
