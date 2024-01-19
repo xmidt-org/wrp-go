@@ -70,6 +70,33 @@ func TestSpecValidators(t *testing.T) {
 		},
 		// Failure case
 		{
+			description: "Invaild touchstone factory",
+			msg: wrp.Message{
+				Type: wrp.Invalid0MessageType,
+				// Missing scheme
+				Source: "external.com",
+				// Invalid Mac
+				Destination:             "MAC:+++BB-44-55",
+				TransactionUUID:         "DEADBEEF",
+				ContentType:             "ContentType",
+				Accept:                  "Accept",
+				Status:                  &expectedStatus,
+				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+				Headers:                 []string{"Header1", "Header2"},
+				Metadata:                map[string]string{"name": "value"},
+				Spans:                   [][]string{{"1", "2"}, {"3"}},
+				IncludeSpans:            &expectedIncludeSpans,
+				Path:                    "/some/where/over/the/rainbow",
+				Payload:                 []byte{1, 2, 3, 4, 0xff, 0xce},
+				ServiceName:             "ServiceName",
+				// Not UFT8 URL string
+				URL:        "someURL\xed\xbf\xbf.com",
+				PartnerIDs: []string{"foo"},
+				SessionID:  "sessionID123",
+			},
+			expectedErr: []error{ErrorInvalidMessageType, ErrorInvalidSource, ErrorInvalidDestination, ErrorInvalidMessageEncoding},
+		},
+		{
 			description: "Invaild spec error",
 			msg: wrp.Message{
 				Type: wrp.Invalid0MessageType,
@@ -140,6 +167,64 @@ func TestSpecValidators(t *testing.T) {
 			}
 
 			assert.NoError(err)
+		})
+	}
+}
+
+func TestSpecValidatorsBadTouchStoneFactory(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         wrp.Message
+		expectedErr []error
+	}{
+		// Failure case
+		{
+			description: "Invaild touchstone factory",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			_, err = NewUTF8Validator(f)
+			require.NoError(err)
+			_, err = SpecValidators(f)
+			require.Error(err)
+
+			_, pr2, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
+			_, err = NewMessageTypeValidator(f2)
+			require.NoError(err)
+			_, err = SpecValidators(f2)
+			require.Error(err)
+
+			_, pr3, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f3 := touchstone.NewFactory(cfg, sallust.Default(), pr3)
+			_, err = NewSourceValidator(f3)
+			require.NoError(err)
+			_, err = SpecValidators(f3)
+			require.Error(err)
+
+			_, pr4, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f4 := touchstone.NewFactory(cfg, sallust.Default(), pr4)
+			_, err = NewDestinationValidator(f4)
+			require.NoError(err)
+			_, err = SpecValidators(f4)
+			require.Error(err)
 		})
 	}
 }

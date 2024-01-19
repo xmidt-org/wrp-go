@@ -178,6 +178,39 @@ func TestTypeValidator(t *testing.T) {
 	}
 }
 
+func TestTypeValidatorBadTouchStoneFactory(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         wrp.Message
+		expectedErr []error
+	}{
+		// Failure case
+		{
+			description: "Invaild touchstone factory",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			ai, err := NewAlwaysInvalid(f)
+			require.NoError(err)
+			_, err = NewTypeValidator(map[wrp.MessageType]Validator{
+				wrp.SimpleEventMessageType: ai,
+			}, nil, f)
+			require.Error(err)
+		})
+	}
+}
+
 func ExampleNewTypeValidator() {
 	cfg := touchstone.Config{
 		DefaultNamespace: "n",

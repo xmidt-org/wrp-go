@@ -145,6 +145,46 @@ func TestSimpleEventValidators(t *testing.T) {
 	}
 }
 
+func TestSimpleEventValidatorsBadTouchStoneFactory(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         wrp.Message
+		expectedErr []error
+	}{
+		// Failure case
+		{
+			description: "Invaild touchstone factory",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			_, err = NewUTF8Validator(f)
+			require.NoError(err)
+			_, err = SimpleEventValidators(f)
+			require.Error(err)
+
+			_, pr2, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
+			_, err = NewSimpleEventTypeValidator(f2)
+			require.NoError(err)
+			_, err = SimpleEventValidators(f2)
+			require.Error(err)
+		})
+	}
+}
+
 func TestSimpleResponseRequestValidators(t *testing.T) {
 	var (
 		expectedStatus                  int64 = 3471
@@ -270,6 +310,55 @@ func TestSimpleResponseRequestValidators(t *testing.T) {
 			}
 
 			assert.NoError(err)
+		})
+	}
+}
+
+func TestSimpleResponseRequestValidatorsBadTouchStoneFactory(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         wrp.Message
+		expectedErr []error
+	}{
+		// Failure case
+		{
+			description: "Invaild touchstone factory",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			require := require.New(t)
+			cfg := touchstone.Config{
+				DefaultNamespace: "n",
+				DefaultSubsystem: "s",
+			}
+			_, pr, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			_, err = NewUTF8Validator(f)
+			require.NoError(err)
+			_, err = SimpleResponseRequestValidators(f)
+			require.Error(err)
+
+			_, pr2, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
+			_, err = NewSimpleResponseRequestTypeValidator(f2)
+			require.NoError(err)
+			_, err = SimpleResponseRequestValidators(f2)
+			require.Error(err)
+
+			_, pr3, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f3 := touchstone.NewFactory(cfg, sallust.Default(), pr3)
+			_, err = NewSpansValidator(f3)
+			require.NoError(err)
+			_, err = SimpleResponseRequestValidators(f3)
+			require.Error(err)
 		})
 	}
 }
