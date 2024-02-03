@@ -20,10 +20,10 @@ func TestSpecHelperValidators(t *testing.T) {
 		description string
 		test        func(*testing.T)
 	}{
-		{"UTF8Validator", testUTF8Validator},
-		{"MessageTypeValidator", testMessageTypeValidator},
-		{"SourceValidator", testSourceValidator},
-		{"DestinationValidator", testDestinationValidator},
+		{"UTF8", testUTF8},
+		{"MessageType", testMessageType},
+		{"Source", testSource},
+		{"Destination", testDestination},
 		{"validateLocator", testValidateLocator},
 	}
 
@@ -32,7 +32,7 @@ func TestSpecHelperValidators(t *testing.T) {
 	}
 }
 
-func TestSpecValidators(t *testing.T) {
+func TestSpecWithMetrics(t *testing.T) {
 	var (
 		expectedStatus                  int64 = 3471
 		expectedRequestDeliveryResponse int64 = 34
@@ -70,7 +70,7 @@ func TestSpecValidators(t *testing.T) {
 		},
 		// Failure case
 		{
-			description: "Invaild touchstone factory",
+			description: "Duplicate validators",
 			msg: wrp.Message{
 				Type: wrp.Invalid0MessageType,
 				// Missing scheme
@@ -150,8 +150,8 @@ func TestSpecValidators(t *testing.T) {
 			_, pr, err := touchstone.New(cfg)
 			require.NoError(err)
 
-			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-			sv, err := SpecValidators(f)
+			tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			sv, err := SpecWithMetrics(tf)
 			require.NoError(err)
 
 			err = sv.Validate(tc.msg, prometheus.Labels{})
@@ -171,7 +171,7 @@ func TestSpecValidators(t *testing.T) {
 	}
 }
 
-func TestSpecValidatorsBadTouchStoneFactory(t *testing.T) {
+func TestSpecWithDuplicateValidators(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         wrp.Message
@@ -179,7 +179,7 @@ func TestSpecValidatorsBadTouchStoneFactory(t *testing.T) {
 	}{
 		// Failure case
 		{
-			description: "Invaild touchstone factory",
+			description: "Duplicate validators",
 		},
 	}
 
@@ -193,37 +193,37 @@ func TestSpecValidatorsBadTouchStoneFactory(t *testing.T) {
 			_, pr, err := touchstone.New(cfg)
 			require.NoError(err)
 
-			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-			_, err = NewUTF8Validator(f)
+			tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			_, err = NewUTF8WithMetric(tf)
 			require.NoError(err)
-			_, err = SpecValidators(f)
+			_, err = SpecWithMetrics(tf)
 			require.Error(err)
 
 			_, pr2, err := touchstone.New(cfg)
 			require.NoError(err)
 
 			f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
-			_, err = NewMessageTypeValidator(f2)
+			_, err = NewMessageTypeWithMetric(f2)
 			require.NoError(err)
-			_, err = SpecValidators(f2)
+			_, err = SpecWithMetrics(f2)
 			require.Error(err)
 
 			_, pr3, err := touchstone.New(cfg)
 			require.NoError(err)
 
 			f3 := touchstone.NewFactory(cfg, sallust.Default(), pr3)
-			_, err = NewSourceValidator(f3)
+			_, err = NewSourceWithMetric(f3)
 			require.NoError(err)
-			_, err = SpecValidators(f3)
+			_, err = SpecWithMetrics(f3)
 			require.Error(err)
 
 			_, pr4, err := touchstone.New(cfg)
 			require.NoError(err)
 
 			f4 := touchstone.NewFactory(cfg, sallust.Default(), pr4)
-			_, err = NewDestinationValidator(f4)
+			_, err = NewDestinationWithMetric(f4)
 			require.NoError(err)
-			_, err = SpecValidators(f4)
+			_, err = SpecWithMetrics(f4)
 			require.Error(err)
 		})
 	}
@@ -239,8 +239,8 @@ func ExampleTypeValidator_Validate_specValidators() {
 		panic(err)
 	}
 
-	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-	specv, err := SpecValidators(f)
+	tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	specv, err := SpecWithMetrics(tf)
 	if err != nil {
 		panic(err)
 	}
@@ -251,12 +251,12 @@ func ExampleTypeValidator_Validate_specValidators() {
 	}
 
 	f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
-	sv, err := NewSourceValidator(f2)
+	sv, err := NewSourceWithMetric(f2)
 	if err != nil {
 		panic(err)
 	}
 
-	ai, err := NewAlwaysInvalid(f)
+	ai, err := NewAlwaysInvalidWithMetric(tf)
 	if err != nil {
 		panic(err)
 	}
@@ -271,7 +271,7 @@ func ExampleTypeValidator_Validate_specValidators() {
 		},
 		// Validates unfound msg types
 		ai,
-		f)
+		tf)
 	if err != nil {
 		return
 	}
@@ -320,7 +320,7 @@ func ExampleTypeValidator_Validate_specValidators() {
 	// Output: false true true false
 }
 
-func testUTF8Validator(t *testing.T) {
+func testUTF8(t *testing.T) {
 	var (
 		expectedStatus                  int64 = 3471
 		expectedRequestDeliveryResponse int64 = 34
@@ -386,7 +386,7 @@ func testUTF8Validator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := UTF8Validator(tc.msg)
+			err := UTF8(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 
@@ -400,7 +400,7 @@ func testUTF8Validator(t *testing.T) {
 	}
 }
 
-func testMessageTypeValidator(t *testing.T) {
+func testMessageType(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         wrp.Message
@@ -483,7 +483,7 @@ func testMessageTypeValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := MessageTypeValidator(tc.msg)
+			err := MessageType(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 
@@ -497,9 +497,9 @@ func testMessageTypeValidator(t *testing.T) {
 	}
 }
 
-func testSourceValidator(t *testing.T) {
-	// SourceValidator is mainly a wrapper for validateLocator.
-	// This test mainly ensures that SourceValidator returns nil for non errors
+func testSource(t *testing.T) {
+	// Source is mainly a wrapper for validateLocator.
+	// This test mainly ensures that Source returns nil for non errors
 	// and wraps errors with ErrorInvalidSource.
 	// testValidateLocator covers the actual spectrum of test cases.
 
@@ -524,7 +524,7 @@ func testSourceValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SourceValidator(tc.msg)
+			err := Source(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 
@@ -538,9 +538,9 @@ func testSourceValidator(t *testing.T) {
 	}
 }
 
-func testDestinationValidator(t *testing.T) {
-	// DestinationValidator is mainly a wrapper for validateLocator.
-	// This test mainly ensures that DestinationValidator returns nil for non errors
+func testDestination(t *testing.T) {
+	// Destination is mainly a wrapper for validateLocator.
+	// This test mainly ensures that Destination returns nil for non errors
 	// and wraps errors with ErrorInvalidDestination.
 	// testValidateLocator covers the actual spectrum of test cases.
 
@@ -565,7 +565,7 @@ func testDestinationValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := DestinationValidator(tc.msg)
+			err := Destination(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 

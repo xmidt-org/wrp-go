@@ -147,13 +147,13 @@ func (tv TypeValidator) Validate(m wrp.Message, ls prometheus.Labels) error {
 }
 
 // NewTypeValidator is a TypeValidator factory.
-func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validator, f *touchstone.Factory, labelNames ...string) (TypeValidator, error) {
+func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validator, tf *touchstone.Factory, labelNames ...string) (TypeValidator, error) {
 	if m == nil {
 		return TypeValidator{}, ErrorInvalidValidator
 	}
 
 	if defaultValidator == nil {
-		v, err := NewAlwaysInvalid(f, labelNames...)
+		v, err := NewAlwaysInvalidWithMetric(tf, labelNames...)
 		if err != nil {
 			return TypeValidator{}, err
 		}
@@ -167,8 +167,8 @@ func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validato
 	}, nil
 }
 
-func NewAlwaysInvalid(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newAlwaysInvalidValidatorErrorTotal(f, labelNames...)
+func NewAlwaysInvalidWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newAlwaysInvalidErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
 		err := AlwaysInvalid(msg)
@@ -180,7 +180,7 @@ func NewAlwaysInvalid(f *touchstone.Factory, labelNames ...string) (ValidatorFun
 	}, err
 }
 
-func NewAlwaysValid(_ *touchstone.Factory, _ ...string) (ValidatorFunc, error) {
+func NewAlwaysValidWithMetric(_ *touchstone.Factory, _ ...string) (ValidatorFunc, error) {
 	return func(msg wrp.Message, _ prometheus.Labels) error {
 		return AlwaysValid(msg)
 	}, nil
@@ -194,4 +194,10 @@ func AlwaysInvalid(_ wrp.Message) error {
 // AlwaysValid doesn't validate anything about the message and always returns nil.
 func AlwaysValid(_ wrp.Message) error {
 	return nil
+}
+
+func NewValidatorWithoutMetric(v func(wrp.Message) error) ValidatorFunc {
+	return func(m wrp.Message, _ prometheus.Labels) error {
+		return v(m)
+	}
 }

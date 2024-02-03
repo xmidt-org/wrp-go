@@ -20,9 +20,9 @@ func TestSimpleMessageTypesHelperValidators(t *testing.T) {
 		description string
 		test        func(*testing.T)
 	}{
-		{"SpansValidator", testSpansValidator},
-		{"SimpleResponseRequestTypeValidator", testSimpleResponseRequestTypeValidator},
-		{"SimpleEventTypeValidator", testSimpleEventTypeValidator},
+		{"Spans", testSpans},
+		{"SimpleResponseRequestType", testSimpleResponseRequestType},
+		{"SimpleEventType", testSimpleEventType},
 	}
 
 	for _, tc := range tests {
@@ -30,7 +30,7 @@ func TestSimpleMessageTypesHelperValidators(t *testing.T) {
 	}
 }
 
-func TestSimpleEventValidators(t *testing.T) {
+func TestSimpleEvent(t *testing.T) {
 	var (
 		expectedStatus                  int64 = 3471
 		expectedRequestDeliveryResponse int64 = 34
@@ -125,8 +125,8 @@ func TestSimpleEventValidators(t *testing.T) {
 			_, pr, err := touchstone.New(cfg)
 			require.NoError(err)
 
-			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-			sev, err := SimpleEventValidators(f)
+			tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			sev, err := SimpleEvent(tf)
 			require.NoError(err)
 			err = sev.Validate(tc.msg, prometheus.Labels{})
 			if tc.expectedErr != nil {
@@ -145,7 +145,7 @@ func TestSimpleEventValidators(t *testing.T) {
 	}
 }
 
-func TestSimpleEventValidatorsBadTouchStoneFactory(t *testing.T) {
+func TestSimpleEventWithDuplicateValidators(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         wrp.Message
@@ -153,7 +153,7 @@ func TestSimpleEventValidatorsBadTouchStoneFactory(t *testing.T) {
 	}{
 		// Failure case
 		{
-			description: "Invaild touchstone factory",
+			description: "Duplicate validators",
 		},
 	}
 
@@ -167,25 +167,25 @@ func TestSimpleEventValidatorsBadTouchStoneFactory(t *testing.T) {
 			_, pr, err := touchstone.New(cfg)
 			require.NoError(err)
 
-			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-			_, err = NewUTF8Validator(f)
+			tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			_, err = NewUTF8WithMetric(tf)
 			require.NoError(err)
-			_, err = SimpleEventValidators(f)
+			_, err = SimpleEvent(tf)
 			require.Error(err)
 
 			_, pr2, err := touchstone.New(cfg)
 			require.NoError(err)
 
 			f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
-			_, err = NewSimpleEventTypeValidator(f2)
+			_, err = NewSimpleEventTypeWithMetric(f2)
 			require.NoError(err)
-			_, err = SimpleEventValidators(f2)
+			_, err = SimpleEvent(f2)
 			require.Error(err)
 		})
 	}
 }
 
-func TestSimpleResponseRequestValidators(t *testing.T) {
+func TestSimpleResponseRequest(t *testing.T) {
 	var (
 		expectedStatus                  int64 = 3471
 		expectedRequestDeliveryResponse int64 = 34
@@ -294,8 +294,8 @@ func TestSimpleResponseRequestValidators(t *testing.T) {
 			_, pr, err := touchstone.New(cfg)
 			require.NoError(err)
 
-			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-			srv, err := SimpleResponseRequestValidators(f)
+			tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			srv, err := SimpleResponseRequest(tf)
 			require.NoError(err)
 			err = srv.Validate(tc.msg, prometheus.Labels{})
 			if tc.expectedErr != nil {
@@ -314,7 +314,7 @@ func TestSimpleResponseRequestValidators(t *testing.T) {
 	}
 }
 
-func TestSimpleResponseRequestValidatorsBadTouchStoneFactory(t *testing.T) {
+func TestSimpleResponseRequestWithDuplicateValidators(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         wrp.Message
@@ -322,7 +322,7 @@ func TestSimpleResponseRequestValidatorsBadTouchStoneFactory(t *testing.T) {
 	}{
 		// Failure case
 		{
-			description: "Invaild touchstone factory",
+			description: "Duplicate validators",
 		},
 	}
 
@@ -336,28 +336,28 @@ func TestSimpleResponseRequestValidatorsBadTouchStoneFactory(t *testing.T) {
 			_, pr, err := touchstone.New(cfg)
 			require.NoError(err)
 
-			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-			_, err = NewUTF8Validator(f)
+			tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			_, err = NewUTF8WithMetric(tf)
 			require.NoError(err)
-			_, err = SimpleResponseRequestValidators(f)
+			_, err = SimpleResponseRequest(tf)
 			require.Error(err)
 
 			_, pr2, err := touchstone.New(cfg)
 			require.NoError(err)
 
 			f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
-			_, err = NewSimpleResponseRequestTypeValidator(f2)
+			_, err = NewSimpleResponseRequestTypeWithMetric(f2)
 			require.NoError(err)
-			_, err = SimpleResponseRequestValidators(f2)
+			_, err = SimpleResponseRequest(f2)
 			require.Error(err)
 
 			_, pr3, err := touchstone.New(cfg)
 			require.NoError(err)
 
 			f3 := touchstone.NewFactory(cfg, sallust.Default(), pr3)
-			_, err = NewSpansValidator(f3)
+			_, err = NewSpansWithMetric(f3)
 			require.NoError(err)
-			_, err = SimpleResponseRequestValidators(f3)
+			_, err = SimpleResponseRequest(f3)
 			require.Error(err)
 		})
 	}
@@ -373,8 +373,8 @@ func ExampleTypeValidator_Validate_simpleTypesValidators() {
 		panic(err)
 	}
 
-	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-	sev, err := SimpleEventValidators(f)
+	tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	sev, err := SimpleEvent(tf)
 	if err != nil {
 		panic(err)
 	}
@@ -385,12 +385,12 @@ func ExampleTypeValidator_Validate_simpleTypesValidators() {
 	}
 
 	f2 := touchstone.NewFactory(cfg, sallust.Default(), pr2)
-	srv, err := SimpleResponseRequestValidators(f2)
+	srv, err := SimpleResponseRequest(f2)
 	if err != nil {
 		panic(err)
 	}
 
-	aiv, err := NewAlwaysInvalid(f)
+	aiv, err := NewAlwaysInvalidWithMetric(tf)
 	if err != nil {
 		panic(err)
 	}
@@ -403,7 +403,7 @@ func ExampleTypeValidator_Validate_simpleTypesValidators() {
 		},
 		// Validates unfound msg types
 		aiv,
-		f)
+		tf)
 	if err != nil {
 		return
 	}
@@ -461,7 +461,7 @@ func ExampleTypeValidator_Validate_simpleTypesValidators() {
 	// Output: false true false false
 }
 
-func testSpansValidator(t *testing.T) {
+func testSpans(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         wrp.Message
@@ -516,7 +516,7 @@ func testSpansValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SpansValidator(tc.msg)
+			err := Spans(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 
@@ -530,7 +530,7 @@ func testSpansValidator(t *testing.T) {
 	}
 }
 
-func testSimpleEventTypeValidator(t *testing.T) {
+func testSimpleEventType(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         wrp.Message
@@ -622,7 +622,7 @@ func testSimpleEventTypeValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SimpleEventTypeValidator(tc.msg)
+			err := SimpleEventType(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 
@@ -636,7 +636,7 @@ func testSimpleEventTypeValidator(t *testing.T) {
 	}
 }
 
-func testSimpleResponseRequestTypeValidator(t *testing.T) {
+func testSimpleResponseRequestType(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         wrp.Message
@@ -728,7 +728,7 @@ func testSimpleResponseRequestTypeValidator(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			err := SimpleResponseRequestTypeValidator(tc.msg)
+			err := SimpleResponseRequestType(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 
