@@ -14,12 +14,16 @@ import (
 )
 
 type Metadata struct {
-	Level   validatorLevel `json:"level"`
-	Type    validatorType  `json:"type"`
-	Disable bool           `json:"disable"`
+	// Level denotes the validator's Level and should be used for client side validator error handling.
+	Level validatorLevel `json:"level"`
+	// Type assigns the validator type.
+	Type validatorType `json:"type"`
+	// disable determines whether incoming messages are validate (`diable` is `false`)
+	// or not (`disable` is `true`), metrics for that validator will not be produced if it's disabled.
+	Disable bool `json:"disable"`
 }
 
-type ValidatorWithMetadata struct {
+type MetaValidator struct {
 	meta      Metadata
 	validator Validator
 }
@@ -30,20 +34,20 @@ var (
 	ErrValidatorInvalidConfig = errors.New("invalid configuration error")
 )
 
-func (v ValidatorWithMetadata) Level() validatorLevel {
+func (v MetaValidator) Level() validatorLevel {
 	return v.meta.Level
 }
 
-func (v ValidatorWithMetadata) Type() validatorType {
+func (v MetaValidator) Type() validatorType {
 	return v.meta.Type
 }
 
-func (v ValidatorWithMetadata) Disabled() bool {
+func (v MetaValidator) Disabled() bool {
 	return v.meta.Disable
 }
 
 // UnmarshalJSON returns the ValidatorConfig's enum value
-func (v *ValidatorWithMetadata) UnmarshalJSON(b []byte) error {
+func (v *MetaValidator) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 {
 		return nil
 	}
@@ -85,7 +89,7 @@ func (v *ValidatorWithMetadata) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (v *ValidatorWithMetadata) AddMetric(tf *touchstone.Factory, labelNames ...string) error {
+func (v *MetaValidator) AddMetric(tf *touchstone.Factory, labelNames ...string) error {
 	if !v.IsValid() {
 		return fmt.Errorf("validator `%s`: invalid configuration: %w", v.meta.Type, ErrValidatorInvalidConfig)
 	} else if v.meta.Disable {
@@ -128,7 +132,7 @@ func (v *ValidatorWithMetadata) AddMetric(tf *touchstone.Factory, labelNames ...
 }
 
 // Validate executes its own ValidatorFunc receiver and returns the result.
-func (v ValidatorWithMetadata) Validate(m wrp.Message, ls prometheus.Labels) error {
+func (v MetaValidator) Validate(m wrp.Message, ls prometheus.Labels) error {
 	if !v.IsValid() {
 		return fmt.Errorf("validator `%s`: invalid configuration: %w", v.meta.Type, ErrValidatorInvalidConfig)
 	} else if v.meta.Disable {
@@ -140,10 +144,10 @@ func (v ValidatorWithMetadata) Validate(m wrp.Message, ls prometheus.Labels) err
 	return nil
 }
 
-func (v ValidatorWithMetadata) IsValid() bool {
+func (v MetaValidator) IsValid() bool {
 	return v.meta.Type.IsValid() && v.meta.Level.IsValid() && v.validator != nil
 }
 
-func (v ValidatorWithMetadata) IsEmpty() bool {
+func (v MetaValidator) IsEmpty() bool {
 	return v.meta.Type.IsEmpty() && v.meta.Level.IsEmpty() && v.validator == nil
 }

@@ -77,7 +77,7 @@ func (vt validatorType) String() string {
 
 // UnmarshalText returns the validatorType's enum value
 func (vt *validatorType) UnmarshalText(b []byte) error {
-	s := string(b)
+	s := strings.ToLower(string(b))
 	r, ok := validatorTypeUnmarshal[s]
 	if !ok {
 		return fmt.Errorf("ValidatorType error: '%s' does not match any valid options: %s",

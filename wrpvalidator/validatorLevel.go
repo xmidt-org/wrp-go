@@ -56,7 +56,7 @@ func (vt validatorLevel) String() string {
 
 // UnmarshalText returns the validatorLevel's enum value
 func (vt *validatorLevel) UnmarshalText(b []byte) error {
-	s := string(b)
+	s := strings.ToLower(string(b))
 	r, ok := validatorLevelUnmarshal[s]
 	if !ok {
 		return fmt.Errorf("ValidatorLevel error: '%s' does not match any valid options: %s",

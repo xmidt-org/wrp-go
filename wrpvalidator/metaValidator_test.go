@@ -6,6 +6,7 @@ package wrpvalidator
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,6 +16,92 @@ import (
 	"github.com/xmidt-org/touchstone"
 	"github.com/xmidt-org/wrp-go/v3"
 )
+
+func ExampleMetaValidator() {
+	var valMeta []MetaValidator
+	valConfig := []byte(`[
+	{
+		"type": "utf8",
+		"level": "warning"
+	},
+	{
+		"type": "source",
+		"level": "error"
+	},
+	{
+		"type": "msg_type",
+		"level": "error",
+		"disable": true
+	}
+]`)
+
+	// Initialize wrp validators
+	if err := json.Unmarshal(valConfig, &valMeta); err != nil {
+		panic(err)
+	}
+	cfg := touchstone.Config{
+		DefaultNamespace: "n",
+		DefaultSubsystem: "s",
+	}
+	_, pr, err := touchstone.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	// (Optional) Add metrics to wrp validator
+	labelNames := []string{"label1", "label2"}
+	tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	for _, v := range valMeta {
+		if err := v.AddMetric(tf, labelNames...); err != nil {
+			panic(err)
+		}
+	}
+
+	var (
+		expectedStatus                  int64 = 3471
+		expectedRequestDeliveryResponse int64 = 34
+		expectedIncludeSpans            bool  = true
+	)
+	failurMsg := wrp.Message{
+		Type: wrp.SimpleEventMessageType,
+		// Missing scheme
+		Source: "external.com",
+		// Invalid Mac
+		Destination:             "MAC:+++BB-44-55",
+		TransactionUUID:         "DEADBEEF",
+		ContentType:             "ContentType",
+		Accept:                  "Accept",
+		Status:                  &expectedStatus,
+		RequestDeliveryResponse: &expectedRequestDeliveryResponse,
+		Headers:                 []string{"Header1", "Header2"},
+		Metadata:                map[string]string{"name": "value"},
+		Spans:                   [][]string{{"1", "2"}, {"3"}},
+		IncludeSpans:            &expectedIncludeSpans,
+		Path:                    "/some/where/over/the/rainbow",
+
+		Payload:     []byte{1, 2, 3, 4},
+		ServiceName: "ServiceName",
+		PartnerIDs:  []string{"foo"},
+		SessionID:   "sessionID123",
+	}
+
+	l := prometheus.Labels{"label1": "foo", "label2": "bar"}
+	for _, v := range valMeta {
+		err := v.Validate(failurMsg, l)
+		if err == nil {
+			continue
+		}
+
+		switch v.meta.Level {
+		case WarningLevel:
+			fmt.Printf("%s warnings: %s", v.Type(), err)
+		case ErrorLevel:
+			fmt.Printf("%s errors: %s", v.Type(), err)
+		}
+	}
+
+	// Output: source errors: validator `source`: Validator error [Source] err=invalid Source name 'external.com': value given doesn't match expected locator pattern: mac|uuid|event|dns|serial
+}
 
 func TestMetaValidatorUnmarshal(t *testing.T) {
 	tests := []struct {
@@ -75,7 +162,7 @@ func TestMetaValidatorUnmarshal(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			var valMeta ValidatorWithMetadata
+			var valMeta MetaValidator
 			assert := assert.New(t)
 
 			err := valMeta.UnmarshalJSON(tc.config)
@@ -220,13 +307,13 @@ func TestMetaValidatorAddMetric(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			var valMeta []ValidatorWithMetadata
+			var valMeta []MetaValidator
 			assert := assert.New(t)
 			require := require.New(t)
 			if len(tc.config) != 0 {
 				require.NoError(json.Unmarshal(tc.config, &valMeta))
 			} else {
-				valMeta = append(valMeta, ValidatorWithMetadata{})
+				valMeta = append(valMeta, MetaValidator{})
 			}
 
 			cfg := touchstone.Config{
@@ -388,13 +475,13 @@ func TestMetaValidatorValidate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			var valMeta []ValidatorWithMetadata
+			var valMeta []MetaValidator
 			assert := assert.New(t)
 			require := require.New(t)
 			if len(tc.config) != 0 {
 				require.NoError(json.Unmarshal(tc.config, &valMeta))
 			} else {
-				valMeta = append(valMeta, ValidatorWithMetadata{})
+				valMeta = append(valMeta, MetaValidator{})
 			}
 
 			require.Len(valMeta, 1)

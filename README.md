@@ -14,6 +14,7 @@ structures and supporting utilities.
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
+- [Validators](#validators)
 - [Examples](#examples)
 - [Contributing](#contributing)
 
@@ -21,6 +22,10 @@ structures and supporting utilities.
 
 This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
 By participating, you agree to this Code.
+
+## Validators
+
+To setup application wrp validators, visit the example `ExampleMetaValidator` [GoDoc](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v3/wrpvalidator#example-MetaValidator).
 
 ## Examples 
 
