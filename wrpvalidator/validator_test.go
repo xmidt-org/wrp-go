@@ -98,11 +98,11 @@ func TestValidators(t *testing.T) {
 	_, pr, err := touchstone.New(cfg)
 	require.NoError(err)
 
-	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-	av, err := NewAlwaysValid(f)
+	tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	av, err := NewAlwaysValidWithMetric(tf)
 	require.NoError(err)
 
-	ai, err := NewAlwaysInvalid(f)
+	ai, err := NewAlwaysInvalidWithMetric(tf)
 	require.NoError(err)
 
 	subvs := Validators{}.AddFunc(av, nil, ai)
@@ -178,7 +178,7 @@ func TestTypeValidator(t *testing.T) {
 	}
 }
 
-func TestTypeValidatorBadTouchStoneFactory(t *testing.T) {
+func TestTypeValidatorWithDuplicateValidators(t *testing.T) {
 	tests := []struct {
 		description string
 		msg         wrp.Message
@@ -186,7 +186,7 @@ func TestTypeValidatorBadTouchStoneFactory(t *testing.T) {
 	}{
 		// Failure case
 		{
-			description: "Invaild touchstone factory",
+			description: "Duplicate validators",
 		},
 	}
 
@@ -200,12 +200,12 @@ func TestTypeValidatorBadTouchStoneFactory(t *testing.T) {
 			_, pr, err := touchstone.New(cfg)
 			require.NoError(err)
 
-			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-			ai, err := NewAlwaysInvalid(f)
+			tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			ai, err := NewAlwaysInvalidWithMetric(tf)
 			require.NoError(err)
 			_, err = NewTypeValidator(map[wrp.MessageType]Validator{
 				wrp.SimpleEventMessageType: ai,
-			}, nil, f)
+			}, nil, tf)
 			require.Error(err)
 		})
 	}
@@ -217,13 +217,13 @@ func ExampleNewTypeValidator() {
 		DefaultSubsystem: "s",
 	}
 	_, pr, err := touchstone.New(cfg)
-	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-	ai, err := NewAlwaysInvalid(f)
+	tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	ai, err := NewAlwaysInvalidWithMetric(tf)
 	if err != nil {
 		panic(err)
 	}
 
-	av, err := NewAlwaysValid(f)
+	av, err := NewAlwaysValidWithMetric(tf)
 	if err != nil {
 		panic(err)
 	}
@@ -233,7 +233,7 @@ func ExampleNewTypeValidator() {
 		map[wrp.MessageType]Validator{wrp.SimpleEventMessageType: av},
 		// Validates unfound msg types
 		ai,
-		f)
+		tf)
 	fmt.Printf("%v %T", err == nil, msgv)
 	// Output: true wrpvalidator.TypeValidator
 }
@@ -244,13 +244,13 @@ func ExampleTypeValidator_Validate() {
 		DefaultSubsystem: "s",
 	}
 	_, pr, err := touchstone.New(cfg)
-	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-	ai, err := NewAlwaysInvalid(f)
+	tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	ai, err := NewAlwaysInvalidWithMetric(tf)
 	if err != nil {
 		panic(err)
 	}
 
-	av, err := NewAlwaysValid(f)
+	av, err := NewAlwaysValidWithMetric(tf)
 	if err != nil {
 		panic(err)
 	}
@@ -260,7 +260,7 @@ func ExampleTypeValidator_Validate() {
 		map[wrp.MessageType]Validator{wrp.SimpleEventMessageType: av},
 		// Validates unfound msg types
 		ai,
-		f)
+		tf)
 	if err != nil {
 		return
 	}
@@ -280,11 +280,11 @@ func testTypeValidatorValidate(t *testing.T) {
 	_, pr, err := touchstone.New(cfg)
 	r.NoError(err)
 
-	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-	av, err := NewAlwaysValid(f)
+	tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	av, err := NewAlwaysValidWithMetric(tf)
 	r.NoError(err)
 
-	ai, err := NewAlwaysInvalid(f)
+	ai, err := NewAlwaysInvalidWithMetric(tf)
 	r.NoError(err)
 
 	tests := []struct {
@@ -375,8 +375,8 @@ func testTypeValidatorValidate(t *testing.T) {
 			require := require.New(t)
 			_, pr, err := touchstone.New(cfg)
 			r.NoError(err)
-			f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator, f)
+			tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator, tf)
 			require.NoError(err)
 			require.NotNil(msgv)
 			assert.NotZero(msgv)
@@ -403,8 +403,8 @@ func testTypeValidatorFactory(t *testing.T) {
 	_, pr, err := touchstone.New(cfg)
 	require.NoError(err)
 
-	f := touchstone.NewFactory(cfg, sallust.Default(), pr)
-	av, err := NewAlwaysValid(f)
+	tf := touchstone.NewFactory(cfg, sallust.Default(), pr)
+	av, err := NewAlwaysValidWithMetric(tf)
 	require.NoError(err)
 
 	tests := []struct {
@@ -441,7 +441,7 @@ func testTypeValidatorFactory(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator, f)
+			msgv, err := NewTypeValidator(tc.m, tc.defaultValidator, tf)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 

@@ -35,17 +35,17 @@ var spanFormat = map[int]string{
 	4: "status",
 }
 
-// SimpleEventValidators ensures messages are valid based on
-// each validator in the list. SimpleEventValidators validates the following:
+// SimpleEvent ensures messages are valid based on
+// each validator in the list. SimpleEvent validates the following:
 // UTF8 (all string fields), MessageType is valid, Source, Destination, MessageType is of SimpleEventMessageType.
-func SimpleEventValidators(f *touchstone.Factory, labelNames ...string) (Validators, error) {
+func SimpleEvent(tf *touchstone.Factory, labelNames ...string) (Validators, error) {
 	var errs error
-	sv, err := SpecValidators(f, labelNames...)
+	sv, err := SpecWithMetrics(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
 
-	stv, err := NewSimpleEventTypeValidator(f, labelNames...)
+	stv, err := NewSimpleEventTypeWithMetric(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
@@ -53,23 +53,23 @@ func SimpleEventValidators(f *touchstone.Factory, labelNames ...string) (Validat
 	return sv.AddFunc(stv), errs
 }
 
-// SimpleResponseRequestValidators ensures messages are valid based on
-// each validator in the list. SimpleResponseRequestValidators validates the following:
+// SimpleResponseRequest ensures messages are valid based on
+// each validator in the list. SimpleResponseRequest validates the following:
 // UTF8 (all string fields), MessageType is valid, Source, Destination, Spans, MessageType is of
 // SimpleRequestResponseMessageType.
-func SimpleResponseRequestValidators(f *touchstone.Factory, labelNames ...string) (Validators, error) {
+func SimpleResponseRequest(tf *touchstone.Factory, labelNames ...string) (Validators, error) {
 	var errs error
-	sv, err := SpecValidators(f, labelNames...)
+	sv, err := SpecWithMetrics(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
 
-	stv, err := NewSimpleResponseRequestTypeValidator(f, labelNames...)
+	stv, err := NewSimpleResponseRequestTypeWithMetric(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
 
-	spv, err := NewSpansValidator(f, labelNames...)
+	spv, err := NewSpansWithMetric(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
@@ -77,12 +77,12 @@ func SimpleResponseRequestValidators(f *touchstone.Factory, labelNames ...string
 	return sv.AddFunc(stv, spv), errs
 }
 
-// NewSimpleResponseRequestTypeValidator is the metric variant of SimpleResponseRequestTypeValidator
-func NewSimpleResponseRequestTypeValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newSimpleRequestResponseMessageTypeValidatorErrorTotal(f, labelNames...)
+// NewSimpleResponseRequestTypeWithMetric returns a SimpleResponseRequestType validator with a metric middleware.
+func NewSimpleResponseRequestTypeWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newSimpleRequestResponseMessageTypeErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
-		err := SimpleResponseRequestTypeValidator(msg)
+		err := SimpleResponseRequestType(msg)
 		if err != nil {
 			m.With(ls).Add(1.0)
 		}
@@ -91,12 +91,12 @@ func NewSimpleResponseRequestTypeValidator(f *touchstone.Factory, labelNames ...
 	}, err
 }
 
-// NewSimpleEventTypeValidator is the metric variant of SimpleEventTypeValidator
-func NewSimpleEventTypeValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newSimpleEventTypeValidatorErrorTotal(f, labelNames...)
+// NewSimpleEventTypeWithMetric returns a SimpleEventType validator with a metric middleware.
+func NewSimpleEventTypeWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newSimpleEventTypeErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
-		err := SimpleEventTypeValidator(msg)
+		err := SimpleEventType(msg)
 		if err != nil {
 			m.With(ls).Add(1.0)
 		}
@@ -105,12 +105,12 @@ func NewSimpleEventTypeValidator(f *touchstone.Factory, labelNames ...string) (V
 	}, err
 }
 
-// NewSpansValidator is the metric variant of SpansValidator
-func NewSpansValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newSpansValidatorErrorTotal(f, labelNames...)
+// NewSpansWithMetric returns a Spans validator with a metric middleware.
+func NewSpansWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newSpansErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
-		err := SpansValidator(msg)
+		err := Spans(msg)
 		if err != nil {
 			m.With(ls).Add(1.0)
 		}
@@ -119,8 +119,8 @@ func NewSpansValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFu
 	}, err
 }
 
-// SimpleResponseRequestTypeValidator takes messages and validates their Type is of SimpleRequestResponseMessageType.
-func SimpleResponseRequestTypeValidator(m wrp.Message) error {
+// SimpleResponseRequestType takes messages and validates their Type is of SimpleRequestResponseMessageType.
+func SimpleResponseRequestType(m wrp.Message) error {
 	if m.Type != wrp.SimpleRequestResponseMessageType {
 		return ErrorNotSimpleResponseRequestType
 	}
@@ -128,8 +128,8 @@ func SimpleResponseRequestTypeValidator(m wrp.Message) error {
 	return nil
 }
 
-// SimpleEventTypeValidator takes messages and validates their Type is of SimpleEventMessageType.
-func SimpleEventTypeValidator(m wrp.Message) error {
+// SimpleEventType takes messages and validates their Type is of SimpleEventMessageType.
+func SimpleEventType(m wrp.Message) error {
 	if m.Type != wrp.SimpleEventMessageType {
 		return ErrorNotSimpleEventType
 	}
@@ -139,8 +139,8 @@ func SimpleEventTypeValidator(m wrp.Message) error {
 
 // TODO Do we want to include SpanParentValidator? SpanParent currently doesn't exist in the Message Struct
 
-// SpansValidator takes messages and validates their Spans.
-func SpansValidator(m wrp.Message) error {
+// Spans takes messages and validates their Spans.
+func Spans(m wrp.Message) error {
 	var err error
 	// Spans consist of individual Span(s), arrays of timing values.
 	for _, s := range m.Spans {

@@ -21,20 +21,20 @@ const (
 	// destinationValidatorErrorTotalName is the name of the counter for all destination validation.
 	destinationValidatorErrorTotalName = metricPrefix + "destination"
 
-	// destinationValidatorErrorTotalHelp is the help text for the DestinationValidator metric.
-	destinationValidatorErrorTotalHelp = "the total number of DestinationValidator metric"
+	// destinationValidatorErrorTotalHelp is the help text for the Destination metric.
+	destinationValidatorErrorTotalHelp = "the total number of Destination metric"
 
 	// sourceValidatorErrorTotalName is the name of the counter for all source validation.
 	sourceValidatorErrorTotalName = metricPrefix + "source"
 
-	// sourceValidatorErrorTotalHelp is the help text for the SourceValidator metric.
-	sourceValidatorErrorTotalHelp = "the total number of SourceValidator metric"
+	// sourceValidatorErrorTotalHelp is the help text for the Source metric.
+	sourceValidatorErrorTotalHelp = "the total number of Source metric"
 
 	// messageTypeValidatorErrorTotalName is the name of the counter for all MessageType validation.
 	messageTypeValidatorErrorTotalName = metricPrefix + "message_type"
 
-	// messageTypeValidatorErrorTotalHelp is the help text for the MessageTypeValidator metric.
-	messageTypeValidatorErrorTotalHelp = "the total number of MessageTypeValidator metric"
+	// messageTypeValidatorErrorTotalHelp is the help text for the MessageType metric.
+	messageTypeValidatorErrorTotalHelp = "the total number of MessageType metric"
 
 	// utf8ValidatorErrorTotalName is the name of the counter for all UTF8 validation.
 	utf8ValidatorErrorTotalName = metricPrefix + "utf8"
@@ -48,11 +48,11 @@ const (
 	// simpleEventTypeValidatorErrorTotalHelp is the help text for the SimpleEventType Validator metric.
 	simpleEventTypeValidatorErrorTotalHelp = "the total number of SimpleEventType Validator metric"
 
-	// simpleRequestResponseMessageTypeValidatorErrorTotalName is the name of the counter for all SimpleRequestResponseMessageType validation.
-	simpleRequestResponseMessageTypeValidatorErrorTotalName = metricPrefix + "simple_request_response_message_type"
+	// simpleRequestResponseMessageTypeErrorTotalName is the name of the counter for all SimpleRequestResponseMessageType validation.
+	simpleRequestResponseMessageTypeErrorTotalName = metricPrefix + "simple_request_response_message_type"
 
-	// simpleRequestResponseMessageTypeValidatorErrorTotalHelp is the help text for the SimpleRequestResponseMessageType Validator metric.
-	simpleRequestResponseMessageTypeValidatorErrorTotalHelp = "the total number of SimpleRequestResponseMessageType Validator metric"
+	// simpleRequestResponseMessageTypeErrorTotalHelp is the help text for the SimpleRequestResponseMessageType Validator metric.
+	simpleRequestResponseMessageTypeErrorTotalHelp = "the total number of SimpleRequestResponseMessageType Validator metric"
 
 	// spansValidatorErrorTotalName is the name of the counter for all Spans validation.
 	spansValidatorErrorTotalName = metricPrefix + "spans"
@@ -68,8 +68,8 @@ const (
 	ClientIDLabel    = "client_id"
 )
 
-func newAlwaysInvalidValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
-	return f.NewCounterVec(
+func newAlwaysInvalidErrorTotal(tf *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
+	return tf.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: alwaysInvalidValidatorErrorTotalName,
 			Help: alwaysInvalidValidatorErrorTotalHelp,
@@ -78,8 +78,8 @@ func newAlwaysInvalidValidatorErrorTotal(f *touchstone.Factory, labelNames ...st
 	)
 }
 
-func newDestinationValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
-	return f.NewCounterVec(
+func newDestinationErrorTotal(tf *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
+	return tf.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: destinationValidatorErrorTotalName,
 			Help: destinationValidatorErrorTotalHelp,
@@ -88,8 +88,8 @@ func newDestinationValidatorErrorTotal(f *touchstone.Factory, labelNames ...stri
 	)
 }
 
-func newSourceValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
-	return f.NewCounterVec(
+func newSourceErrorTotal(tf *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
+	return tf.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: sourceValidatorErrorTotalName,
 			Help: sourceValidatorErrorTotalHelp,
@@ -98,8 +98,8 @@ func newSourceValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (
 	)
 }
 
-func newMessageTypeValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
-	return f.NewCounterVec(
+func newMessageTypeErrorTotal(tf *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
+	return tf.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: messageTypeValidatorErrorTotalName,
 			Help: messageTypeValidatorErrorTotalHelp,
@@ -108,8 +108,8 @@ func newMessageTypeValidatorErrorTotal(f *touchstone.Factory, labelNames ...stri
 	)
 }
 
-func newUTF8ValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
-	return f.NewCounterVec(
+func newUTF8ErrorTotal(tf *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
+	return tf.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: utf8ValidatorErrorTotalName,
 			Help: utf8ValidatorErrorTotalHelp,
@@ -118,8 +118,8 @@ func newUTF8ValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m 
 	)
 }
 
-func newSimpleEventTypeValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
-	return f.NewCounterVec(
+func newSimpleEventTypeErrorTotal(tf *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
+	return tf.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: simpleEventTypeValidatorErrorTotalName,
 			Help: simpleEventTypeValidatorErrorTotalHelp,
@@ -128,18 +128,18 @@ func newSimpleEventTypeValidatorErrorTotal(f *touchstone.Factory, labelNames ...
 	)
 }
 
-func newSimpleRequestResponseMessageTypeValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
-	return f.NewCounterVec(
+func newSimpleRequestResponseMessageTypeErrorTotal(tf *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
+	return tf.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: simpleRequestResponseMessageTypeValidatorErrorTotalName,
-			Help: simpleRequestResponseMessageTypeValidatorErrorTotalHelp,
+			Name: simpleRequestResponseMessageTypeErrorTotalName,
+			Help: simpleRequestResponseMessageTypeErrorTotalHelp,
 		},
 		labelNames...,
 	)
 }
 
-func newSpansValidatorErrorTotal(f *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
-	return f.NewCounterVec(
+func newSpansErrorTotal(tf *touchstone.Factory, labelNames ...string) (m *prometheus.CounterVec, err error) {
+	return tf.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: spansValidatorErrorTotalName,
 			Help: spansValidatorErrorTotalHelp,

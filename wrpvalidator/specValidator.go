@@ -30,6 +30,7 @@ const (
 	hexDigits     = "0123456789abcdefABCDEF"
 	macDelimiters = ":-.,"
 	macLength     = 12
+	scheme        = macPrefix + `|` + uuidPrefix + `|` + eventPrefix + `|` + dnsPrefix + `|` + serialPrefix
 )
 
 var (
@@ -47,30 +48,30 @@ var (
 // locatorPattern is the precompiled regular expression that all source and dest locators must match.
 // Matching is partial, as everything after the authority (ID) is ignored. https://xmidt.io/docs/wrp/basics/#locators
 var locatorPattern = regexp.MustCompile(
-	`^(?P<scheme>(?i)` + macPrefix + `|` + uuidPrefix + `|` + eventPrefix + `|` + dnsPrefix + `|` + serialPrefix + `):(?P<authority>[^/]+)?`,
+	`^(?P<scheme>(?i)` + scheme + `):(?P<authority>[^/]+)?`,
 )
 
-// SpecValidators ensures messages are valid based on each spec validator in the list.
+// SpecWithMetrics ensures messages are valid based on each spec validator in the list.
 // Only validates the opinionated portions of the spec.
-// SpecValidators validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
-func SpecValidators(f *touchstone.Factory, labelNames ...string) (Validators, error) {
+// SpecWithMetrics validates the following fields: UTF8 (all string fields), MessageType, Source, Destination
+func SpecWithMetrics(tf *touchstone.Factory, labelNames ...string) (Validators, error) {
 	var errs error
-	utf8v, err := NewUTF8Validator(f, labelNames...)
+	utf8v, err := NewUTF8WithMetric(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
 
-	mtv, err := NewMessageTypeValidator(f, labelNames...)
+	mtv, err := NewMessageTypeWithMetric(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
 
-	sv, err := NewSourceValidator(f, labelNames...)
+	sv, err := NewSourceWithMetric(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
 
-	dv, err := NewDestinationValidator(f, labelNames...)
+	dv, err := NewDestinationWithMetric(tf, labelNames...)
 	if err != nil {
 		errs = multierr.Append(errs, err)
 	}
@@ -78,12 +79,12 @@ func SpecValidators(f *touchstone.Factory, labelNames ...string) (Validators, er
 	return Validators{}.AddFunc(utf8v, mtv, sv, dv), errs
 }
 
-// NewUTF8Validator is the metric variant of UTF8Validator
-func NewUTF8Validator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newUTF8ValidatorErrorTotal(f, labelNames...)
+// NewUTF8WithMetric returns a UTF8 validator with a metric middleware.
+func NewUTF8WithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newUTF8ErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
-		err := UTF8Validator(msg)
+		err := UTF8(msg)
 		if err != nil {
 			m.With(ls).Add(1.0)
 		}
@@ -92,12 +93,12 @@ func NewUTF8Validator(f *touchstone.Factory, labelNames ...string) (ValidatorFun
 	}, err
 }
 
-// NewMessageTypeValidator is the metric variant of MessageTypeValidator
-func NewMessageTypeValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newMessageTypeValidatorErrorTotal(f, labelNames...)
+// NewMessageTypeWithMetric returns a MessageType validator with a metric middleware.
+func NewMessageTypeWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newMessageTypeErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
-		err := MessageTypeValidator(msg)
+		err := MessageType(msg)
 		if err != nil {
 			m.With(ls).Add(1.0)
 		}
@@ -106,12 +107,12 @@ func NewMessageTypeValidator(f *touchstone.Factory, labelNames ...string) (Valid
 	}, err
 }
 
-// NewSourceValidator is the metric variant of SourceValidator
-func NewSourceValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newSourceValidatorErrorTotal(f, labelNames...)
+// NewSourceWithMetric returns a Source validator with a metric middleware.
+func NewSourceWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newSourceErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
-		err := SourceValidator(msg)
+		err := Source(msg)
 		if err != nil {
 			m.With(ls).Add(1.0)
 		}
@@ -120,12 +121,12 @@ func NewSourceValidator(f *touchstone.Factory, labelNames ...string) (ValidatorF
 	}, err
 }
 
-// NewDestinationValidator is the metric variant of DestinationValidator
-func NewDestinationValidator(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newDestinationValidatorErrorTotal(f, labelNames...)
+// NewDestinationWithMetric returns a Destination validator with a metric middleware.
+func NewDestinationWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newDestinationErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
-		err := DestinationValidator(msg)
+		err := Destination(msg)
 		if err != nil {
 			m.With(ls).Add(1.0)
 		}
@@ -134,8 +135,8 @@ func NewDestinationValidator(f *touchstone.Factory, labelNames ...string) (Valid
 	}, err
 }
 
-// UTF8Validator takes messages and validates that it contains UTF-8 strings.
-func UTF8Validator(m wrp.Message) error {
+// UTF8 takes messages and validates that it contains UTF-8 strings.
+func UTF8(m wrp.Message) error {
 	if err := wrp.UTF8(m); err != nil {
 		return fmt.Errorf("%w: %v", ErrorInvalidMessageEncoding, err)
 	}
@@ -143,8 +144,8 @@ func UTF8Validator(m wrp.Message) error {
 	return nil
 }
 
-// MessageTypeValidator takes messages and validates their Type.
-func MessageTypeValidator(m wrp.Message) error {
+// MessageType takes messages and validates their Type.
+func MessageType(m wrp.Message) error {
 	if m.Type < wrp.Invalid0MessageType || m.Type > wrp.LastMessageType {
 		return ErrorInvalidMessageType
 	}
@@ -157,10 +158,10 @@ func MessageTypeValidator(m wrp.Message) error {
 	return nil
 }
 
-// SourceValidator takes messages and validates their Source.
+// Source takes messages and validates their Source.
 // Only mac and uuid sources are validated. Serial, event and dns sources are
 // not validated.
-func SourceValidator(m wrp.Message) error {
+func Source(m wrp.Message) error {
 	if err := validateLocator(m.Source); err != nil {
 		return fmt.Errorf("%w '%s': %v", ErrorInvalidSource, m.Source, err)
 	}
@@ -168,10 +169,10 @@ func SourceValidator(m wrp.Message) error {
 	return nil
 }
 
-// DestinationValidator takes messages and validates their Destination.
+// Destination takes messages and validates their Destination.
 // Only mac and uuid destinations are validated. Serial, event and dns destinations are
 // not validated.
-func DestinationValidator(m wrp.Message) error {
+func Destination(m wrp.Message) error {
 	if err := validateLocator(m.Destination); err != nil {
 		return fmt.Errorf("%w '%s': %v", ErrorInvalidDestination, m.Destination, err)
 	}
@@ -185,7 +186,7 @@ func DestinationValidator(m wrp.Message) error {
 func validateLocator(l string) error {
 	match := locatorPattern.FindStringSubmatch(l)
 	if match == nil {
-		return errorInvalidLocatorPattern
+		return fmt.Errorf("%w: %s", errorInvalidLocatorPattern, locatorPattern)
 	}
 
 	idPart := match[2]

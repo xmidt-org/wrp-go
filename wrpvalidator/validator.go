@@ -147,13 +147,13 @@ func (tv TypeValidator) Validate(m wrp.Message, ls prometheus.Labels) error {
 }
 
 // NewTypeValidator is a TypeValidator factory.
-func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validator, f *touchstone.Factory, labelNames ...string) (TypeValidator, error) {
+func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validator, tf *touchstone.Factory, labelNames ...string) (TypeValidator, error) {
 	if m == nil {
 		return TypeValidator{}, ErrorInvalidValidator
 	}
 
 	if defaultValidator == nil {
-		v, err := NewAlwaysInvalid(f, labelNames...)
+		v, err := NewAlwaysInvalidWithMetric(tf, labelNames...)
 		if err != nil {
 			return TypeValidator{}, err
 		}
@@ -167,8 +167,16 @@ func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validato
 	}, nil
 }
 
-func NewAlwaysInvalid(f *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
-	m, err := newAlwaysInvalidValidatorErrorTotal(f, labelNames...)
+// NewValidatorWithoutMetric returns a validator `v` with a stubbed metric middleware (no metric required or produced).
+func NewValidatorWithoutMetric(v func(wrp.Message) error) ValidatorFunc {
+	return func(m wrp.Message, _ prometheus.Labels) error {
+		return v(m)
+	}
+}
+
+// NewAlwaysInvalidWithMetric returns a AlwaysInvalid validator with a metric middleware.
+func NewAlwaysInvalidWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newAlwaysInvalidErrorTotal(tf, labelNames...)
 
 	return func(msg wrp.Message, ls prometheus.Labels) error {
 		err := AlwaysInvalid(msg)
@@ -180,10 +188,9 @@ func NewAlwaysInvalid(f *touchstone.Factory, labelNames ...string) (ValidatorFun
 	}, err
 }
 
-func NewAlwaysValid(_ *touchstone.Factory, _ ...string) (ValidatorFunc, error) {
-	return func(msg wrp.Message, _ prometheus.Labels) error {
-		return AlwaysValid(msg)
-	}, nil
+// NewAlwaysValidWithMetric returns a AlwaysValid validator with a stubbed metric middleware (no metric produced).
+func NewAlwaysValidWithMetric(_ *touchstone.Factory, _ ...string) (ValidatorFunc, error) {
+	return NewValidatorWithoutMetric(AlwaysValid), nil
 }
 
 // AlwaysInvalid doesn't validate anything about the message and always returns an error.
