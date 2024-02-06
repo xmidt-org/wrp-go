@@ -186,7 +186,7 @@ func Destination(m wrp.Message) error {
 func validateLocator(l string) error {
 	match := locatorPattern.FindStringSubmatch(l)
 	if match == nil {
-		return fmt.Errorf("%w: %s", errorInvalidLocatorPattern, scheme)
+		return fmt.Errorf("%w: %s", errorInvalidLocatorPattern, locatorPattern)
 	}
 
 	idPart := match[2]
