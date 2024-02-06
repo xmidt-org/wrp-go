@@ -79,7 +79,7 @@ func SpecWithMetrics(tf *touchstone.Factory, labelNames ...string) (Validators, 
 	return Validators{}.AddFunc(utf8v, mtv, sv, dv), errs
 }
 
-// NewUTF8WithMetric is the metric variant of UTF8
+// NewUTF8WithMetric returns a UTF8 validator with a metric middleware.
 func NewUTF8WithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := newUTF8ErrorTotal(tf, labelNames...)
 
@@ -93,7 +93,7 @@ func NewUTF8WithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorF
 	}, err
 }
 
-// NewMessageTypeWithMetric is the metric variant of MessageType
+// NewMessageTypeWithMetric returns a MessageType validator with a metric middleware.
 func NewMessageTypeWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := newMessageTypeErrorTotal(tf, labelNames...)
 
@@ -107,7 +107,7 @@ func NewMessageTypeWithMetric(tf *touchstone.Factory, labelNames ...string) (Val
 	}, err
 }
 
-// NewSourceWithMetric is the metric variant of Source
+// NewSourceWithMetric returns a Source validator with a metric middleware.
 func NewSourceWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := newSourceErrorTotal(tf, labelNames...)
 
@@ -121,7 +121,7 @@ func NewSourceWithMetric(tf *touchstone.Factory, labelNames ...string) (Validato
 	}, err
 }
 
-// NewDestinationWithMetric is the metric variant of Destination
+// NewDestinationWithMetric returns a Destination validator with a metric middleware.
 func NewDestinationWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := newDestinationErrorTotal(tf, labelNames...)
 

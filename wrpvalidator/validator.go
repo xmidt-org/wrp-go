@@ -167,6 +167,14 @@ func NewTypeValidator(m map[wrp.MessageType]Validator, defaultValidator Validato
 	}, nil
 }
 
+// NewValidatorWithoutMetric returns a validator `v` with a stubbed metric middleware (no metric required or produced).
+func NewValidatorWithoutMetric(v func(wrp.Message) error) ValidatorFunc {
+	return func(m wrp.Message, _ prometheus.Labels) error {
+		return v(m)
+	}
+}
+
+// NewAlwaysInvalidWithMetric returns a AlwaysInvalid validator with a metric middleware.
 func NewAlwaysInvalidWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := newAlwaysInvalidErrorTotal(tf, labelNames...)
 
@@ -180,10 +188,9 @@ func NewAlwaysInvalidWithMetric(tf *touchstone.Factory, labelNames ...string) (V
 	}, err
 }
 
+// NewAlwaysValidWithMetric returns a AlwaysValid validator with a stubbed metric middleware (no metric produced).
 func NewAlwaysValidWithMetric(_ *touchstone.Factory, _ ...string) (ValidatorFunc, error) {
-	return func(msg wrp.Message, _ prometheus.Labels) error {
-		return AlwaysValid(msg)
-	}, nil
+	return NewValidatorWithoutMetric(AlwaysValid), nil
 }
 
 // AlwaysInvalid doesn't validate anything about the message and always returns an error.
@@ -194,10 +201,4 @@ func AlwaysInvalid(_ wrp.Message) error {
 // AlwaysValid doesn't validate anything about the message and always returns nil.
 func AlwaysValid(_ wrp.Message) error {
 	return nil
-}
-
-func NewValidatorWithoutMetric(v func(wrp.Message) error) ValidatorFunc {
-	return func(m wrp.Message, _ prometheus.Labels) error {
-		return v(m)
-	}
 }

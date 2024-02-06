@@ -55,18 +55,20 @@ var (
 	}
 )
 
-// Empty returns true if the value is UnknownType (the default),
+// IsEmpty returns true if the value is UnknownType (the default),
 // otherwise false is returned.
 func (vt validatorType) IsEmpty() bool {
 	return vt == UnknownType
 }
 
+// IsValid returns true if the value is valid,
+// otherwise false is returned.
 func (vt validatorType) IsValid() bool {
 	return UnknownType < vt && vt < lastType
 }
 
 // String returns a human-readable string representation for an existing validatorType,
-// otherwise String returns the unknownEnum string value.
+// otherwise String returns the `unknown` string value.
 func (vt validatorType) String() string {
 	if value, ok := validatorTypeMarshal[vt]; ok {
 		return value
@@ -75,7 +77,7 @@ func (vt validatorType) String() string {
 	return validatorTypeMarshal[UnknownType]
 }
 
-// UnmarshalText returns the validatorType's enum value
+// UnmarshalText unmarshals a validatorType's enum value.
 func (vt *validatorType) UnmarshalText(b []byte) error {
 	s := strings.ToLower(string(b))
 	r, ok := validatorTypeUnmarshal[s]

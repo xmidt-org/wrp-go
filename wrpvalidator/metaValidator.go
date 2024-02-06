@@ -13,6 +13,7 @@ import (
 	"github.com/xmidt-org/wrp-go/v3"
 )
 
+// Metadata contains validator specific metadata.
 type Metadata struct {
 	// Level denotes the validator's Level and should be used for client side validator error handling.
 	Level validatorLevel `json:"level"`
@@ -23,6 +24,7 @@ type Metadata struct {
 	Disable bool `json:"disable"`
 }
 
+// MetaValidator wraps validators with additional metadata related functionalities.
 type MetaValidator struct {
 	meta      Metadata
 	validator Validator
@@ -34,19 +36,24 @@ var (
 	ErrValidatorInvalidConfig = errors.New("invalid configuration error")
 )
 
+// Level returns the level of the validator.
 func (v MetaValidator) Level() validatorLevel {
 	return v.meta.Level
 }
 
+// Type returns the type of the validator.
 func (v MetaValidator) Type() validatorType {
 	return v.meta.Type
 }
 
+// Disabled returns whether a validator is disabled.
 func (v MetaValidator) Disabled() bool {
 	return v.meta.Disable
 }
 
-// UnmarshalJSON returns the ValidatorConfig's enum value
+// UnmarshalJSON unmarshals a json into a MetaValidator.
+// By default, a metricless version of the wrapped validator is used.
+// Refer to `AddMetric` to add a metric middleware to the wrapped validator.
 func (v *MetaValidator) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 {
 		return nil
@@ -89,6 +96,8 @@ func (v *MetaValidator) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// AddMetric adds a metric middleware to the wrapped validator.
+// Calling `AddMetric` more than once will return an error.
 func (v *MetaValidator) AddMetric(tf *touchstone.Factory, labelNames ...string) error {
 	if !v.IsValid() {
 		return fmt.Errorf("validator `%s`: invalid configuration: %w", v.meta.Type, ErrValidatorInvalidConfig)
@@ -144,10 +153,14 @@ func (v MetaValidator) Validate(m wrp.Message, ls prometheus.Labels) error {
 	return nil
 }
 
+// IsValid returns true if the wrapped validator and its metadata are valid,
+// otherwise false is returned.
 func (v MetaValidator) IsValid() bool {
 	return v.meta.Type.IsValid() && v.meta.Level.IsValid() && v.validator != nil
 }
 
+// Empty returns true if the wrapped validator is nil or its metadata are consider empty,
+// otherwise false is returned.
 func (v MetaValidator) IsEmpty() bool {
-	return v.meta.Type.IsEmpty() && v.meta.Level.IsEmpty() && v.validator == nil
+	return v.meta.Type.IsEmpty() || v.meta.Level.IsEmpty() || v.validator == nil
 }

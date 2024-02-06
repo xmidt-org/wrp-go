@@ -45,7 +45,7 @@ func (vt validatorLevel) IsValid() bool {
 }
 
 // String returns a human-readable string representation for an existing validatorLevel,
-// otherwise String returns the unknownEnum string value.
+// otherwise String returns the unknown string value.
 func (vt validatorLevel) String() string {
 	if value, ok := validatorLevelMarshal[vt]; ok {
 		return value
@@ -54,7 +54,7 @@ func (vt validatorLevel) String() string {
 	return validatorLevelMarshal[UnknownLevel]
 }
 
-// UnmarshalText returns the validatorLevel's enum value
+// UnmarshalText unmarshals a validatorLevel's enum value.
 func (vt *validatorLevel) UnmarshalText(b []byte) error {
 	s := strings.ToLower(string(b))
 	r, ok := validatorLevelUnmarshal[s]

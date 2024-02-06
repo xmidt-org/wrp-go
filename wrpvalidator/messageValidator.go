@@ -77,7 +77,7 @@ func SimpleResponseRequest(tf *touchstone.Factory, labelNames ...string) (Valida
 	return sv.AddFunc(stv, spv), errs
 }
 
-// NewSimpleResponseRequestTypeWithMetric is the metric variant of SimpleResponseRequestType
+// NewSimpleResponseRequestTypeWithMetric returns a SimpleResponseRequestType validator with a metric middleware.
 func NewSimpleResponseRequestTypeWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := newSimpleRequestResponseMessageTypeErrorTotal(tf, labelNames...)
 
@@ -91,7 +91,7 @@ func NewSimpleResponseRequestTypeWithMetric(tf *touchstone.Factory, labelNames .
 	}, err
 }
 
-// NewSimpleEventTypeWithMetric is the metric variant of SimpleEventType
+// NewSimpleEventTypeWithMetric returns a SimpleEventType validator with a metric middleware.
 func NewSimpleEventTypeWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := newSimpleEventTypeErrorTotal(tf, labelNames...)
 
@@ -105,7 +105,7 @@ func NewSimpleEventTypeWithMetric(tf *touchstone.Factory, labelNames ...string) 
 	}, err
 }
 
-// NewSpansWithMetric is the metric variant of Spans
+// NewSpansWithMetric returns a Spans validator with a metric middleware.
 func NewSpansWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
 	m, err := newSpansErrorTotal(tf, labelNames...)
 
