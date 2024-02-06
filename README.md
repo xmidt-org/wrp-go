@@ -27,6 +27,21 @@ By participating, you agree to this Code.
 
 To setup application wrp validators, visit the example `ExampleMetaValidator` [GoDoc](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v3/wrpvalidator#example-MetaValidator).
 
+Application config example:
+```yaml
+# wrpValidators defines the wrp validators used to validate incoming wrp messages.
+# (Optional)
+# Available validator types: always_invalid, always_valid, utf8, msg_type, source, destination, simple_res_req, simple_event, spans
+# Available validator levels: info, warning, error
+# Validators can be disabled with `disable: true`, it is false by default
+wrpValidators:
+  - type: utf8
+    level: warning
+    disable: true
+  - type: source
+    level: error
+```
+
 ## Examples 
 
 To use the wrp-go library, it first should be added as an import in the file you plan to use it.
