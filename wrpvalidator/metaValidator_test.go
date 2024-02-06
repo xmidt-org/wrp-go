@@ -100,7 +100,7 @@ func ExampleMetaValidator() {
 		}
 	}
 
-	// Output: source errors: validator `source`: Validator error [Source] err=invalid Source name 'external.com': value given doesn't match expected locator pattern: mac|uuid|event|dns|serial
+	// Output: source errors: validator `source`: Validator error [Source] err=invalid Source name 'external.com': value given doesn't match expected locator pattern: ^(?P<scheme>(?i)mac|uuid|event|dns|serial):(?P<authority>[^/]+)?
 }
 
 func TestMetaValidatorUnmarshal(t *testing.T) {
