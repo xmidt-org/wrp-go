@@ -113,3 +113,141 @@ func TestParseDeviceID(t *testing.T) {
 		})
 	}
 }
+
+func DeviceIDPtr(id string) *DeviceID {
+	d := DeviceID(id)
+	return &d
+}
+
+func TestParseLocator(t *testing.T) {
+	tests := []struct {
+		description string
+		locator     string
+		want        *Locator
+		str         string
+		expectedErr error
+	}{
+		{
+			description: "cpe locator",
+			locator:     "mac:112233445566",
+			str:         "mac:112233445566",
+			want: &Locator{
+				Scheme:    "mac",
+				Authority: "112233445566",
+				id:        DeviceIDPtr("mac:112233445566"),
+			},
+		}, {
+			description: "cpe locator ensure lowercase",
+			locator:     "Mac:112233445566",
+			str:         "mac:112233445566",
+			want: &Locator{
+				Scheme:    "mac",
+				Authority: "112233445566",
+				id:        DeviceIDPtr("mac:112233445566"),
+			},
+		}, {
+			description: "locator with service",
+			locator:     "DNS:foo.bar.com/service",
+			str:         "dns:foo.bar.com/service",
+			want: &Locator{
+				Scheme:    "dns",
+				Authority: "foo.bar.com",
+				Service:   "service",
+			},
+		}, {
+			description: "locator with service everything",
+			locator:     "event:something/service/ignored",
+			str:         "event:something/service/ignored",
+			want: &Locator{
+				Scheme:    "event",
+				Authority: "something",
+				Service:   "service",
+				Ignored:   "/ignored",
+			},
+		},
+
+		// Validate all the schemes
+		{
+			description: "dns scheme",
+			locator:     "dns:foo.bar.com",
+			str:         "dns:foo.bar.com",
+			want: &Locator{
+				Scheme:    "dns",
+				Authority: "foo.bar.com",
+			},
+		}, {
+			description: "event scheme",
+			locator:     "event:targetedEvent",
+			str:         "event:targetedEvent",
+			want: &Locator{
+				Scheme:    "event",
+				Authority: "targetedEvent",
+			},
+		}, {
+			description: "mac scheme",
+			locator:     "mac:112233445566",
+			str:         "mac:112233445566",
+			want: &Locator{
+				Scheme:    "mac",
+				Authority: "112233445566",
+				id:        DeviceIDPtr("mac:112233445566"),
+			},
+		}, {
+			description: "serial scheme",
+			locator:     "serial:AsdfSerial",
+			str:         "serial:AsdfSerial",
+			want: &Locator{
+				Scheme:    "serial",
+				Authority: "AsdfSerial",
+				id:        DeviceIDPtr("serial:AsdfSerial"),
+			},
+		}, {
+			description: "uuid scheme",
+			locator:     "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
+			str:         "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
+			want: &Locator{
+				Scheme:    "uuid",
+				Authority: "bbee1f69-2f64-4aa9-a422-27d68b40b152",
+				id:        DeviceIDPtr("uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152"),
+			},
+		},
+
+		// Validate invalid locators are caught
+		{
+			description: "empty",
+			expectedErr: ErrorInvalidLocator,
+		}, {
+			description: "invalid scheme",
+			locator:     "invalid:foo.bar.com",
+			expectedErr: ErrorInvalidLocator,
+		}, {
+			description: "invalid mac scheme",
+			locator:     "mac:112invalid66",
+			expectedErr: ErrorInvalidDeviceName,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got, err := ParseLocator(tc.locator)
+
+			assert.ErrorIs(err, tc.expectedErr)
+			assert.Equal(tc.want, got)
+
+			if tc.want != nil {
+				assert.Equal(tc.str, got.String())
+			}
+		})
+	}
+}
+
+func TestLocatorDeviceID(t *testing.T) {
+	assert := assert.New(t)
+
+	l, err := ParseLocator("mac:112233445566")
+	assert.NoError(err)
+
+	assert.True(l.IsDeviceID())
+	assert.NotNil(l.DeviceID())
+}
