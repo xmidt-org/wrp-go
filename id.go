@@ -16,12 +16,13 @@ const (
 	macDelimiters = ":-.,"
 	macLength     = 12
 
-	SchemeMAC    = "mac"
-	SchemeUUID   = "uuid"
-	SchemeDNS    = "dns"
-	SchemeSerial = "serial"
-	SchemeSelf   = "self"
-	SchemeEvent  = "event"
+	SchemeMAC     = "mac"
+	SchemeUUID    = "uuid"
+	SchemeDNS     = "dns"
+	SchemeSerial  = "serial"
+	SchemeSelf    = "self"
+	SchemeEvent   = "event"
+	SchemeUnknown = ""
 )
 
 var (
