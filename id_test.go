@@ -127,7 +127,7 @@ func TestParseLocator(t *testing.T) {
 			locator:     "mac:112233445566",
 			str:         "mac:112233445566",
 			want: &Locator{
-				Scheme:    "mac",
+				Scheme:    SchemeMAC,
 				Authority: "112233445566",
 				ID:        "mac:112233445566",
 			},
@@ -136,7 +136,7 @@ func TestParseLocator(t *testing.T) {
 			locator:     "Mac:112233445566",
 			str:         "mac:112233445566",
 			want: &Locator{
-				Scheme:    "mac",
+				Scheme:    SchemeMAC,
 				Authority: "112233445566",
 				ID:        "mac:112233445566",
 			},
@@ -145,7 +145,7 @@ func TestParseLocator(t *testing.T) {
 			locator:     "DNS:foo.bar.com/service",
 			str:         "dns:foo.bar.com/service",
 			want: &Locator{
-				Scheme:    "dns",
+				Scheme:    SchemeDNS,
 				Authority: "foo.bar.com",
 				Service:   "service",
 			},
@@ -154,10 +154,29 @@ func TestParseLocator(t *testing.T) {
 			locator:     "event:something/service/ignored",
 			str:         "event:something/service/ignored",
 			want: &Locator{
-				Scheme:    "event",
+				Scheme:    SchemeEvent,
 				Authority: "something",
 				Service:   "service",
 				Ignored:   "/ignored",
+			},
+		}, {
+			description: "self locator with service",
+			locator:     "SELF:/service",
+			str:         "self:/service",
+			want: &Locator{
+				Scheme:  SchemeSelf,
+				Service: "service",
+				ID:      "self:",
+			},
+		}, {
+			description: "self locator with service everything",
+			locator:     "self:/service/ignored",
+			str:         "self:/service/ignored",
+			want: &Locator{
+				Scheme:  SchemeSelf,
+				Service: "service",
+				Ignored: "/ignored",
+				ID:      "self:",
 			},
 		},
 
@@ -167,7 +186,7 @@ func TestParseLocator(t *testing.T) {
 			locator:     "dns:foo.bar.com",
 			str:         "dns:foo.bar.com",
 			want: &Locator{
-				Scheme:    "dns",
+				Scheme:    SchemeDNS,
 				Authority: "foo.bar.com",
 			},
 		}, {
@@ -175,7 +194,7 @@ func TestParseLocator(t *testing.T) {
 			locator:     "event:targetedEvent",
 			str:         "event:targetedEvent",
 			want: &Locator{
-				Scheme:    "event",
+				Scheme:    SchemeEvent,
 				Authority: "targetedEvent",
 			},
 		}, {
@@ -183,7 +202,7 @@ func TestParseLocator(t *testing.T) {
 			locator:     "mac:112233445566",
 			str:         "mac:112233445566",
 			want: &Locator{
-				Scheme:    "mac",
+				Scheme:    SchemeMAC,
 				Authority: "112233445566",
 				ID:        "mac:112233445566",
 			},
@@ -192,7 +211,7 @@ func TestParseLocator(t *testing.T) {
 			locator:     "serial:AsdfSerial",
 			str:         "serial:AsdfSerial",
 			want: &Locator{
-				Scheme:    "serial",
+				Scheme:    SchemeSerial,
 				Authority: "AsdfSerial",
 				ID:        "serial:AsdfSerial",
 			},
@@ -201,9 +220,17 @@ func TestParseLocator(t *testing.T) {
 			locator:     "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
 			str:         "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
 			want: &Locator{
-				Scheme:    "uuid",
+				Scheme:    SchemeUUID,
 				Authority: "bbee1f69-2f64-4aa9-a422-27d68b40b152",
 				ID:        "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
+			},
+		}, {
+			description: "self scheme",
+			locator:     "self:",
+			str:         "self:",
+			want: &Locator{
+				Scheme: SchemeSelf,
+				ID:     "self:",
 			},
 		},
 
@@ -218,6 +245,10 @@ func TestParseLocator(t *testing.T) {
 		}, {
 			description: "invalid mac scheme",
 			locator:     "mac:112invalid66",
+			expectedErr: ErrorInvalidDeviceName,
+		}, {
+			description: "invalid self scheme",
+			locator:     "self:anything",
 			expectedErr: ErrorInvalidDeviceName,
 		},
 	}
