@@ -75,7 +75,6 @@ func ParseDeviceID(deviceName string) (DeviceID, error) {
 	}
 
 	return makeDeviceID(match[1], match[2])
-
 }
 
 // Locator represents a device locator, which is a device identifier an optional
@@ -112,8 +111,8 @@ type Locator struct {
 	// value will contain a prefix of the `/` character.
 	Ignored string
 
-	// id is the device identifier portion of the locator if it is one.
-	id *DeviceID
+	// ID is the device identifier portion of the locator if it is one.
+	ID DeviceID
 }
 
 // ParseLocator parses a raw locator string into a canonicalized locator.
@@ -140,24 +139,19 @@ func ParseLocator(locator string) (*Locator, error) {
 		if err != nil {
 			return nil, err
 		}
-		l.id = &id
+		l.ID = id
 	default:
 	}
 
 	return &l, nil
 }
 
-// DeviceID returns the device identifier portion of the locator.
-func (l *Locator) DeviceID() *DeviceID {
-	return l.id
-}
-
 // IsDeviceID returns true if the locator is a device identifier.
-func (l *Locator) IsDeviceID() bool {
-	return l.id != nil
+func (l Locator) HasDeviceID() bool {
+	return l.ID != ""
 }
 
-func (l *Locator) String() string {
+func (l Locator) String() string {
 	var buf strings.Builder
 
 	buf.WriteString(l.Scheme)

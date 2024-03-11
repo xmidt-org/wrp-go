@@ -114,11 +114,6 @@ func TestParseDeviceID(t *testing.T) {
 	}
 }
 
-func DeviceIDPtr(id string) *DeviceID {
-	d := DeviceID(id)
-	return &d
-}
-
 func TestParseLocator(t *testing.T) {
 	tests := []struct {
 		description string
@@ -134,7 +129,7 @@ func TestParseLocator(t *testing.T) {
 			want: &Locator{
 				Scheme:    "mac",
 				Authority: "112233445566",
-				id:        DeviceIDPtr("mac:112233445566"),
+				ID:        "mac:112233445566",
 			},
 		}, {
 			description: "cpe locator ensure lowercase",
@@ -143,7 +138,7 @@ func TestParseLocator(t *testing.T) {
 			want: &Locator{
 				Scheme:    "mac",
 				Authority: "112233445566",
-				id:        DeviceIDPtr("mac:112233445566"),
+				ID:        "mac:112233445566",
 			},
 		}, {
 			description: "locator with service",
@@ -190,7 +185,7 @@ func TestParseLocator(t *testing.T) {
 			want: &Locator{
 				Scheme:    "mac",
 				Authority: "112233445566",
-				id:        DeviceIDPtr("mac:112233445566"),
+				ID:        "mac:112233445566",
 			},
 		}, {
 			description: "serial scheme",
@@ -199,7 +194,7 @@ func TestParseLocator(t *testing.T) {
 			want: &Locator{
 				Scheme:    "serial",
 				Authority: "AsdfSerial",
-				id:        DeviceIDPtr("serial:AsdfSerial"),
+				ID:        "serial:AsdfSerial",
 			},
 		}, {
 			description: "uuid scheme",
@@ -208,7 +203,7 @@ func TestParseLocator(t *testing.T) {
 			want: &Locator{
 				Scheme:    "uuid",
 				Authority: "bbee1f69-2f64-4aa9-a422-27d68b40b152",
-				id:        DeviceIDPtr("uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152"),
+				ID:        "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
 			},
 		},
 
@@ -248,6 +243,6 @@ func TestLocatorDeviceID(t *testing.T) {
 	l, err := ParseLocator("mac:112233445566")
 	assert.NoError(err)
 
-	assert.True(l.IsDeviceID())
-	assert.NotNil(l.DeviceID())
+	assert.True(l.HasDeviceID())
+	assert.NotEqual(l.ID, "")
 }
