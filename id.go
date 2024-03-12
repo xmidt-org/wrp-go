@@ -14,8 +14,15 @@ import (
 const (
 	hexDigits     = "0123456789abcdefABCDEF"
 	macDelimiters = ":-.,"
-	macPrefix     = "mac"
 	macLength     = 12
+
+	SchemeMAC     = "mac"
+	SchemeUUID    = "uuid"
+	SchemeDNS     = "dns"
+	SchemeSerial  = "serial"
+	SchemeSelf    = "self"
+	SchemeEvent   = "event"
+	SchemeUnknown = ""
 )
 
 var (
@@ -24,15 +31,24 @@ var (
 
 	invalidDeviceID = DeviceID("")
 
+	// Locator/DeviceID form:
+	//   {scheme|prefix}:{authority|id}/{service}/{ignored}
+	//
+	//  If the scheme is "mac", "uuid", or "serial" then the authority is the
+	//	device identifier.
+	//  If the scheme is "dns" then the authority is the FQDN of the service.
+	//  If the scheme is "event" then the authority is the event name.
+	//  If the scheme is "self" then the authority is the empty string.
+
 	// DevicIDPattern is the precompiled regular expression that all device identifiers must match.
 	// Matching is partial, as everything after the service is ignored.
 	DeviceIDPattern = regexp.MustCompile(
-		`^(?P<prefix>(?i)mac|uuid|dns|serial):(?P<id>[^/]+)(?P<service>/[^/]+)?`,
+		`^(?P<prefix>(?i)mac|uuid|dns|serial|self):(?P<id>[^/]+)(?P<service>/[^/]+)?`,
 	)
 
 	// LocatorPattern is the precompiled regular expression that all locators must match.
 	LocatorPattern = regexp.MustCompile(
-		`^(?P<scheme>(?i)mac|uuid|dns|serial|event):(?P<authority>[^/]+)(?P<service>/[^/]+)?(?P<ignored>/[^/]+)?`,
+		`^(?P<scheme>(?i)mac|uuid|dns|serial|event|self):(?P<authority>[^/]+)?(?P<service>/[^/]+)?(?P<ignored>/[^/]+)?`,
 	)
 )
 
@@ -85,9 +101,9 @@ func ParseDeviceID(deviceName string) (DeviceID, error) {
 //	{scheme}:{authority}/{service}/{ignored}
 type Locator struct {
 	// Scheme is the scheme type of the locator.  A CPE will have the forms
-	// `mac`, `uuid`, `serial`.  A server or cloud service will have the form
-	// `dns`.  An event locator that is used for pub-sub listeners will have
-	// the form `event`.
+	// `mac`, `uuid`, `serial`, `self`.  A server or cloud service will have
+	// the form `dns`.  An event locator that is used for pub-sub listeners
+	// will have the form `event`.
 	//
 	// The Scheme MUST NOT be used to determine where to send a message, but
 	// rather to determine how to interpret the authority and service.
@@ -133,8 +149,9 @@ func ParseLocator(locator string) (*Locator, error) {
 		l.Ignored = match[4]
 	}
 
+	// If the locator is a device identifier, then we need to parse it.
 	switch l.Scheme {
-	case "mac", "uuid", "serial": // device_id locators
+	case SchemeMAC, SchemeUUID, SchemeSerial, SchemeSelf:
 		id, err := makeDeviceID(l.Scheme, l.Authority)
 		if err != nil {
 			return nil, err
@@ -146,9 +163,14 @@ func ParseLocator(locator string) (*Locator, error) {
 	return &l, nil
 }
 
-// IsDeviceID returns true if the locator is a device identifier.
+// HasDeviceID returns true if the locator is a device identifier.
 func (l Locator) HasDeviceID() bool {
 	return l.ID != ""
+}
+
+// IsSelf returns true if the locator is a self locator.
+func (l Locator) IsSelf() bool {
+	return l.Scheme == SchemeSelf
 }
 
 func (l Locator) String() string {
@@ -171,7 +193,12 @@ func (l Locator) String() string {
 
 func makeDeviceID(prefix, idPart string) (DeviceID, error) {
 	prefix = strings.ToLower(prefix)
-	if prefix == macPrefix {
+	switch prefix {
+	case SchemeSelf:
+		if idPart != "" {
+			return invalidDeviceID, ErrorInvalidDeviceName
+		}
+	case SchemeMAC:
 		var invalidCharacter rune = -1
 		idPart = strings.Map(
 			func(r rune) rune {
@@ -191,6 +218,7 @@ func makeDeviceID(prefix, idPart string) (DeviceID, error) {
 		if invalidCharacter != -1 || len(idPart) != macLength {
 			return invalidDeviceID, ErrorInvalidDeviceName
 		}
+	default:
 	}
 
 	return DeviceID(fmt.Sprintf("%s:%s", prefix, idPart)), nil
