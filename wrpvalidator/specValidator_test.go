@@ -615,17 +615,17 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Mac ID error, invalid mac ID character",
 			value:       "MAC:invalid45566",
-			expectedErr: errorInvalidCharacter,
+			expectedErr: wrp.ErrorInvalidDeviceName,
 		},
 		{
 			description: "Mac ID error, invalid mac ID length",
 			value:       "mac:11-aa-BB-44-55",
-			expectedErr: errorInvalidMacLength,
+			expectedErr: wrp.ErrorInvalidDeviceName,
 		},
 		{
 			description: "Mac ID error, no ID",
 			value:       "mac:",
-			expectedErr: errorEmptyAuthority,
+			expectedErr: wrp.ErrorInvalidDeviceName,
 		},
 		// Serial success case
 		{
@@ -637,7 +637,7 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Invalid serial ID error, no ID",
 			value:       "serial:",
-			expectedErr: errorEmptyAuthority,
+			expectedErr: wrp.ErrorInvalidDeviceName,
 		},
 		// UUID success case
 		// The variant specified in RFC4122
@@ -698,7 +698,7 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Invalid UUID ID error, no ID",
 			value:       "uuid:",
-			expectedErr: errorEmptyAuthority,
+			expectedErr: wrp.ErrorInvalidDeviceName,
 		},
 		// Event success case
 		{
@@ -710,7 +710,7 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Invalid event ID error, no ID",
 			value:       "event:",
-			expectedErr: errorEmptyAuthority,
+			expectedErr: wrp.ErrorInvalidLocator,
 		},
 		// DNS success case
 		{
@@ -722,18 +722,18 @@ func testValidateLocator(t *testing.T) {
 		{
 			description: "Invalid DNS ID error, no ID",
 			value:       "dns:",
-			expectedErr: errorEmptyAuthority,
+			expectedErr: wrp.ErrorInvalidLocator,
 		},
 		// Scheme failure case
 		{
 			description: "Invalid scheme error",
 			value:       "invalid:a-BB-44-55",
-			expectedErr: errorInvalidLocatorPattern,
+			expectedErr: wrp.ErrorInvalidLocator,
 		},
 		{
 			description: "Invalid scheme error, empty string",
 			value:       "",
-			expectedErr: errorInvalidLocatorPattern,
+			expectedErr: wrp.ErrorInvalidLocator,
 		},
 	}
 

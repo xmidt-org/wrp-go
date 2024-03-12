@@ -14,7 +14,6 @@ import (
 const (
 	hexDigits     = "0123456789abcdefABCDEF"
 	macDelimiters = ":-.,"
-	macLength     = 12
 
 	SchemeMAC     = "mac"
 	SchemeUUID    = "uuid"
@@ -99,6 +98,8 @@ func ParseDeviceID(deviceName string) (DeviceID, error) {
 // The general format is:
 //
 //	{scheme}:{authority}/{service}/{ignored}
+//
+// See https://xmidt.io/docs/wrp/basics/#locators for more details.
 type Locator struct {
 	// Scheme is the scheme type of the locator.  A CPE will have the forms
 	// `mac`, `uuid`, `serial`, `self`.  A server or cloud service will have
@@ -151,6 +152,10 @@ func ParseLocator(locator string) (*Locator, error) {
 
 	// If the locator is a device identifier, then we need to parse it.
 	switch l.Scheme {
+	case SchemeDNS, SchemeEvent:
+		if l.Authority == "" {
+			return nil, ErrorInvalidLocator
+		}
 	case SchemeMAC, SchemeUUID, SchemeSerial, SchemeSelf:
 		id, err := makeDeviceID(l.Scheme, l.Authority)
 		if err != nil {
@@ -198,6 +203,10 @@ func makeDeviceID(prefix, idPart string) (DeviceID, error) {
 		if idPart != "" {
 			return invalidDeviceID, ErrorInvalidDeviceName
 		}
+	case SchemeUUID, SchemeSerial:
+		if idPart == "" {
+			return invalidDeviceID, ErrorInvalidDeviceName
+		}
 	case SchemeMAC:
 		var invalidCharacter rune = -1
 		idPart = strings.Map(
@@ -215,7 +224,8 @@ func makeDeviceID(prefix, idPart string) (DeviceID, error) {
 			idPart,
 		)
 
-		if invalidCharacter != -1 || len(idPart) != macLength {
+		if invalidCharacter != -1 ||
+			((len(idPart) != 12) && (len(idPart) != 16) && (len(idPart) != 40)) {
 			return invalidDeviceID, ErrorInvalidDeviceName
 		}
 	default:
