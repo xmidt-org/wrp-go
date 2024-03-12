@@ -37,7 +37,7 @@ func TestFindStringSubMatch(t *testing.T) {
 
 	var result string
 	for i := 0; i < len(events); i++ {
-		result = findEventStringSubMatch(events[i])
+		result = FindEventStringSubMatch(events[i])
 		if result != expected[i] {
 			t.Errorf("\ntesting %v:\ninput: %v\nexpected: %v\ngot: %v\n\n", i, spew.Sprintf(events[i]), spew.Sprintf(expected[i]), spew.Sprintf(result))
 		}
