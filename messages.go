@@ -164,7 +164,7 @@ type Message struct {
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
-	return FindEventStringSubMatch(msg.Destination)
+	return findEventStringSubMatch(msg.Destination)
 }
 
 func (msg *Message) MessageType() MessageType {
@@ -255,7 +255,7 @@ type SimpleRequestResponse struct {
 }
 
 func (msg *SimpleRequestResponse) FindEventStringSubMatch() string {
-	return FindEventStringSubMatch(msg.Destination)
+	return findEventStringSubMatch(msg.Destination)
 }
 
 // SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
@@ -489,7 +489,7 @@ func (msg *Unknown) BeforeEncode() error {
 	return nil
 }
 
-func FindEventStringSubMatch(s string) string {
+func findEventStringSubMatch(s string) string {
 	var match = eventPattern.FindStringSubmatch(s)
 
 	event := "unknown"
