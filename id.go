@@ -133,10 +133,10 @@ type Locator struct {
 }
 
 // ParseLocator parses a raw locator string into a canonicalized locator.
-func ParseLocator(locator string) (*Locator, error) {
+func ParseLocator(locator string) (Locator, error) {
 	match := LocatorPattern.FindStringSubmatch(locator)
 	if match == nil {
-		return nil, ErrorInvalidLocator
+		return Locator{}, ErrorInvalidLocator
 	}
 
 	var l Locator
@@ -154,18 +154,18 @@ func ParseLocator(locator string) (*Locator, error) {
 	switch l.Scheme {
 	case SchemeDNS, SchemeEvent:
 		if l.Authority == "" {
-			return nil, ErrorInvalidLocator
+			return Locator{}, ErrorInvalidLocator
 		}
 	case SchemeMAC, SchemeUUID, SchemeSerial, SchemeSelf:
 		id, err := makeDeviceID(l.Scheme, l.Authority)
 		if err != nil {
-			return nil, err
+			return Locator{}, err
 		}
 		l.ID = id
 	default:
 	}
 
-	return &l, nil
+	return l, nil
 }
 
 // HasDeviceID returns true if the locator is a device identifier.

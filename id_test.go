@@ -118,7 +118,7 @@ func TestParseLocator(t *testing.T) {
 	tests := []struct {
 		description string
 		locator     string
-		want        *Locator
+		want        Locator
 		str         string
 		expectedErr error
 	}{
@@ -126,7 +126,7 @@ func TestParseLocator(t *testing.T) {
 			description: "cpe locator",
 			locator:     "mac:112233445566",
 			str:         "mac:112233445566",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeMAC,
 				Authority: "112233445566",
 				ID:        "mac:112233445566",
@@ -135,7 +135,7 @@ func TestParseLocator(t *testing.T) {
 			description: "cpe locator ensure lowercase",
 			locator:     "Mac:112233445566",
 			str:         "mac:112233445566",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeMAC,
 				Authority: "112233445566",
 				ID:        "mac:112233445566",
@@ -144,7 +144,7 @@ func TestParseLocator(t *testing.T) {
 			description: "locator with service",
 			locator:     "DNS:foo.bar.com/service",
 			str:         "dns:foo.bar.com/service",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeDNS,
 				Authority: "foo.bar.com",
 				Service:   "service",
@@ -153,7 +153,7 @@ func TestParseLocator(t *testing.T) {
 			description: "locator with service everything",
 			locator:     "event:something/service/ignored",
 			str:         "event:something/service/ignored",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeEvent,
 				Authority: "something",
 				Service:   "service",
@@ -163,7 +163,7 @@ func TestParseLocator(t *testing.T) {
 			description: "self locator with service",
 			locator:     "SELF:/service",
 			str:         "self:/service",
-			want: &Locator{
+			want: Locator{
 				Scheme:  SchemeSelf,
 				Service: "service",
 				ID:      "self:",
@@ -172,7 +172,7 @@ func TestParseLocator(t *testing.T) {
 			description: "self locator with service everything",
 			locator:     "self:/service/ignored",
 			str:         "self:/service/ignored",
-			want: &Locator{
+			want: Locator{
 				Scheme:  SchemeSelf,
 				Service: "service",
 				Ignored: "/ignored",
@@ -185,7 +185,7 @@ func TestParseLocator(t *testing.T) {
 			description: "dns scheme",
 			locator:     "dns:foo.bar.com",
 			str:         "dns:foo.bar.com",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeDNS,
 				Authority: "foo.bar.com",
 			},
@@ -193,7 +193,7 @@ func TestParseLocator(t *testing.T) {
 			description: "event scheme",
 			locator:     "event:targetedEvent",
 			str:         "event:targetedEvent",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeEvent,
 				Authority: "targetedEvent",
 			},
@@ -201,7 +201,7 @@ func TestParseLocator(t *testing.T) {
 			description: "mac scheme",
 			locator:     "mac:112233445566",
 			str:         "mac:112233445566",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeMAC,
 				Authority: "112233445566",
 				ID:        "mac:112233445566",
@@ -210,7 +210,7 @@ func TestParseLocator(t *testing.T) {
 			description: "serial scheme",
 			locator:     "serial:AsdfSerial",
 			str:         "serial:AsdfSerial",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeSerial,
 				Authority: "AsdfSerial",
 				ID:        "serial:AsdfSerial",
@@ -219,7 +219,7 @@ func TestParseLocator(t *testing.T) {
 			description: "uuid scheme",
 			locator:     "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
 			str:         "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
-			want: &Locator{
+			want: Locator{
 				Scheme:    SchemeUUID,
 				Authority: "bbee1f69-2f64-4aa9-a422-27d68b40b152",
 				ID:        "uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152",
@@ -228,7 +228,7 @@ func TestParseLocator(t *testing.T) {
 			description: "self scheme",
 			locator:     "self:",
 			str:         "self:",
-			want: &Locator{
+			want: Locator{
 				Scheme: SchemeSelf,
 				ID:     "self:",
 			},
@@ -261,7 +261,8 @@ func TestParseLocator(t *testing.T) {
 			assert.ErrorIs(err, tc.expectedErr)
 			assert.Equal(tc.want, got)
 
-			if tc.want != nil {
+			l := Locator{}
+			if tc.want != l {
 				assert.Equal(tc.str, got.String())
 			}
 		})
