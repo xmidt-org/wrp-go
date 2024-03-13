@@ -19,13 +19,13 @@ var (
 	ErrInvalidString      = errors.New("invalid UTF-8 string")
 )
 
-// Normify applies a series of normalizing options to a WRP message.
-type Normify struct {
-	opts []NormifyOption
+// Normifier applies a series of normalizing options to a WRP message.
+type Normifier struct {
+	opts []NormifierOption
 }
 
-// NormifyOption is a functional option for normalizing a WRP message.
-type NormifyOption interface {
+// NormifierOption is a functional option for normalizing a WRP message.
+type NormifierOption interface {
 	// normify applies the option to the given message.
 	normify(*Message) error
 }
@@ -34,22 +34,22 @@ type NormifyOption interface {
 // normalizing options.
 type optionFunc func(*Message) error
 
-var _ NormifyOption = optionFunc(nil)
+var _ NormifierOption = optionFunc(nil)
 
 func (f optionFunc) normify(m *Message) error {
 	return f(m)
 }
 
 // New creates a new Correctifier with the given options.
-func New(opts ...NormifyOption) *Normify {
-	return &Normify{
+func NewNormifier(opts ...NormifierOption) *Normifier {
+	return &Normifier{
 		opts: opts,
 	}
 }
 
-// Process applies the normalizing and validating options to the message.  It
+// Normify applies the normalizing and validating options to the message.  It
 // returns an error if any of the options fail.
-func (n *Normify) Process(m *Message) error {
+func (n *Normifier) Normify(m *Message) error {
 	for _, opt := range n.opts {
 		if opt != nil {
 			if err := opt.normify(m); err != nil {
@@ -61,14 +61,14 @@ func (n *Normify) Process(m *Message) error {
 }
 
 // errorOption returns an option that always returns the given error.
-func errorOption(err error) NormifyOption {
+func errorOption(err error) NormifierOption {
 	return optionFunc(func(*Message) error {
 		return err
 	})
 }
 
-// Options returns a new option that applies all of the given options in order.
-func Options(opts ...NormifyOption) NormifyOption {
+// options returns a new option that applies all of the given options in order.
+func options(opts ...NormifierOption) NormifierOption {
 	return optionFunc(func(m *Message) error {
 		for _, opt := range opts {
 			if opt != nil {
@@ -86,8 +86,8 @@ func Options(opts ...NormifyOption) NormifyOption {
 // ReplaceAnySelfLocator replaces any `self:` based locator with the scheme and
 // authority of the given locator.  If the given locator is not valid, the
 // option returns an error.
-func ReplaceAnySelfLocator(me string) NormifyOption {
-	return Options(
+func ReplaceAnySelfLocator(me string) NormifierOption {
+	return options(
 		ReplaceSourceSelfLocator(me),
 		ReplaceDestinationSelfLocator(me),
 	)
@@ -96,7 +96,7 @@ func ReplaceAnySelfLocator(me string) NormifyOption {
 // ReplaceSourceSelfLocator replaces a `self:` based source locator with the
 // scheme and authority of the given locator.  If the given locator is not valid,
 // the option returns an error.
-func ReplaceSourceSelfLocator(me string) NormifyOption {
+func ReplaceSourceSelfLocator(me string) NormifierOption {
 	full, err := ParseLocator(me)
 	if err != nil {
 		return errorOption(err)
@@ -121,7 +121,7 @@ func ReplaceSourceSelfLocator(me string) NormifyOption {
 // ReplaceDestinationSelfLocator replaces the destination of the message with the
 // given locator if the destination is a `self:` based locator.  If the given
 // locator is not valid, the option returns an error.
-func ReplaceDestinationSelfLocator(me string) NormifyOption {
+func ReplaceDestinationSelfLocator(me string) NormifierOption {
 	full, err := ParseLocator(me)
 	if err != nil {
 		return errorOption(err)
@@ -146,7 +146,7 @@ func ReplaceDestinationSelfLocator(me string) NormifyOption {
 // EnsureTransactionUUID ensures that the message has a transaction UUID.  If
 // the message does not have a transaction UUID, a new one is generated and
 // added to the message.
-func EnsureTransactionUUID() NormifyOption {
+func EnsureTransactionUUID() NormifierOption {
 	return optionFunc(func(m *Message) error {
 		if m.TransactionUUID == "" {
 			id, err := uuid.NewRandom()
@@ -162,7 +162,7 @@ func EnsureTransactionUUID() NormifyOption {
 
 // EnsurePartnerID ensures that the message includes the given partner ID in
 // the list.  If not present, the partner ID is added to the list.
-func EnsurePartnerID(partnerID string) NormifyOption {
+func EnsurePartnerID(partnerID string) NormifierOption {
 	return optionFunc(func(m *Message) error {
 		if m.PartnerIDs == nil {
 			m.PartnerIDs = make([]string, 0, 1)
@@ -179,7 +179,7 @@ func EnsurePartnerID(partnerID string) NormifyOption {
 
 // SetPartnerID ensures that the message has only the given partner ID.  This
 // will always set the partner ID, replacing any existing partner IDs.
-func SetPartnerID(partnerID string) NormifyOption {
+func SetPartnerID(partnerID string) NormifierOption {
 	return optionFunc(func(m *Message) error {
 		m.PartnerIDs = []string{partnerID}
 		return nil
@@ -188,7 +188,7 @@ func SetPartnerID(partnerID string) NormifyOption {
 
 // SetSessionID ensures that the message has the given session ID.  This will
 // always set the session ID, replacing any existing session ID
-func SetSessionID(sessionID string) NormifyOption {
+func SetSessionID(sessionID string) NormifierOption {
 	return optionFunc(func(m *Message) error {
 		m.SessionID = sessionID
 		return nil
@@ -197,7 +197,7 @@ func SetSessionID(sessionID string) NormifyOption {
 
 // EnsureMetadataString ensures that the message has the given string metadata.
 // This will always set the metadata.
-func EnsureMetadataString(key, value string) NormifyOption {
+func EnsureMetadataString(key, value string) NormifierOption {
 	return optionFunc(func(m *Message) error {
 		if m.Metadata == nil {
 			m.Metadata = make(map[string]string)
@@ -209,21 +209,21 @@ func EnsureMetadataString(key, value string) NormifyOption {
 
 // EnsureMetadataTime ensures that the message has the given time metadata.
 // This will always set the metadata.  The time is formatted using RFC3339.
-func EnsureMetadataTime(key string, t time.Time) NormifyOption {
+func EnsureMetadataTime(key string, t time.Time) NormifierOption {
 	return EnsureMetadataString(key, t.Format(time.RFC3339))
 }
 
 // EnsureMetadataInt64 ensures that the message has the given integer metadata.
 // This will always set the metadata.  The integer is converted to a string
 // using base 10.
-func EnsureMetadataInt64(key string, i int64) NormifyOption {
+func EnsureMetadataInt64(key string, i int64) NormifierOption {
 	return EnsureMetadataString(key, strconv.FormatInt(i, 10))
 }
 
 // -- Validators ---------------------------------------------------------------
 
 // ValidateSource ensures that the source locator is valid.
-func ValidateSource() NormifyOption {
+func ValidateSource() NormifierOption {
 	return optionFunc(func(m *Message) error {
 		if _, err := ParseLocator(m.Source); err != nil {
 			return errors.Join(err, ErrInvalidSource)
@@ -233,7 +233,7 @@ func ValidateSource() NormifyOption {
 }
 
 // ValidateDestination ensures that the destination locator is valid.
-func ValidateDestination() NormifyOption {
+func ValidateDestination() NormifierOption {
 	return optionFunc(func(m *Message) error {
 		if _, err := ParseLocator(m.Destination); err != nil {
 			return errors.Join(err, ErrInvalidDest)
@@ -243,7 +243,7 @@ func ValidateDestination() NormifyOption {
 }
 
 // ValidateMessageType ensures that the message type is valid.
-func ValidateMessageType() NormifyOption {
+func ValidateMessageType() NormifierOption {
 	return optionFunc(func(m *Message) error {
 		if m.Type <= Invalid1MessageType || m.Type >= LastMessageType {
 			return ErrInvalidMessageType
@@ -254,7 +254,7 @@ func ValidateMessageType() NormifyOption {
 
 // ValidateOnlyUTF8Strings ensures that all string fields in the message are
 // valid UTF-8.
-func ValidateOnlyUTF8Strings() NormifyOption {
+func ValidateOnlyUTF8Strings() NormifierOption {
 	return optionFunc(func(m *Message) error {
 		if err := UTF8(m); err != nil {
 			return errors.Join(err, ErrInvalidString)
@@ -264,7 +264,7 @@ func ValidateOnlyUTF8Strings() NormifyOption {
 }
 
 // ValidateIsPartner ensures that the message has the given partner ID.
-func ValidateIsPartner(partner string) NormifyOption {
+func ValidateIsPartner(partner string) NormifierOption {
 	return optionFunc(func(m *Message) error {
 		list := m.TrimmedPartnerIDs()
 		if len(list) != 1 || list[0] != partner {
@@ -277,7 +277,7 @@ func ValidateIsPartner(partner string) NormifyOption {
 
 // ValidateHasPartner ensures that the message has one of the given partner
 // IDs.
-func ValidateHasPartner(partners ...string) NormifyOption {
+func ValidateHasPartner(partners ...string) NormifierOption {
 	trimmed := make([]string, 0, len(partners))
 	for _, p := range partners {
 		if p != "" {

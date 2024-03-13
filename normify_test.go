@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
+// SPDX-FileCopyrightText: 2024 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
 package wrp
@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNormify(t *testing.T) {
+func TestNormifier(t *testing.T) {
 	tests := []struct {
 		description string
-		opt         NormifyOption
-		opts        []NormifyOption
+		opt         NormifierOption
+		opts        []NormifierOption
 		msg         Message
 		want        Message
 		wantFn      func(*assert.Assertions, *Message)
@@ -287,11 +287,11 @@ func TestNormify(t *testing.T) {
 			require := require.New(t)
 
 			opts := append(tc.opts, tc.opt)
-			n := New(opts...)
+			n := NewNormifier(opts...)
 			require.NotNil(n)
 
 			m := tc.msg
-			err := n.Process(&m)
+			err := n.Normify(&m)
 
 			assert.ErrorIs(err, tc.expectedErr)
 			if tc.expectedErr != nil {
