@@ -765,3 +765,34 @@ func TestUnknown(t *testing.T) {
 		})
 	}
 }
+
+func TestMessage_TrimmedPartnerIDs(t *testing.T) {
+	tests := []struct {
+		description string
+		partners    []string
+		want        []string
+	}{
+		{
+			description: "empty partner list",
+			partners:    []string{},
+			want:        []string{},
+		}, {
+			description: "normal partner list",
+			partners:    []string{"foo", "bar", "baz"},
+			want:        []string{"foo", "bar", "baz"},
+		}, {
+			description: "partner list with empty strings",
+			partners:    []string{"", "foo", "", "bar", "", "baz", ""},
+			want:        []string{"foo", "bar", "baz"},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			msg := &Message{
+				PartnerIDs: tc.partners,
+			}
+			assert.Equal(tc.want, msg.TrimmedPartnerIDs())
+		})
+	}
+}

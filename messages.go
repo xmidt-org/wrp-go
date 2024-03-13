@@ -230,6 +230,17 @@ func (msg *Message) SetIncludeSpans(value bool) *Message {
 	return msg
 }
 
+// TrimmedPartnerIDs returns a copy of the PartnerIDs field with all empty strings removed.
+func (msg *Message) TrimmedPartnerIDs() []string {
+	trimmed := make([]string, 0, len(msg.PartnerIDs))
+	for _, id := range msg.PartnerIDs {
+		if id != "" {
+			trimmed = append(trimmed, id)
+		}
+	}
+	return trimmed
+}
+
 // SimpleRequestResponse represents a WRP message of type SimpleRequestResponseMessageType.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#simple-request-response-definition
