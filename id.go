@@ -47,7 +47,7 @@ var (
 
 	// LocatorPattern is the precompiled regular expression that all locators must match.
 	LocatorPattern = regexp.MustCompile(
-		`^(?P<scheme>(?i)mac|uuid|dns|serial|event|self):(?P<authority>[^/]+)?(?P<service>/[^/]+)?(?P<ignored>/[^/]+)?`,
+		`^(?P<scheme>(?i)mac|uuid|dns|serial|event|self):(?P<authority>[^/]+)?(?P<service>/[^/]+)?(?P<ignored>.+)?`,
 	)
 )
 
@@ -152,9 +152,17 @@ func ParseLocator(locator string) (Locator, error) {
 
 	// If the locator is a device identifier, then we need to parse it.
 	switch l.Scheme {
-	case SchemeDNS, SchemeEvent:
+	case SchemeDNS:
 		if l.Authority == "" {
 			return Locator{}, ErrorInvalidLocator
+		}
+	case SchemeEvent:
+		if l.Authority == "" {
+			return Locator{}, ErrorInvalidLocator
+		}
+		if l.Service != "" {
+			l.Ignored = "/" + l.Service + l.Ignored
+			l.Service = ""
 		}
 	case SchemeMAC, SchemeUUID, SchemeSerial, SchemeSelf:
 		id, err := makeDeviceID(l.Scheme, l.Authority)
@@ -187,10 +195,10 @@ func (l Locator) String() string {
 	if l.Service != "" {
 		buf.WriteString("/")
 		buf.WriteString(l.Service)
+	}
 
-		if l.Ignored != "" {
-			buf.WriteString(l.Ignored)
-		}
+	if l.Ignored != "" {
+		buf.WriteString(l.Ignored)
 	}
 
 	return buf.String()

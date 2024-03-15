@@ -142,22 +142,23 @@ func TestParseLocator(t *testing.T) {
 			},
 		}, {
 			description: "locator with service",
-			locator:     "DNS:foo.bar.com/service",
-			str:         "dns:foo.bar.com/service",
+			locator:     "DNS:foo.bar.com/service/ignored/really/really/ignored",
+			str:         "dns:foo.bar.com/service/ignored/really/really/ignored",
 			want: Locator{
 				Scheme:    SchemeDNS,
 				Authority: "foo.bar.com",
 				Service:   "service",
+				Ignored:   "/ignored/really/really/ignored",
 			},
 		}, {
 			description: "locator with service everything",
-			locator:     "event:something/service/ignored",
-			str:         "event:something/service/ignored",
+			locator:     "event:event_name/ignored/really/really/ignored",
+			str:         "event:event_name/ignored/really/really/ignored",
 			want: Locator{
 				Scheme:    SchemeEvent,
-				Authority: "something",
-				Service:   "service",
-				Ignored:   "/ignored",
+				Authority: "event_name",
+				Service:   "",
+				Ignored:   "/ignored/really/really/ignored",
 			},
 		}, {
 			description: "self locator with service",
@@ -170,12 +171,12 @@ func TestParseLocator(t *testing.T) {
 			},
 		}, {
 			description: "self locator with service everything",
-			locator:     "self:/service/ignored",
-			str:         "self:/service/ignored",
+			locator:     "self:/service/ignored/really/really/ignored",
+			str:         "self:/service/ignored/really/really/ignored",
 			want: Locator{
 				Scheme:  SchemeSelf,
 				Service: "service",
-				Ignored: "/ignored",
+				Ignored: "/ignored/really/really/ignored",
 				ID:      "self:",
 			},
 		},
