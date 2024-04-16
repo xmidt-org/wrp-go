@@ -195,6 +195,19 @@ func SetSessionID(sessionID string) NormifierOption {
 	})
 }
 
+// ClampQualityOfService clamps a wrp message's qos value between 0 and 99.
+func ClampQualityOfService() NormifierOption {
+	return optionFunc(func(m *Message) error {
+		if m.QualityOfService < 0 {
+			m.QualityOfService = 0
+		} else if m.QualityOfService > 99 {
+			m.QualityOfService = 99
+		}
+
+		return nil
+	})
+}
+
 // EnsureMetadataString ensures that the message has the given string metadata.
 // This will always set the metadata.
 func EnsureMetadataString(key, value string) NormifierOption {
