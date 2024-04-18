@@ -89,6 +89,24 @@ func TestNormifier(t *testing.T) {
 				SessionID: "session",
 			},
 		}, {
+			description: "ClampQualityOfService(), QualityOfService < 0",
+			opt:         ClampQualityOfService(),
+			msg: Message{
+				QualityOfService: -1,
+			},
+			want: Message{
+				QualityOfService: 0,
+			},
+		}, {
+			description: "ClampQualityOfService(), QualityOfService > 99",
+			opt:         ClampQualityOfService(),
+			msg: Message{
+				QualityOfService: 100,
+			},
+			want: Message{
+				QualityOfService: 99,
+			},
+		}, {
 			description: "EnsureMetadataString(key, value) add to empty",
 			opt:         EnsureMetadataString("key", "value"),
 			want: Message{
