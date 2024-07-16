@@ -1,6 +1,7 @@
 module github.com/xmidt-org/wrp-go/v3
 
 go 1.21
+toolchain go1.22.5
 
 require (
 	github.com/davecgh/go-spew v1.1.1
@@ -10,7 +11,7 @@ require (
 	github.com/prometheus/client_golang v1.19.1
 	github.com/stretchr/testify v1.9.0
 	github.com/ugorji/go/codec v1.2.12
-	github.com/xmidt-org/httpaux v0.4.0
+	github.com/xmidt-org/httpaux v0.4.1
 	github.com/xmidt-org/sallust v0.2.2
 	github.com/xmidt-org/touchstone v0.1.5
 	github.com/xmidt-org/webpa-common v1.11.9
