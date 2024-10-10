@@ -83,10 +83,16 @@ func (v *MetaValidator) UnmarshalJSON(b []byte) error {
 		val = SimpleEventType
 	case SpansType:
 		val = Spans
+	case NoneEmptySourceType:
+		val = NoneEmptySource
+	case NoneEmptyDestinationType:
+		val = NoneEmptyDestination
 	default:
 		return fmt.Errorf("validator `%s`: wrp validator selection: %w: %s", v.meta.Type, ErrValidatorUnmarshalling, errValidatorTypeInvalid)
 	}
 
+	// By default validators will have no metrics.
+	// Metrics are optional and can be added with `MetaValidator.AddMetric()`.
 	v.validator = NewValidatorWithoutMetric(val)
 
 	if !v.IsValid() {
@@ -128,6 +134,10 @@ func (v *MetaValidator) AddMetric(tf *touchstone.Factory, labelNames ...string) 
 		val, err = NewSimpleEventTypeWithMetric(tf, labelNames...)
 	case SpansType:
 		val, err = NewSpansWithMetric(tf, labelNames...)
+	case NoneEmptySourceType:
+		val, err = NewNoneEmptySourceWithMetric(tf, labelNames...)
+	case NoneEmptyDestinationType:
+		val, err = NewNoneEmptyDestinationWithMetric(tf, labelNames...)
 		// no default is needed since v.IsValid() takes care of this case
 	}
 

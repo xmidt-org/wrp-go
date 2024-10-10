@@ -56,6 +56,14 @@ func TestTypeUnmarshalling(t *testing.T) {
 			config:      []byte("spans"),
 		},
 		{
+			description: "NoneEmptySourceType valid",
+			config:      []byte("none_empty_source"),
+		},
+		{
+			description: "NoneEmptyDestinationType valid",
+			config:      []byte("none_empty_destination"),
+		},
+		{
 			description: "Nonexistent type invalid",
 			config:      []byte("FOOBAR"),
 			invalid:     true,
@@ -138,6 +146,16 @@ func TestTypeState(t *testing.T) {
 			description: "SpansType valid",
 			val:         SpansType,
 			expectedVal: "spans",
+		},
+		{
+			description: "NoneEmptySourceType valid",
+			val:         NoneEmptySourceType,
+			expectedVal: "none_empty_source",
+		},
+		{
+			description: "NoneEmptyDestinationType valid",
+			val:         NoneEmptyDestinationType,
+			expectedVal: "none_empty_destination",
 		},
 		{
 			description: "lastLevel valid",

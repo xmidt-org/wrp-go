@@ -24,6 +24,8 @@ func TestSpecHelperValidators(t *testing.T) {
 		{"MessageType", testMessageType},
 		{"Source", testSource},
 		{"Destination", testDestination},
+		{"NoneEmptySource", testNoneEmptySource},
+		{"NoneEmptyDestination", testNoneEmptyDestination},
 		{"validateLocator", testValidateLocator},
 	}
 
@@ -224,6 +226,24 @@ func TestSpecWithDuplicateValidators(t *testing.T) {
 			_, err = NewDestinationWithMetric(f4)
 			require.NoError(err)
 			_, err = SpecWithMetrics(f4)
+			require.Error(err)
+
+			_, pr5, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f5 := touchstone.NewFactory(cfg, sallust.Default(), pr5)
+			_, err = NewNoneEmptySourceWithMetric(f5)
+			require.NoError(err)
+			_, err = SpecWithMetrics(f5)
+			require.Error(err)
+
+			_, pr6, err := touchstone.New(cfg)
+			require.NoError(err)
+
+			f6 := touchstone.NewFactory(cfg, sallust.Default(), pr6)
+			_, err = NewNoneEmptyDestinationWithMetric(f6)
+			require.NoError(err)
+			_, err = SpecWithMetrics(f6)
 			require.Error(err)
 		})
 	}
@@ -566,6 +586,78 @@ func testDestination(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			err := Destination(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				var targetErr ValidatorError
+
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
+				return
+			}
+
+			assert.NoError(err)
+		})
+	}
+}
+
+func testNoneEmptySource(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         wrp.Message
+		expectedErr error
+	}{
+		// Success case
+		{
+			description: "Source success",
+			msg:         wrp.Message{Source: "MAC:11:22:33:44:55:66"},
+		},
+		// Failures
+		{
+			description: "NoneEmptySource error",
+			msg:         wrp.Message{Source: ""},
+			expectedErr: ErrorInvalidEmptySource,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			err := NoneEmptySource(tc.msg)
+			if expectedErr := tc.expectedErr; expectedErr != nil {
+				var targetErr ValidatorError
+
+				assert.ErrorAs(expectedErr, &targetErr)
+				assert.ErrorIs(err, targetErr.Err)
+				return
+			}
+
+			assert.NoError(err)
+		})
+	}
+}
+
+func testNoneEmptyDestination(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         wrp.Message
+		expectedErr error
+	}{
+		// Success case
+		{
+			description: "NoneEmptyDestination success",
+			msg:         wrp.Message{Destination: "MAC:11:22:33:44:55:66"},
+		},
+		// Failures
+		{
+			description: "NoneEmptyDestination error",
+			msg:         wrp.Message{Destination: ""},
+			expectedErr: ErrorInvalidEmptyDestination,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			err := NoneEmptyDestination(tc.msg)
 			if expectedErr := tc.expectedErr; expectedErr != nil {
 				var targetErr ValidatorError
 

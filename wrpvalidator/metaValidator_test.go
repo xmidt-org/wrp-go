@@ -267,6 +267,24 @@ func TestMetaValidatorAddMetric(t *testing.T) {
 			]`),
 		},
 		{
+			description: "Add metric validator NoneEmptySource",
+			config: []byte(`[
+				{
+					"type": "none_empty_source",
+					"level": "warning"
+				}
+			]`),
+		},
+		{
+			description: "Add metric validator NoneEmptyDestinationType",
+			config: []byte(`[
+				{
+					"type": "none_empty_destination",
+					"level": "warning"
+				}
+			]`),
+		},
+		{
 			description: "Add metric validator always_invalid",
 			config: []byte(`[
 				{
