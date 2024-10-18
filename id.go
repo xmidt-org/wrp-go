@@ -141,13 +141,13 @@ func ParseLocator(locator string) (Locator, error) {
 
 	var l Locator
 
-	l.Scheme = strings.ToLower(match[1])
-	l.Authority = match[2]
+	l.Scheme = strings.TrimSpace(strings.ToLower(match[1]))
+	l.Authority = strings.TrimSpace(match[2])
 	if len(match) > 3 {
-		l.Service = strings.TrimPrefix(match[3], "/")
+		l.Service = strings.TrimSpace(strings.TrimPrefix(match[3], "/"))
 	}
 	if len(match) > 4 {
-		l.Ignored = match[4]
+		l.Ignored = strings.TrimSpace(match[4])
 	}
 
 	// If the locator is a device identifier, then we need to parse it.

@@ -191,6 +191,14 @@ func TestParseLocator(t *testing.T) {
 				Authority: "foo.bar.com",
 			},
 		}, {
+			description: "event scheme (with spaces)",
+			locator:     "event:   targetedEvent     ",
+			str:         "event:targetedEvent",
+			want: Locator{
+				Scheme:    SchemeEvent,
+				Authority: "targetedEvent",
+			},
+		}, {
 			description: "event scheme",
 			locator:     "event:targetedEvent",
 			str:         "event:targetedEvent",
@@ -251,6 +259,14 @@ func TestParseLocator(t *testing.T) {
 			description: "invalid self scheme",
 			locator:     "self:anything",
 			expectedErr: ErrorInvalidDeviceName,
+		}, {
+			description: "invalid event scheme (no authority)",
+			locator:     "event:/anything",
+			expectedErr: ErrorInvalidLocator,
+		}, {
+			description: "invalid event scheme (no authority and with spaces)",
+			locator:     "event:    /anything",
+			expectedErr: ErrorInvalidLocator,
 		},
 	}
 	for _, tc := range tests {
