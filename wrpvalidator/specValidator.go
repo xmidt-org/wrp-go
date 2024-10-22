@@ -19,11 +19,14 @@ const (
 )
 
 var (
-	ErrorInvalidMessageEncoding = NewValidatorError(errors.New("invalid message encoding"), "", nil)
-	ErrorInvalidMessageType     = NewValidatorError(errors.New("invalid message type"), "", []string{"Type"})
-	ErrorInvalidSource          = NewValidatorError(errors.New("invalid Source name"), "", []string{"Source"})
-	ErrorInvalidDestination     = NewValidatorError(errors.New("invalid Destination name"), "", []string{"Destination"})
-	errorInvalidUUID            = errors.New("invalid UUID")
+	ErrorInvalidMessageEncoding  = NewValidatorError(errors.New("invalid message encoding"), "", nil)
+	ErrorInvalidMessageType      = NewValidatorError(errors.New("invalid message type"), "", []string{"Type"})
+	ErrorInvalidSource           = NewValidatorError(errors.New("invalid Source name"), "", []string{"Source"})
+	ErrorInvalidDestination      = NewValidatorError(errors.New("invalid Destination name"), "", []string{"Destination"})
+	ErrorInvalidEmptySource      = NewValidatorError(errors.New("empty Source"), "", []string{"Source"})
+	ErrorInvalidEmptyDestination = NewValidatorError(errors.New("empty Destination"), "", []string{"Destination"})
+
+	errorInvalidUUID = errors.New("invalid UUID")
 )
 
 // SpecWithMetrics ensures messages are valid based on each spec validator in the list.
@@ -51,7 +54,17 @@ func SpecWithMetrics(tf *touchstone.Factory, labelNames ...string) (Validators, 
 		errs = multierr.Append(errs, err)
 	}
 
-	return Validators{}.AddFunc(utf8v, mtv, sv, dv), errs
+	nesv, err := NewNoneEmptySourceWithMetric(tf, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	nedv, err := NewNoneEmptyDestinationWithMetric(tf, labelNames...)
+	if err != nil {
+		errs = multierr.Append(errs, err)
+	}
+
+	return Validators{}.AddFunc(utf8v, mtv, sv, dv, nesv, nedv), errs
 }
 
 // NewUTF8WithMetric returns a UTF8 validator with a metric middleware.
@@ -110,6 +123,34 @@ func NewDestinationWithMetric(tf *touchstone.Factory, labelNames ...string) (Val
 	}, err
 }
 
+// NewNoneEmptySourceWithMetric returns a NoneEmptySource validator with a metric middleware.
+func NewNoneEmptySourceWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newNoneEmptySourceErrorTotal(tf, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := NoneEmptySource(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
+}
+
+// NewNoneEmptyDestinationWithMetric returns a NoneEmptyDestination validator with a metric middleware.
+func NewNoneEmptyDestinationWithMetric(tf *touchstone.Factory, labelNames ...string) (ValidatorFunc, error) {
+	m, err := newNoneEmptyDestinationErrorTotal(tf, labelNames...)
+
+	return func(msg wrp.Message, ls prometheus.Labels) error {
+		err := NoneEmptyDestination(msg)
+		if err != nil {
+			m.With(ls).Add(1.0)
+		}
+
+		return err
+	}, err
+}
+
 // UTF8 takes messages and validates that it contains UTF-8 strings.
 func UTF8(m wrp.Message) error {
 	if err := wrp.UTF8(m); err != nil {
@@ -145,6 +186,24 @@ func Source(m wrp.Message) error {
 func Destination(m wrp.Message) error {
 	if err := validateLocator(m.Destination); err != nil {
 		return fmt.Errorf("%w '%s': %v", ErrorInvalidDestination, m.Destination, err)
+	}
+
+	return nil
+}
+
+// NoneEmptySource takes messages and validates whether their Source is not empty.
+func NoneEmptySource(m wrp.Message) error {
+	if m.Source == "" {
+		return ErrorInvalidEmptySource
+	}
+
+	return nil
+}
+
+// NoneEmptyDestination takes messages and validates whether their Destination is not empty.
+func NoneEmptyDestination(m wrp.Message) error {
+	if m.Destination == "" {
+		return ErrorInvalidEmptyDestination
 	}
 
 	return nil
