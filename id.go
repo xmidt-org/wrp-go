@@ -136,7 +136,7 @@ type Locator struct {
 func ParseLocator(locator string) (Locator, error) {
 	match := LocatorPattern.FindStringSubmatch(locator)
 	if match == nil {
-		return Locator{}, ErrorInvalidLocator
+		return Locator{}, fmt.Errorf("%w: `%s` does not match expected locator pattern", ErrorInvalidLocator, locator)
 	}
 
 	var l Locator
@@ -154,11 +154,11 @@ func ParseLocator(locator string) (Locator, error) {
 	switch l.Scheme {
 	case SchemeDNS:
 		if l.Authority == "" {
-			return Locator{}, ErrorInvalidLocator
+			return Locator{}, fmt.Errorf("%w: empty authority", ErrorInvalidLocator)
 		}
 	case SchemeEvent:
 		if l.Authority == "" {
-			return Locator{}, ErrorInvalidLocator
+			return Locator{}, fmt.Errorf("%w: empty authority", ErrorInvalidLocator)
 		}
 		if l.Service != "" {
 			l.Ignored = "/" + l.Service + l.Ignored
@@ -167,7 +167,7 @@ func ParseLocator(locator string) (Locator, error) {
 	case SchemeMAC, SchemeUUID, SchemeSerial, SchemeSelf:
 		id, err := makeDeviceID(l.Scheme, l.Authority)
 		if err != nil {
-			return Locator{}, err
+			return Locator{}, fmt.Errorf("%w: unable to make a device ID with scheme `%s` and authority `%s`", err, l.Scheme, l.Authority)
 		}
 		l.ID = id
 	default:
