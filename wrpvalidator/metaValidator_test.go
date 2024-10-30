@@ -100,7 +100,7 @@ func ExampleMetaValidator() {
 		}
 	}
 
-	// Output: source errors: validator `source`: Validator error [Source] err=invalid Source name 'external.com': invalid locator
+	// Output: source errors: validator `source`: Validator error [Source] err=invalid Source name 'external.com': invalid locator: `external.com` does not match expected locator pattern
 }
 
 func TestMetaValidatorUnmarshal(t *testing.T) {
