@@ -796,3 +796,274 @@ func TestMessage_TrimmedPartnerIDs(t *testing.T) {
 		})
 	}
 }
+
+func mapToEnviron(m map[string]string) []string {
+	result := make([]string, 0, len(m))
+	for k, v := range m {
+		result = append(result, fmt.Sprintf("%s=%s", k, v))
+	}
+	return result
+}
+
+func TestEnviron_Message(t *testing.T) {
+	tests := []struct {
+		description string
+		want        Message
+		err         error
+	}{
+		{
+			description: "empty",
+		}, {
+			description: "simple",
+			want: Message{
+				Source:           "source",
+				Destination:      "destination",
+				TransactionUUID:  "transaction_uuid",
+				QualityOfService: 24,
+				PartnerIDs:       []string{"foo", "bar", "baz"},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			msg := tc.want
+			m := msg.ToEnvironForm()
+			assert.NotNil(t, m)
+
+			got, err := MessageFromEnviron(mapToEnviron(m))
+
+			if tc.err != nil {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			assert.Equal(t, &msg, got)
+		})
+	}
+}
+
+func TestEnviron_SimpleRequestResponse(t *testing.T) {
+	tests := []struct {
+		description string
+		want        SimpleRequestResponse
+		err         error
+	}{
+		{
+			description: "empty",
+		}, {
+			description: "simple",
+			want: SimpleRequestResponse{
+				Source:          "source",
+				Destination:     "destination",
+				TransactionUUID: "transaction_uuid",
+				PartnerIDs:      []string{"foo", "bar", "baz"},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			msg := tc.want
+			m := msg.ToEnvironForm()
+			assert.NotNil(t, m)
+
+			got, err := SimpleRequestResponseFromEnviron(mapToEnviron(m))
+
+			if tc.err != nil {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			assert.Equal(t, &msg, got)
+		})
+	}
+}
+
+func TestEnviron_SimpleEvent(t *testing.T) {
+	tests := []struct {
+		description string
+		want        SimpleEvent
+		err         error
+	}{
+		{
+			description: "empty",
+		}, {
+			description: "simple",
+			want: SimpleEvent{
+				Source:      "source",
+				Destination: "destination",
+				PartnerIDs:  []string{"foo", "bar", "baz"},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			msg := tc.want
+			m := msg.ToEnvironForm()
+			assert.NotNil(t, m)
+
+			got, err := SimpleEventFromEnviron(mapToEnviron(m))
+
+			if tc.err != nil {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			assert.Equal(t, &msg, got)
+		})
+	}
+}
+
+func TestEnviron_CRUD(t *testing.T) {
+	tests := []struct {
+		description string
+		want        CRUD
+		err         error
+	}{
+		{
+			description: "empty",
+		}, {
+			description: "simple",
+			want: CRUD{
+				Source:      "source",
+				Destination: "destination",
+				PartnerIDs:  []string{"foo", "bar", "baz"},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			msg := tc.want
+			m := msg.ToEnvironForm()
+			assert.NotNil(t, m)
+
+			got, err := CRUDFromEnviron(mapToEnviron(m))
+
+			if tc.err != nil {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			assert.Equal(t, &msg, got)
+		})
+	}
+}
+
+func TestEnviron_ServiceRegistration(t *testing.T) {
+	tests := []struct {
+		description string
+		want        ServiceRegistration
+		err         error
+	}{
+		{
+			description: "empty",
+		}, {
+			description: "simple",
+			want: ServiceRegistration{
+				ServiceName: "service_name",
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			msg := tc.want
+			m := msg.ToEnvironForm()
+			assert.NotNil(t, m)
+
+			got, err := ServiceRegistrationFromEnviron(mapToEnviron(m))
+
+			if tc.err != nil {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			assert.Equal(t, &msg, got)
+		})
+	}
+}
+
+func TestEnviron_ServiceAlive(t *testing.T) {
+	tests := []struct {
+		description string
+		want        ServiceAlive
+		err         error
+	}{
+		{
+			description: "empty",
+		}, {
+			description: "simple",
+			want: ServiceAlive{
+				Type: ServiceAliveMessageType,
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			msg := tc.want
+			m := msg.ToEnvironForm()
+			assert.NotNil(t, m)
+
+			got, err := ServiceAliveFromEnviron(mapToEnviron(m))
+
+			if tc.err != nil {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			assert.Equal(t, &msg, got)
+		})
+	}
+}
+
+func TestEnviron_Unknown(t *testing.T) {
+	tests := []struct {
+		description string
+		want        Unknown
+		err         error
+	}{
+		{
+			description: "empty",
+		}, {
+			description: "simple",
+			want: Unknown{
+				Type: UnknownMessageType,
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			msg := tc.want
+			m := msg.ToEnvironForm()
+			assert.NotNil(t, m)
+
+			got, err := UnknownFromEnviron(mapToEnviron(m))
+
+			if tc.err != nil {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			assert.Equal(t, &msg, got)
+		})
+	}
+}

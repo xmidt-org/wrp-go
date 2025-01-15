@@ -308,7 +308,7 @@ func SetMessageFromHeaders(h http.Header, m *wrp.Message) (err error) {
 		// nolint:staticcheck
 		m.IncludeSpans = getBoolHeader(h, includeSpansHeader)
 	}
-	m.Spans = getSpans(h)
+	m.Spans = getSpans(h) // nolint:staticcheck
 	m.ContentType = h.Get("Content-Type")
 	m.Accept = h.Get(AcceptHeader)
 	if m.Accept == "" {
@@ -368,6 +368,7 @@ func AddMessageHeaders(h http.Header, m *wrp.Message) {
 		h.Set(IncludeSpansHeader, strconv.FormatBool(*m.IncludeSpans))
 	}
 
+	// nolint:staticcheck
 	for _, s := range m.Spans {
 		h.Add(SpanHeader, strings.Join(s, ","))
 	}

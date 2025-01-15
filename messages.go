@@ -82,48 +82,50 @@ type Message struct {
 	// Type is the message type for the message.
 	//
 	// example: SimpleRequestResponseMessageType
-	Type MessageType `json:"msg_type"`
+	Type MessageType `json:"msg_type" env:"WRP_MSG_TYPE"`
 
 	// Source is the device_id name of the device originating the request or response.
 	//
 	// example: dns:talaria.xmidt.example.com
-	Source string `json:"source,omitempty"`
+	Source string `json:"source,omitempty" env:"WRP_SOURCE,omitempty"`
 
 	// Destination is the device_id name of the target device of the request or response.
 	//
 	// example: event:device-status/mac:ffffffffdae4/online
-	Destination string `json:"dest,omitempty"`
+	Destination string `json:"dest,omitempty" env:"WRP_DEST,omitempty"`
 
 	// TransactionUUID The transaction key for the message
 	//
 	// example: 546514d4-9cb6-41c9-88ca-ccd4c130c525
-	TransactionUUID string `json:"transaction_uuid,omitempty"`
+	TransactionUUID string `json:"transaction_uuid,omitempty" env:"WRP_TRANSACTION_UUID,omitempty"`
 
 	// ContentType The media type of the payload.
 	//
 	// example: json
-	ContentType string `json:"content_type,omitempty"`
+	ContentType string `json:"content_type,omitempty" env:"WRP_CONTENT_TYPE,omitempty"`
 
 	// Accept is the media type accepted in the response.
-	Accept string `json:"accept,omitempty"`
+	Accept string `json:"accept,omitempty" env:"WRP_ACCEPT,omitempty"`
 
 	// Status is the response status from the originating service.
-	Status *int64 `json:"status,omitempty"`
+	Status *int64 `json:"status,omitempty" env:"WRP_STATUS,omitempty"`
 
 	// RequestDeliveryResponse is the request delivery response is the delivery result
 	// of the previous (implied request) message with a matching transaction_uuid
-	RequestDeliveryResponse *int64 `json:"rdr,omitempty"`
+	RequestDeliveryResponse *int64 `json:"rdr,omitempty" env:"WRP_RDR,omitempty"`
 
 	// Headers is the headers associated with the payload.
-	Headers []string `json:"headers,omitempty"`
+	Headers []string `json:"headers,omitempty" env:"WRP_HEADERS,omitempty,multiline"`
 
 	// Metadata is the map of name/value pairs used by consumers of WRP messages for filtering & other purposes.
 	//
 	// example: {"/boot-time":"1542834188","/last-reconnect-reason":"spanish inquisition"}
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty" env:"WRP_METADATA,omitempty"`
 
 	// Spans is an array of arrays of timing values as a list in the format: "parent" (string), "name" (string),
 	// "start time" (int), "duration" (int), "status" (int)
+	//
+	// Deprecated: A future version of wrp will remove this field.
 	Spans [][]string `json:"spans,omitempty"`
 
 	// IncludeSpans indicates whether timing values should be included in the response.
@@ -132,7 +134,7 @@ type Message struct {
 	IncludeSpans *bool `json:"include_spans,omitempty"`
 
 	// Path is the path to which to apply the payload.
-	Path string `json:"path,omitempty"`
+	Path string `json:"path,omitempty" env:"WRP_PATH,omitempty"`
 
 	// Payload is the payload for this message.  It's format is expected to match ContentType.
 	//
@@ -141,26 +143,26 @@ type Message struct {
 	// For msgpack, this field may be raw binary or a UTF-8 string.
 	//
 	// example: eyJpZCI6IjUiLCJ0cyI6IjIwMTktMDItMTJUMTE6MTA6MDIuNjE0MTkxNzM1WiIsImJ5dGVzLXNlbnQiOjAsIm1lc3NhZ2VzLXNlbnQiOjEsImJ5dGVzLXJlY2VpdmVkIjowLCJtZXNzYWdlcy1yZWNlaXZlZCI6MH0=
-	Payload []byte `json:"payload,omitempty"`
+	Payload []byte `json:"payload,omitempty" env:"WRP_PAYLOAD,omitempty"`
 
 	// ServiceName is the originating point of the request or response.
-	ServiceName string `json:"service_name,omitempty"`
+	ServiceName string `json:"service_name,omitempty" env:"WRP_SERVICE_NAME,omitempty"`
 
 	// URL is the url to use when connecting to the nanomsg pipeline.
-	URL string `json:"url,omitempty"`
+	URL string `json:"url,omitempty" env:"WRP_URL,omitempty"`
 
 	// PartnerIDs is the list of partner ids the message is meant to target.
 	//
 	// example: ["hello","world"]
-	PartnerIDs []string `json:"partner_ids,omitempty"`
+	PartnerIDs []string `json:"partner_ids,omitempty" env:"WRP_PARTNER_IDS,omitempty"`
 
 	// SessionID is the ID for the current session.
-	SessionID string `json:"session_id,omitempty"`
+	SessionID string `json:"session_id,omitempty" env:"WRP_SESSION_ID,omitempty"`
 
 	// QualityOfService is the qos value associated with this message.  Values between 0 and 99, inclusive,
 	// are defined by the wrp spec.  Negative values are assumed to be zero, and values larger than 99
 	// are assumed to be 99.
-	QualityOfService QOSValue `json:"qos"`
+	QualityOfService QOSValue `json:"qos" env:"WRP_QOS"`
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
@@ -241,6 +243,24 @@ func (msg *Message) TrimmedPartnerIDs() []string {
 	return trimmed
 }
 
+// ToEnvironForm converts the message to a map of strings suitable for
+// use with os.Setenv().
+func (msg *Message) ToEnvironForm() map[string]string {
+	return toEnvMap(msg)
+}
+
+// MessageFromEnviron creates a new Message from an array of strings, such as
+// that returned by os.Environ().
+func MessageFromEnviron(env []string) (*Message, error) {
+	var msg Message
+	err := fromEnvMap(env, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
 // SimpleRequestResponse represents a WRP message of type SimpleRequestResponseMessageType.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#simple-request-response-definition
@@ -249,20 +269,21 @@ func (msg *Message) TrimmedPartnerIDs() []string {
 type SimpleRequestResponse struct {
 	// Type is exposed principally for encoding.  This field *must* be set to SimpleRequestResponseMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type                    MessageType       `json:"msg_type"`
-	Source                  string            `json:"source"`
-	Destination             string            `json:"dest"`
-	ContentType             string            `json:"content_type,omitempty"`
-	Accept                  string            `json:"accept,omitempty"`
-	TransactionUUID         string            `json:"transaction_uuid,omitempty"`
-	Status                  *int64            `json:"status,omitempty"`
-	RequestDeliveryResponse *int64            `json:"rdr,omitempty"`
-	Headers                 []string          `json:"headers,omitempty"`
-	Metadata                map[string]string `json:"metadata,omitempty"`
+	Type                    MessageType       `json:"msg_type"                   env:"WRP_MSG_TYPE"`
+	Source                  string            `json:"source"                     env:"WRP_SOURCE"`
+	Destination             string            `json:"dest"                       env:"WRP_DEST"`
+	ContentType             string            `json:"content_type,omitempty"     env:"WRP_CONTENT_TYPE,omitempty"`
+	Accept                  string            `json:"accept,omitempty"           env:"WRP_ACCEPT,omitempty"`
+	TransactionUUID         string            `json:"transaction_uuid,omitempty" env:"WRP_TRANSACTION_UUID"`
+	Status                  *int64            `json:"status,omitempty"           env:"WRP_STATUS,omitempty"`
+	RequestDeliveryResponse *int64            `json:"rdr,omitempty"              env:"WRP_RDR,omitempty"`
+	Headers                 []string          `json:"headers,omitempty"          env:"WRP_HEADERS,omitempty,multiline"`
+	Metadata                map[string]string `json:"metadata,omitempty"         env:"WRP_METADATA,omitempty"`
 	Spans                   [][]string        `json:"spans,omitempty"`
 	IncludeSpans            *bool             `json:"include_spans,omitempty"`
-	Payload                 []byte            `json:"payload,omitempty"`
-	PartnerIDs              []string          `json:"partner_ids,omitempty"`
+	Payload                 []byte            `json:"payload,omitempty"          env:"WRP_PAYLOAD,omitempty"`
+	PartnerIDs              []string          `json:"partner_ids,omitempty"      env:"WRP_PARTNER_IDS,omitempty"`
+	SessionID               string            `json:"session_id,omitempty"       env:"WRP_SESSION,omitempty"`
 }
 
 func (msg *SimpleRequestResponse) FindEventStringSubMatch() string {
@@ -322,6 +343,24 @@ func (msg *SimpleRequestResponse) Response(newSource string, requestDeliveryResp
 	return &response
 }
 
+// ToEnvironForm converts the message to a map of strings suitable for
+// use with os.Setenv().
+func (msg *SimpleRequestResponse) ToEnvironForm() map[string]string {
+	return toEnvMap(msg)
+}
+
+// SimpleRequestResponseFromEnviron creates a new Message from an array of
+// strings, such as that returned by os.Environ().
+func SimpleRequestResponseFromEnviron(env []string) (*SimpleRequestResponse, error) {
+	var msg SimpleRequestResponse
+	err := fromEnvMap(env, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
 // SimpleEvent represents a WRP message of type SimpleEventMessageType.
 //
 // This type implements Routable, and as such has a Response method.  However, in actual practice
@@ -334,15 +373,15 @@ func (msg *SimpleRequestResponse) Response(newSource string, requestDeliveryResp
 type SimpleEvent struct {
 	// Type is exposed principally for encoding.  This field *must* be set to SimpleEventMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type        MessageType       `json:"msg_type"`
-	Source      string            `json:"source"`
-	Destination string            `json:"dest"`
-	ContentType string            `json:"content_type,omitempty"`
-	Headers     []string          `json:"headers,omitempty"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
-	Payload     []byte            `json:"payload,omitempty"`
-	PartnerIDs  []string          `json:"partner_ids,omitempty"`
-	SessionID   string            `json:"session_id,omitempty"`
+	Type        MessageType       `json:"msg_type"               env:"WRP_MSG_TYPE"`
+	Source      string            `json:"source"                 env:"WRP_SOURCE"`
+	Destination string            `json:"dest"                   env:"WRP_DEST"`
+	ContentType string            `json:"content_type,omitempty" env:"WRP_CONTENT_TYPE,omitempty"`
+	Headers     []string          `json:"headers,omitempty"      env:"WRP_HEADERS,omitempty,multiline"`
+	Metadata    map[string]string `json:"metadata,omitempty"     env:"WRP_METADATA,omitempty"`
+	Payload     []byte            `json:"payload,omitempty"      env:"WRP_PAYLOAD,omitempty"`
+	PartnerIDs  []string          `json:"partner_ids,omitempty"  env:"WRP_PARTNER_IDS"`
+	SessionID   string            `json:"session_id,omitempty"   env:"WRP_SESSION,omitempty"`
 }
 
 func (msg *SimpleEvent) BeforeEncode() error {
@@ -380,6 +419,24 @@ func (msg *SimpleEvent) Response(newSource string, requestDeliveryResponse int64
 	return &response
 }
 
+// ToEnvironForm converts the message to a map of strings suitable for
+// use with os.Setenv().
+func (msg *SimpleEvent) ToEnvironForm() map[string]string {
+	return toEnvMap(msg)
+}
+
+// SimpleRequestResponseFromEnviron creates a new Message from an array of
+// strings, such as that returned by os.Environ().
+func SimpleEventFromEnviron(env []string) (*SimpleEvent, error) {
+	var msg SimpleEvent
+	err := fromEnvMap(env, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
 // CRUD represents a WRP message of one of the CRUD message types.  This type does not implement BeforeEncode,
 // and so does not automatically set the Type field.  Client code must set the Type code appropriately.
 //
@@ -387,20 +444,21 @@ func (msg *SimpleEvent) Response(newSource string, requestDeliveryResponse int64
 //
 // Deprecated: A future version of wrp will remove this type.
 type CRUD struct {
-	Type                    MessageType       `json:"msg_type"`
-	Source                  string            `json:"source"`
-	Destination             string            `json:"dest"`
-	TransactionUUID         string            `json:"transaction_uuid,omitempty"`
-	ContentType             string            `json:"content_type,omitempty"`
-	Headers                 []string          `json:"headers,omitempty"`
-	Metadata                map[string]string `json:"metadata,omitempty"`
-	Spans                   [][]string        `json:"spans,omitempty"`
-	IncludeSpans            *bool             `json:"include_spans,omitempty"`
-	Status                  *int64            `json:"status,omitempty"`
-	RequestDeliveryResponse *int64            `json:"rdr,omitempty"`
-	Path                    string            `json:"path"`
-	Payload                 []byte            `json:"payload,omitempty"`
-	PartnerIDs              []string          `json:"partner_ids,omitempty"`
+	Type                    MessageType       `json:"msg_type"                   env:"WRP_MSG_TYPE"`
+	Source                  string            `json:"source"                     env:"WRP_SOURCE"`
+	Destination             string            `json:"dest"                       env:"WRP_DEST"`
+	TransactionUUID         string            `json:"transaction_uuid,omitempty" env:"WRP_TRANSACTION_UUID"`
+	ContentType             string            `json:"content_type,omitempty"     env:"WRP_CONTENT_TYPE,omitempty"`
+	Headers                 []string          `json:"headers,omitempty"          env:"WRP_HEADERS,omitempty,multiline"`
+	Metadata                map[string]string `json:"metadata,omitempty"         env:"WRP_METADATA,omitempty"`
+	Spans                   [][]string        `json:"spans,omitempty"            env:"WRP_SPANS,omitempty"`
+	IncludeSpans            *bool             `json:"include_spans,omitempty"    env:"WRP_INCLUDE_SPANS,omitempty"`
+	Status                  *int64            `json:"status,omitempty"           env:"WRP_STATUS,omitempty"`
+	RequestDeliveryResponse *int64            `json:"rdr,omitempty"              env:"WRP_RDR,omitempty"`
+	Path                    string            `json:"path"                       env:"WRP_PATH,omitempty"`
+	Payload                 []byte            `json:"payload,omitempty"          env:"WRP_PAYLOAD,omitempty"`
+	PartnerIDs              []string          `json:"partner_ids,omitempty"      env:"WRP_PARTNER_IDS,omitempty"`
+	SessionID               string            `json:"session_id,omitempty"       env:"WRP_SESSION,omitempty"`
 }
 
 // SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
@@ -450,6 +508,24 @@ func (msg *CRUD) Response(newSource string, requestDeliveryResponse int64) Routa
 	return &response
 }
 
+// ToEnvironForm converts the message to a map of strings suitable for
+// use with os.Setenv().
+func (msg *CRUD) ToEnvironForm() map[string]string {
+	return toEnvMap(msg)
+}
+
+// CRUDFromEnviron creates a new Message from an array of strings, such as
+// that returned by os.Environ().
+func CRUDFromEnviron(env []string) (*CRUD, error) {
+	var msg CRUD
+	err := fromEnvMap(env, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
 // ServiceRegistration represents a WRP message of type ServiceRegistrationMessageType.
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#on-device-service-registration-message-definition
@@ -458,14 +534,32 @@ func (msg *CRUD) Response(newSource string, requestDeliveryResponse int64) Routa
 type ServiceRegistration struct {
 	// Type is exposed principally for encoding.  This field *must* be set to ServiceRegistrationMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type        MessageType `json:"msg_type"`
-	ServiceName string      `json:"service_name"`
-	URL         string      `json:"url"`
+	Type        MessageType `json:"msg_type"     env:"WRP_MSG_TYPE"`
+	ServiceName string      `json:"service_name" env:"WRP_SERVICE_NAME"`
+	URL         string      `json:"url"          env:"WRP_URL"`
 }
 
 func (msg *ServiceRegistration) BeforeEncode() error {
 	msg.Type = ServiceRegistrationMessageType
 	return nil
+}
+
+// ToEnvironForm converts the message to a map of strings suitable for
+// use with os.Setenv().
+func (msg *ServiceRegistration) ToEnvironForm() map[string]string {
+	return toEnvMap(msg)
+}
+
+// ServiceRegistrationFromEnviron creates a new Message from an array of strings,
+// such as that returned by os.Environ().
+func ServiceRegistrationFromEnviron(env []string) (*ServiceRegistration, error) {
+	var msg ServiceRegistration
+	err := fromEnvMap(env, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
 }
 
 // ServiceAlive represents a WRP message of type ServiceAliveMessageType.
@@ -476,12 +570,30 @@ func (msg *ServiceRegistration) BeforeEncode() error {
 type ServiceAlive struct {
 	// Type is exposed principally for encoding.  This field *must* be set to ServiceAliveMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type MessageType `json:"msg_type"`
+	Type MessageType `json:"msg_type" env:"WRP_MSG_TYPE"`
 }
 
 func (msg *ServiceAlive) BeforeEncode() error {
 	msg.Type = ServiceAliveMessageType
 	return nil
+}
+
+// ToEnvironForm converts the message to a map of strings suitable for
+// use with os.Setenv().
+func (msg *ServiceAlive) ToEnvironForm() map[string]string {
+	return toEnvMap(msg)
+}
+
+// ServiceAliveFromEnviron creates a new Message from an array of strings,
+// such as that returned by os.Environ().
+func ServiceAliveFromEnviron(env []string) (*ServiceAlive, error) {
+	var msg ServiceAlive
+	err := fromEnvMap(env, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
 }
 
 // Unknown represents a WRP message of type UnknownMessageType.
@@ -492,12 +604,30 @@ func (msg *ServiceAlive) BeforeEncode() error {
 type Unknown struct {
 	// Type is exposed principally for encoding.  This field *must* be set to UnknownMessageType,
 	// and is automatically set by the BeforeEncode method.
-	Type MessageType `json:"msg_type"`
+	Type MessageType `json:"msg_type" env:"WRP_MSG_TYPE"`
 }
 
 func (msg *Unknown) BeforeEncode() error {
 	msg.Type = UnknownMessageType
 	return nil
+}
+
+// ToEnvironForm converts the message to a map of strings suitable for
+// use with os.Setenv().
+func (msg *Unknown) ToEnvironForm() map[string]string {
+	return toEnvMap(msg)
+}
+
+// UnknownFromEnviron creates a new Message from an array of strings,
+// such as that returned by os.Environ().
+func UnknownFromEnviron(env []string) (*Unknown, error) {
+	var msg Unknown
+	err := fromEnvMap(env, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
 }
 
 func findEventStringSubMatch(s string) string {

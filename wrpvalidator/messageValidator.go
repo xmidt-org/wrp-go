@@ -143,7 +143,7 @@ func SimpleEventType(m wrp.Message) error {
 func Spans(m wrp.Message) error {
 	var err error
 	// Spans consist of individual Span(s), arrays of timing values.
-	for _, s := range m.Spans {
+	for _, s := range m.Spans { // nolint:staticcheck
 		if len(s) != len(spanFormat) {
 			err = multierr.Append(err, ErrorInvalidSpanLength)
 			continue
