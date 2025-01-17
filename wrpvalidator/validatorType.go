@@ -23,6 +23,10 @@ const (
 	SimpleResponseRequestTypeType
 	SimpleEventTypeType
 	SpansType
+	// Add-ons
+	NoneEmptySourceType
+	NoneEmptyDestinationType
+	// End of list.
 	lastType
 )
 
@@ -40,6 +44,9 @@ var (
 		"simple_res_req": SimpleResponseRequestTypeType,
 		"simple_event":   SimpleEventTypeType,
 		"spans":          SpansType,
+		// Add-ons
+		"none_empty_source":      NoneEmptySourceType,
+		"none_empty_destination": NoneEmptyDestinationType,
 	}
 	validatorTypeMarshal = map[validatorType]string{
 		UnknownType:                   "unknown",
@@ -52,6 +59,9 @@ var (
 		SimpleResponseRequestTypeType: "simple_res_req",
 		SimpleEventTypeType:           "simple_event",
 		SpansType:                     "spans",
+		// Add-ons
+		NoneEmptySourceType:      "none_empty_source",
+		NoneEmptyDestinationType: "none_empty_destination",
 	}
 )
 
