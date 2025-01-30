@@ -15,53 +15,53 @@ import (
 
 const (
 	// ----- content types ----
-	codecSelferCcUTF82112 = 1
-	codecSelferCcRAW2112  = 255
+	codecSelferCcUTF88390 = 1
+	codecSelferCcRAW8390  = 255
 	// ----- value types used ----
-	codecSelferValueTypeArray2112     = 10
-	codecSelferValueTypeMap2112       = 9
-	codecSelferValueTypeString2112    = 6
-	codecSelferValueTypeInt2112       = 2
-	codecSelferValueTypeUint2112      = 3
-	codecSelferValueTypeFloat2112     = 4
-	codecSelferValueTypeNil2112       = 1
-	codecSelferBitsize2112            = uint8(32 << (^uint(0) >> 63))
-	codecSelferDecContainerLenNil2112 = -2147483648
+	codecSelferValueTypeArray8390     = 10
+	codecSelferValueTypeMap8390       = 9
+	codecSelferValueTypeString8390    = 6
+	codecSelferValueTypeInt8390       = 2
+	codecSelferValueTypeUint8390      = 3
+	codecSelferValueTypeFloat8390     = 4
+	codecSelferValueTypeNil8390       = 1
+	codecSelferBitsize8390            = uint8(32 << (^uint(0) >> 63))
+	codecSelferDecContainerLenNil8390 = -2147483648
 )
 
 var (
-	errCodecSelferOnlyMapOrArrayEncodeToStruct2112                = errors.New(`only encoded map or array can be decoded into a struct`)
+	errCodecSelferOnlyMapOrArrayEncodeToStruct8390                = errors.New(`only encoded map or array can be decoded into a struct`)
 	_                                              sort.Interface = nil
 )
 
-type codecSelfer2112 struct{}
+type codecSelfer8390 struct{}
 
-func codecSelfer2112False() bool { return false }
-func codecSelfer2112True() bool  { return true }
+func codecSelfer8390False() bool { return false }
+func codecSelfer8390True() bool  { return true }
 
-type codecSelfer2112stringSlice []string
+type codecSelfer8390stringSlice []string
 
-func (p codecSelfer2112stringSlice) Len() int           { return len(p) }
-func (p codecSelfer2112stringSlice) Swap(i, j int)      { p[uint(i)], p[uint(j)] = p[uint(j)], p[uint(i)] }
-func (p codecSelfer2112stringSlice) Less(i, j int) bool { return p[uint(i)] < p[uint(j)] }
+func (p codecSelfer8390stringSlice) Len() int           { return len(p) }
+func (p codecSelfer8390stringSlice) Swap(i, j int)      { p[uint(i)], p[uint(j)] = p[uint(j)], p[uint(i)] }
+func (p codecSelfer8390stringSlice) Less(i, j int) bool { return p[uint(i)] < p[uint(j)] }
 
-type codecSelfer2112uint64Slice []uint64
+type codecSelfer8390uint64Slice []uint64
 
-func (p codecSelfer2112uint64Slice) Len() int           { return len(p) }
-func (p codecSelfer2112uint64Slice) Swap(i, j int)      { p[uint(i)], p[uint(j)] = p[uint(j)], p[uint(i)] }
-func (p codecSelfer2112uint64Slice) Less(i, j int) bool { return p[uint(i)] < p[uint(j)] }
+func (p codecSelfer8390uint64Slice) Len() int           { return len(p) }
+func (p codecSelfer8390uint64Slice) Swap(i, j int)      { p[uint(i)], p[uint(j)] = p[uint(j)], p[uint(i)] }
+func (p codecSelfer8390uint64Slice) Less(i, j int) bool { return p[uint(i)] < p[uint(j)] }
 
-type codecSelfer2112int64Slice []int64
+type codecSelfer8390int64Slice []int64
 
-func (p codecSelfer2112int64Slice) Len() int           { return len(p) }
-func (p codecSelfer2112int64Slice) Swap(i, j int)      { p[uint(i)], p[uint(j)] = p[uint(j)], p[uint(i)] }
-func (p codecSelfer2112int64Slice) Less(i, j int) bool { return p[uint(i)] < p[uint(j)] }
+func (p codecSelfer8390int64Slice) Len() int           { return len(p) }
+func (p codecSelfer8390int64Slice) Swap(i, j int)      { p[uint(i)], p[uint(j)] = p[uint(j)], p[uint(i)] }
+func (p codecSelfer8390int64Slice) Less(i, j int) bool { return p[uint(i)] < p[uint(j)] }
 
-type codecSelfer2112float64Slice []float64
+type codecSelfer8390float64Slice []float64
 
-func (p codecSelfer2112float64Slice) Len() int           { return len(p) }
-func (p codecSelfer2112float64Slice) Swap(i, j int)      { p[uint(i)], p[uint(j)] = p[uint(j)], p[uint(i)] }
-func (p codecSelfer2112float64Slice) Less(i, j int) bool { return p[uint(i)] < p[uint(j)] }
+func (p codecSelfer8390float64Slice) Len() int           { return len(p) }
+func (p codecSelfer8390float64Slice) Swap(i, j int)      { p[uint(i)], p[uint(j)] = p[uint(j)], p[uint(i)] }
+func (p codecSelfer8390float64Slice) Less(i, j int) bool { return p[uint(i)] < p[uint(j)] }
 
 func init() {
 	if codec1978.GenVersion != 28 {
@@ -73,7 +73,7 @@ func init() {
 
 func (Message) codecSelferViaCodecgen() {}
 func (x *Message) CodecEncodeSelf(e *codec1978.Encoder) {
-	var h codecSelfer2112
+	var h codecSelfer8390
 	z, r := codec1978.GenHelper().Encoder(e)
 	_, _, _ = h, z, r
 	if z.EncBasicHandle().CheckCircularRef {
@@ -686,32 +686,32 @@ func (x *Message) CodecEncodeSelf(e *codec1978.Encoder) {
 }
 
 func (x *Message) CodecDecodeSelf(d *codec1978.Decoder) {
-	var h codecSelfer2112
+	var h codecSelfer8390
 	z, r := codec1978.GenHelper().Decoder(d)
 	_, _, _ = h, z, r
 	yyct2 := r.ContainerType()
-	if yyct2 == codecSelferValueTypeNil2112 {
+	if yyct2 == codecSelferValueTypeNil8390 {
 		*(x) = Message{}
-	} else if yyct2 == codecSelferValueTypeMap2112 {
+	} else if yyct2 == codecSelferValueTypeMap8390 {
 		yyl2 := z.DecReadMapStart()
 		if yyl2 == 0 {
 		} else {
 			x.codecDecodeSelfFromMap(yyl2, d)
 		}
 		z.DecReadMapEnd()
-	} else if yyct2 == codecSelferValueTypeArray2112 {
+	} else if yyct2 == codecSelferValueTypeArray8390 {
 		yyl2 := z.DecReadArrayStart()
 		if yyl2 != 0 {
 			x.codecDecodeSelfFromArray(yyl2, d)
 		}
 		z.DecReadArrayEnd()
 	} else {
-		panic(errCodecSelferOnlyMapOrArrayEncodeToStruct2112)
+		panic(errCodecSelferOnlyMapOrArrayEncodeToStruct8390)
 	}
 }
 
 func (x *Message) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
-	var h codecSelfer2112
+	var h codecSelfer8390
 	z, r := codec1978.GenHelper().Decoder(d)
 	_, _, _ = h, z, r
 	var yyhl3 bool = l >= 0
@@ -791,7 +791,7 @@ func (x *Message) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 			if yyxt32 := z.Extension(x.QualityOfService); yyxt32 != nil {
 				z.DecExtension(&x.QualityOfService, yyxt32)
 			} else {
-				x.QualityOfService = (QOSValue)(z.C.IntV(r.DecodeInt64(), codecSelferBitsize2112))
+				x.QualityOfService = (QOSValue)(z.C.IntV(r.DecodeInt64(), codecSelferBitsize8390))
 			}
 		default:
 			z.DecStructFieldNotFound(-1, string(yys3))
@@ -800,7 +800,7 @@ func (x *Message) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 }
 
 func (x *Message) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
-	var h codecSelfer2112
+	var h codecSelfer8390
 	z, r := codec1978.GenHelper().Decoder(d)
 	_, _, _ = h, z, r
 	var yyj33 int
@@ -990,7 +990,7 @@ func (x *Message) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	if yyxt62 := z.Extension(x.QualityOfService); yyxt62 != nil {
 		z.DecExtension(&x.QualityOfService, yyxt62)
 	} else {
-		x.QualityOfService = (QOSValue)(z.C.IntV(r.DecodeInt64(), codecSelferBitsize2112))
+		x.QualityOfService = (QOSValue)(z.C.IntV(r.DecodeInt64(), codecSelferBitsize8390))
 	}
 	yyj33++
 	for ; z.DecContainerNext(yyj33, l, yyhl33); yyj33++ {
@@ -1003,8 +1003,8 @@ func (x *Message) IsCodecEmpty() bool {
 	return !(x.Type != 0 || x.Source != "" || x.Destination != "" || x.TransactionUUID != "" || x.ContentType != "" || x.Accept != "" || len(x.Headers) != 0 || len(x.Metadata) != 0 || len(x.Spans) != 0 || x.Path != "" || len(x.Payload) != 0 || x.ServiceName != "" || x.URL != "" || len(x.PartnerIDs) != 0 || x.SessionID != "" || x.QualityOfService != 0 || false)
 }
 
-func (x codecSelfer2112) encSliceSlicestring(v [][]string, e *codec1978.Encoder) {
-	var h codecSelfer2112
+func (x codecSelfer8390) encSliceSlicestring(v [][]string, e *codec1978.Encoder) {
+	var h codecSelfer8390
 	z, r := codec1978.GenHelper().Encoder(e)
 	_, _, _ = h, z, r
 	if v == nil {
@@ -1023,8 +1023,8 @@ func (x codecSelfer2112) encSliceSlicestring(v [][]string, e *codec1978.Encoder)
 	z.EncWriteArrayEnd()
 }
 
-func (x codecSelfer2112) decSliceSlicestring(v *[][]string, d *codec1978.Decoder) {
-	var h codecSelfer2112
+func (x codecSelfer8390) decSliceSlicestring(v *[][]string, d *codec1978.Decoder) {
+	var h codecSelfer8390
 	z, r := codec1978.GenHelper().Decoder(d)
 	_, _, _ = h, z, r
 

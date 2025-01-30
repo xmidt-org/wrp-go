@@ -163,8 +163,6 @@ type Message struct {
 	// are defined by the wrp spec.  Negative values are assumed to be zero, and values larger than 99
 	// are assumed to be 99.
 	QualityOfService QOSValue `json:"qos" env:"WRP_QOS"`
-
-	Original []byte `json:"-" env:"-"`
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
