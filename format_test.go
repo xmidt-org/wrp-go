@@ -95,7 +95,7 @@ func TestSampleMsgpack(t *testing.T) {
 			0x76, 0x65, 0x6c, 0x22, 0x20, 0x5d, 0x20, 0x7d,
 		}
 
-		sampleMessage = SimpleRequestResponse{
+		sampleMessage = Message{
 			Type:            SimpleRequestResponseMessageType,
 			Source:          "dns:webpa.comcast.com/v2-device-config",
 			Destination:     "serial:1234/config",
@@ -112,7 +112,7 @@ func TestSampleMsgpack(t *testing.T) {
 			buffer        bytes.Buffer
 			encoder       = NewEncoder(&buffer, Msgpack)
 			decoder       = NewDecoder(&buffer, Msgpack)
-			actualMessage SimpleRequestResponse
+			actualMessage Message
 		)
 
 		assert.NoError(encoder.Encode(&sampleMessage))
@@ -124,7 +124,7 @@ func TestSampleMsgpack(t *testing.T) {
 		var (
 			assert        = assert.New(t)
 			decoder       = NewDecoder(bytes.NewBuffer(sampleEncoded), Msgpack)
-			actualMessage SimpleRequestResponse
+			actualMessage Message
 		)
 
 		assert.NoError(decoder.Decode(&actualMessage))
@@ -135,7 +135,7 @@ func TestSampleMsgpack(t *testing.T) {
 		var (
 			assert        = assert.New(t)
 			decoder       = NewDecoderBytes(sampleEncoded, Msgpack)
-			actualMessage SimpleRequestResponse
+			actualMessage Message
 		)
 
 		assert.NoError(decoder.Decode(&actualMessage))
@@ -274,14 +274,14 @@ func TestTranscodeMessage(t *testing.T) {
 		expectedStatus                  int64 = 123
 		expectedRequestDeliveryResponse int64 = -1234
 
-		messages = []interface{}{
-			SimpleRequestResponse{},
-			SimpleRequestResponse{
+		messages = []Message{
+			Message{},
+			Message{
 				Source:      "foobar.com",
 				Destination: "mac:FFEEDDCCBBAA",
 				Payload:     []byte("hi!"),
 			},
-			SimpleRequestResponse{
+			Message{
 				Source:                  "foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
 				ContentType:             MimeTypeWrp,
