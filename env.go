@@ -13,12 +13,7 @@ import (
 )
 
 func toEnvMap(msg any) map[string]string {
-	v := reflect.ValueOf(msg)
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return nil
-	}
-
-	v = v.Elem()
+	v := reflect.ValueOf(msg).Elem()
 	t := v.Type()
 	envVars := make(map[string]string)
 
@@ -82,12 +77,7 @@ func toEnvMap(msg any) map[string]string {
 }
 
 func fromEnvMap(envVars []string, msg any) error {
-	v := reflect.ValueOf(msg)
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("msg must be a pointer to a struct")
-	}
-
-	v = v.Elem()
+	v := reflect.ValueOf(msg).Elem()
 	t := v.Type()
 	envMap := make(map[string]string)
 	for _, envVar := range envVars {

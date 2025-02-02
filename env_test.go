@@ -120,10 +120,6 @@ func TestEnvMap(t *testing.T) {
 			output: map[string]string{
 				"LABEL": "hello world,goodbye world",
 			},
-		}, {
-			name:   "Not a struct",
-			input:  "not a struct",
-			onlyTo: true,
 		},
 		{
 			name: "wrp.Message",

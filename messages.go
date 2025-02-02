@@ -4,6 +4,7 @@
 package wrp
 
 import (
+	"net/http"
 	"regexp"
 )
 
@@ -15,54 +16,6 @@ var (
 	// classifier
 	eventPattern = regexp.MustCompile(`^event:(?P<event>[^/]+)`)
 )
-
-// Typed is implemented by any WRP type which is associated with a MessageType.  All
-// message types implement this interface.
-type Typed interface {
-	// MessageType is the type of message represented by this Typed.
-	MessageType() MessageType
-}
-
-// Routable describes an object which can be routed.  Implementations will most
-// often also be WRP Message instances.  All Routable objects may be passed to
-// Encoders and Decoders.
-//
-// Not all WRP messages are Routable.  Only messages that can be sent through
-// routing software (e.g. talaria) implement this interface.
-type Routable interface {
-	Typed
-
-	// To is the destination of this Routable instance.  It corresponds to the Destination field
-	// in WRP messages defined in this package.
-	To() string
-
-	// From is the originator of this Routable instance.  It corresponds to the Source field
-	// in WRP messages defined in this package.
-	From() string
-
-	// IsTransactionPart tests if this message represents part of a transaction.  For this to be true,
-	// both (1) the msg_type field must be of a type that participates in transactions and (2) a transaction_uuid
-	// must exist in the message (see TransactionKey).
-	//
-	// If this method returns true, TransactionKey will always return a non-empty string.
-	IsTransactionPart() bool
-
-	// TransactionKey corresponds to the transaction_uuid field.  If present, this field is used
-	// to match up responses from devices.
-	//
-	// Not all Routables support transactions, e.g. SimpleEvent.  For those Routable messages that do
-	// not possess a transaction_uuid field, this method returns an empty string.
-	TransactionKey() string
-
-	// Response produces a new Routable instance which is a response to this one.  The new Routable's
-	// destination (From) is set to the original source (To), with the supplied newSource used as the response's source.
-	// The requestDeliveryResponse parameter indicates the success or failure of this response.  The underlying
-	// type of the returned Routable will be the same as this type, i.e. if this instance is a Message,
-	// the returned Routable will also be a Message.
-	//
-	// If applicable, the response's payload is set to nil.  All other fields are copied as is into the response.
-	Response(newSource string, requestDeliveryResponse int64) Routable
-}
 
 // Message is the union of all WRP fields, made optional (except for Type).  This type is
 // useful for transcoding streams, since deserializing from non-msgpack formats like JSON
@@ -82,59 +35,48 @@ type Message struct {
 	// Type is the message type for the message.
 	//
 	// example: SimpleRequestResponseMessageType
-	Type MessageType `json:"msg_type" env:"WRP_MSG_TYPE"`
+	Type MessageType `json:"msg_type" env:"WRP_MSG_TYPE" http:"X-Xmidt-Message-Type,X-Midt-Msg-Type"`
 
 	// Source is the device_id name of the device originating the request or response.
 	//
 	// example: dns:talaria.xmidt.example.com
-	Source string `json:"source,omitempty" env:"WRP_SOURCE,omitempty"`
+	Source string `json:"source,omitempty" env:"WRP_SOURCE,omitempty" http:"X-Xmidt-Source,X-Midt-Source,omitempty"`
 
 	// Destination is the device_id name of the target device of the request or response.
 	//
 	// example: event:device-status/mac:ffffffffdae4/online
-	Destination string `json:"dest,omitempty" env:"WRP_DEST,omitempty"`
+	Destination string `json:"dest,omitempty" env:"WRP_DEST,omitempty" http:"X-Webpa-Device-Name,X-Xmidt-Dest,X-Midt-Dest,omitempty"`
 
 	// TransactionUUID The transaction key for the message
 	//
 	// example: 546514d4-9cb6-41c9-88ca-ccd4c130c525
-	TransactionUUID string `json:"transaction_uuid,omitempty" env:"WRP_TRANSACTION_UUID,omitempty"`
+	TransactionUUID string `json:"transaction_uuid,omitempty" env:"WRP_TRANSACTION_UUID,omitempty" http:"X-Xmidt-Transaction-Uuid,X-Midt-Transaction-Uuid,omitempty"`
 
 	// ContentType The media type of the payload.
 	//
 	// example: json
-	ContentType string `json:"content_type,omitempty" env:"WRP_CONTENT_TYPE,omitempty"`
+	ContentType string `json:"content_type,omitempty" env:"WRP_CONTENT_TYPE,omitempty" http:"Content-Type,omitempty"`
 
 	// Accept is the media type accepted in the response.
-	Accept string `json:"accept,omitempty" env:"WRP_ACCEPT,omitempty"`
+	Accept string `json:"accept,omitempty" env:"WRP_ACCEPT,omitempty" http:"X-Xmidt-Accept,X-Midt-Accept,omitempty"`
 
 	// Status is the response status from the originating service.
-	Status *int64 `json:"status,omitempty" env:"WRP_STATUS,omitempty"`
+	Status *int64 `json:"status,omitempty" env:"WRP_STATUS,omitempty" http:"X-Xmidt-Status,X-Midt-Status,omitempty"`
 
 	// RequestDeliveryResponse is the request delivery response is the delivery result
 	// of the previous (implied request) message with a matching transaction_uuid
-	RequestDeliveryResponse *int64 `json:"rdr,omitempty" env:"WRP_RDR,omitempty"`
+	RequestDeliveryResponse *int64 `json:"rdr,omitempty" env:"WRP_RDR,omitempty" http:"X-Xmidt-Request-Delivery-Response,X-Midt-Request-Delivery-Response,omitempty"`
 
 	// Headers is the headers associated with the payload.
-	Headers []string `json:"headers,omitempty" env:"WRP_HEADERS,omitempty,multiline"`
+	Headers []string `json:"headers,omitempty" env:"WRP_HEADERS,omitempty,multiline" http:"X-Xmidt-Headers,X-Midt-Headers,omitempty,multiline"`
 
 	// Metadata is the map of name/value pairs used by consumers of WRP messages for filtering & other purposes.
 	//
 	// example: {"/boot-time":"1542834188","/last-reconnect-reason":"spanish inquisition"}
-	Metadata map[string]string `json:"metadata,omitempty" env:"WRP_METADATA,omitempty"`
-
-	// Spans is an array of arrays of timing values as a list in the format: "parent" (string), "name" (string),
-	// "start time" (int), "duration" (int), "status" (int)
-	//
-	// Deprecated: A future version of wrp will remove this field.
-	Spans [][]string `json:"spans,omitempty"`
-
-	// IncludeSpans indicates whether timing values should be included in the response.
-	//
-	// Deprecated: A future version of wrp will remove this field.
-	IncludeSpans *bool `json:"include_spans,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty" env:"WRP_METADATA,omitempty" http:"X-Xmidt-Metadata,X-Midt-Metadata,omitempty"`
 
 	// Path is the path to which to apply the payload.
-	Path string `json:"path,omitempty" env:"WRP_PATH,omitempty"`
+	Path string `json:"path,omitempty" env:"WRP_PATH,omitempty" http:"X-Xmidt-Path,X-Midt-Path,omitempty"`
 
 	// Payload is the payload for this message.  It's format is expected to match ContentType.
 	//
@@ -146,23 +88,23 @@ type Message struct {
 	Payload []byte `json:"payload,omitempty" env:"WRP_PAYLOAD,omitempty"`
 
 	// ServiceName is the originating point of the request or response.
-	ServiceName string `json:"service_name,omitempty" env:"WRP_SERVICE_NAME,omitempty"`
+	ServiceName string `json:"service_name,omitempty" env:"WRP_SERVICE_NAME,omitempty" http:"X-Xmidt-Service-Name,X-Midt-Service-Name,omitempty"`
 
 	// URL is the url to use when connecting to the nanomsg pipeline.
-	URL string `json:"url,omitempty" env:"WRP_URL,omitempty"`
+	URL string `json:"url,omitempty" env:"WRP_URL,omitempty" http:"X-Xmidt-Url,X-Midt-Url,omitempty"`
 
 	// PartnerIDs is the list of partner ids the message is meant to target.
 	//
 	// example: ["hello","world"]
-	PartnerIDs []string `json:"partner_ids,omitempty" env:"WRP_PARTNER_IDS,omitempty"`
+	PartnerIDs []string `json:"partner_ids,omitempty" env:"WRP_PARTNER_IDS,omitempty" http:"X-Xmidt-Partner-Id,X-Midt-Partner-Id,omitempty"`
 
 	// SessionID is the ID for the current session.
-	SessionID string `json:"session_id,omitempty" env:"WRP_SESSION_ID,omitempty"`
+	SessionID string `json:"session_id,omitempty" env:"WRP_SESSION_ID,omitempty" http:"X-Xmidt-Session-Id,X-Midt-Session-Id,omitempty"`
 
 	// QualityOfService is the qos value associated with this message.  Values between 0 and 99, inclusive,
 	// are defined by the wrp spec.  Negative values are assumed to be zero, and values larger than 99
 	// are assumed to be 99.
-	QualityOfService QOSValue `json:"qos" env:"WRP_QOS"`
+	QualityOfService QOSValue `json:"qos" env:"WRP_QOS,omitempty" http:"X-Xmidt-Qos,X-Midt-Qos,omitempty"`
 }
 
 func (msg *Message) FindEventStringSubMatch() string {
@@ -204,14 +146,27 @@ func (msg *Message) IsQOSAckPart() bool {
 	}
 }
 
-func (msg *Message) Response(newSource string, requestDeliveryResponse int64) Routable {
-	response := *msg
-	response.Destination = msg.Source
-	response.Source = newSource
-	response.RequestDeliveryResponse = &requestDeliveryResponse
-	response.Payload = nil
-
-	return &response
+// Response creates a new message that is a response to the current message.
+// The following fields are copied from the current message:
+//   - Type
+//   - Source (becomes the new Destination)
+//   - Destination (becomes the new Source)
+//   - TransactionUUID
+//   - RequestDeliveryResponse
+//   - QualityOfService
+//   - SessionID
+//   - PartnerIDs
+func (msg *Message) Response() *Message {
+	return &Message{
+		Type:                    msg.Type,
+		Destination:             msg.Source,
+		Source:                  msg.Destination,
+		TransactionUUID:         msg.TransactionUUID,
+		RequestDeliveryResponse: msg.RequestDeliveryResponse,
+		PartnerIDs:              msg.PartnerIDs,
+		SessionID:               msg.SessionID,
+		QualityOfService:        msg.QualityOfService,
+	}
 }
 
 // SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
@@ -223,12 +178,6 @@ func (msg *Message) SetStatus(value int64) *Message {
 // SetRequestDeliveryResponse simplifies setting the optional RequestDeliveryResponse field, which is a pointer type tagged with omitempty.
 func (msg *Message) SetRequestDeliveryResponse(value int64) *Message {
 	msg.RequestDeliveryResponse = &value
-	return msg
-}
-
-// SetIncludeSpans simplifies setting the optional IncludeSpans field, which is a pointer type tagged with omitempty.
-func (msg *Message) SetIncludeSpans(value bool) *Message {
-	msg.IncludeSpans = &value
 	return msg
 }
 
@@ -249,14 +198,46 @@ func (msg *Message) ToEnvironForm() map[string]string {
 	return toEnvMap(msg)
 }
 
-// MessageFromEnviron creates a new Message from an array of strings, such as
+// NewMessageFromEnviron creates a new Message from an array of strings, such as
 // that returned by os.Environ().
-func MessageFromEnviron(env []string) (*Message, error) {
+func NewMessageFromEnviron(env []string) (*Message, error) {
 	var msg Message
 	err := fromEnvMap(env, &msg)
 	if err != nil {
 		return nil, err
 	}
+
+	return &msg, nil
+}
+
+// ToHeaderForm converts the message to a map of strings suitable for use with
+// http.Header.Set().  If existing is provided, the new headers are applied to
+// the existing headers, overwriting any that are in conflict.  Only the first
+// existing set of headers is modified, if present.
+func (msg *Message) ToHeaderForm(existing ...http.Header) (headers http.Header, payload []byte) {
+	existing = append(existing, http.Header{})
+
+	if len(msg.Payload) > 0 {
+		defaultAHeader(&existing[0], "Content-Type", []string{"application/octet-stream"})
+	}
+	toHeaders(msg, existing[0])
+
+	return existing[0], msg.Payload
+}
+
+// MessageFromHeader creates a new Message from an http.Header and a payload.
+func NewMessageFromHeaders(header http.Header, payload []byte) (*Message, error) {
+	var msg Message
+
+	if len(payload) > 0 {
+		defaultAHeader(&header, "Content-Type", []string{"application/octet-stream"})
+	}
+
+	err := fromHeaders(header, &msg)
+	if err != nil {
+		return nil, err
+	}
+	msg.Payload = payload
 
 	return &msg, nil
 }
