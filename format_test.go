@@ -8,11 +8,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"reflect"
 	"testing"
 
+	// "github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	// "zappem.net/pub/debug/xxd"
 )
 
 func testPayload(t *testing.T, payload []byte) {
@@ -25,15 +26,13 @@ func testPayload(t *testing.T, payload []byte) {
 
 		decoded Message
 
-		output  bytes.Buffer
-		encoder = NewEncoder(nil, Msgpack)
-		decoder = NewDecoder(nil, Msgpack)
+		output bytes.Buffer
 	)
 
-	encoder.Reset(&output)
+	encoder := NewEncoder(&output, Msgpack)
 	require.NoError(encoder.Encode(&original))
 
-	decoder.Reset(&output)
+	decoder := NewDecoder(&output, Msgpack)
 	require.NoError(decoder.Decode(&decoded))
 
 	// don't output the payload if it's a ridiculous size
@@ -210,14 +209,6 @@ func testFormatString(t *testing.T) {
 	assert.NotEqual(JSON.String(), Msgpack.String())
 }
 
-func testFormatHandle(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.NotNil(JSON.handle())
-	assert.NotNil(Msgpack.handle())
-	assert.Panics(func() { Format(999).handle() })
-}
-
 func testFormatContentType(t *testing.T) {
 	assert := assert.New(t)
 
@@ -229,23 +220,13 @@ func testFormatContentType(t *testing.T) {
 
 func TestFormat(t *testing.T) {
 	t.Run("String", testFormatString)
-	t.Run("Handle", testFormatHandle)
 	t.Run("ContentType", testFormatContentType)
 }
 
 // testTranscodeMessage expects a nonpointer reference to a WRP message struct as the original parameter
-func testTranscodeMessage(t *testing.T, target, source Format, original interface{}) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		originalValue = reflect.ValueOf(original)
-		encodeValue   = reflect.New(originalValue.Type())
-		decodeValue   = reflect.New(originalValue.Type())
-	)
-
-	// encodeValue is now a pointer to a copy of the original
-	encodeValue.Elem().Set(originalValue)
+func testTranscodeMessage(t *testing.T, target, source Format, original Message) {
+	assert := assert.New(t)
+	require := require.New(t)
 
 	var (
 		sourceBuffer  bytes.Buffer
@@ -258,15 +239,16 @@ func testTranscodeMessage(t *testing.T, target, source Format, original interfac
 	)
 
 	// create the input first
-	require.NoError(sourceEncoder.Encode(encodeValue.Interface()))
+	require.NoError(sourceEncoder.Encode(&original))
 
 	// now we can attempt the transcode
 	message, err := TranscodeMessage(targetEncoder, sourceDecoder)
 	assert.NotNil(message)
 	assert.NoError(err)
 
-	assert.NoError(targetDecoder.Decode(decodeValue.Interface()))
-	assert.Equal(encodeValue.Elem().Interface(), decodeValue.Elem().Interface())
+	var got Message
+	assert.NoError(targetDecoder.Decode(&got))
+	assert.Equal(original, got)
 }
 
 func TestTranscodeMessage(t *testing.T) {
@@ -275,13 +257,12 @@ func TestTranscodeMessage(t *testing.T) {
 		expectedRequestDeliveryResponse int64 = -1234
 
 		messages = []Message{
-			Message{},
-			Message{
+			{},
+			{
 				Source:      "foobar.com",
 				Destination: "mac:FFEEDDCCBBAA",
 				Payload:     []byte("hi!"),
-			},
-			Message{
+			}, {
 				Source:                  "foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
 				ContentType:             MimeTypeWrp,
@@ -292,13 +273,13 @@ func TestTranscodeMessage(t *testing.T) {
 				Metadata:                map[string]string{"hi": "there"},
 				Payload:                 []byte("hi!"),
 			},
-			Message{},
-			Message{
+			{},
+			{
 				Source:      "foobar.com",
 				Destination: "mac:FFEEDDCCBBAA",
 				Payload:     []byte("hi!"),
 			},
-			Message{
+			{
 				Source:                  "foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
 				ContentType:             MimeTypeWrp,

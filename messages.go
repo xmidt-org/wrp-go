@@ -8,8 +8,12 @@ import (
 	"regexp"
 )
 
-//go:generate go install github.com/ugorji/go/codec/codecgen@latest
-//go:generate codecgen -st "json" -o messages_codec.go messages.go
+//go:generate go install github.com/tinylib/msgp@latest
+//go:generate msgp -io=false
+//msgp:replace MessageType with:int64
+//msgp:replace QOSValue with:int
+//msgp:tag json
+//msgp:newtime
 
 var (
 	// eventPattern is the precompiled regex that selects the top level event
@@ -218,7 +222,7 @@ func (msg *Message) ToHeaderForm(existing ...http.Header) (headers http.Header, 
 	existing = append(existing, http.Header{})
 
 	if len(msg.Payload) > 0 {
-		defaultAHeader(&existing[0], "Content-Type", []string{"application/octet-stream"})
+		defaultAHeader(&existing[0], "Content-Type", []string{MimeTypeOctetStream})
 	}
 	toHeaders(msg, existing[0])
 
@@ -230,7 +234,7 @@ func NewMessageFromHeaders(header http.Header, payload []byte) (*Message, error)
 	var msg Message
 
 	if len(payload) > 0 {
-		defaultAHeader(&header, "Content-Type", []string{"application/octet-stream"})
+		defaultAHeader(&header, "Content-Type", []string{MimeTypeOctetStream})
 	}
 
 	err := fromHeaders(header, &msg)

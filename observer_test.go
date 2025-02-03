@@ -185,12 +185,12 @@ func TestModifiers_ModifyWRP(t *testing.T) {
 				ModifierFunc(func(_ context.Context, _ Message) (Message, error) {
 					c++
 					return Message{
-						ContentType: "application/json",
+						ContentType: MimeTypeJson,
 					}, nil
 				}),
 				ProcessorAsModifier(ProcessorFunc(func(_ context.Context, m Message) error {
 					if m.Accept != "anything" &&
-						m.ContentType != "application/json" {
+						m.ContentType != MimeTypeJson {
 						return unknownErr
 					}
 					return ErrNotHandled
@@ -201,7 +201,7 @@ func TestModifiers_ModifyWRP(t *testing.T) {
 			c: 1,
 			want: Message{
 				Accept:      "anything",
-				ContentType: "application/json",
+				ContentType: MimeTypeJson,
 			},
 		}, {
 			desc: "canceled context",
