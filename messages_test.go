@@ -394,7 +394,7 @@ func TestHeaders_Message(t *testing.T) {
 			// The content type is set to application/octet-stream if the payload
 			// is not empty and the content type is not set.
 			if got.ContentType != "" && tc.want.ContentType == "" {
-				assert.Equal(t, "application/octet-stream", got.ContentType)
+				assert.Equal(t, MimeTypeOctetStream, got.ContentType)
 				got.ContentType = ""
 			}
 			assert.Equal(t, &msg, got)
