@@ -74,50 +74,6 @@ func testMessageSetRequestDeliveryResponse(t *testing.T) {
 	assert.Equal(int64(456), *message.RequestDeliveryResponse)
 }
 
-func testMessageSetIncludeSpans(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		message Message
-	)
-
-	assert.Nil(message.IncludeSpans)
-	assert.True(&message == message.SetIncludeSpans(true))
-	assert.NotNil(message.IncludeSpans)
-	assert.Equal(true, *message.IncludeSpans)
-	assert.True(&message == message.SetIncludeSpans(false))
-	assert.NotNil(message.IncludeSpans)
-	assert.Equal(false, *message.IncludeSpans)
-}
-
-func testMessageRoutable(t *testing.T, original Message) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-	)
-
-	assert.Equal(original.Type, original.MessageType())
-	assert.Equal(original.Destination, original.To())
-	assert.Equal(original.Source, original.From())
-	assert.Equal(original.TransactionUUID, original.TransactionKey())
-	assert.Equal(
-		original.Type.RequiresTransaction() && len(original.TransactionUUID) > 0,
-		original.IsTransactionPart(),
-	)
-
-	routable := original.Response("testMessageRoutable", 1234)
-	require.NotNil(routable)
-	response, ok := routable.(*Message)
-	require.NotNil(response)
-	require.True(ok)
-
-	assert.Equal(original.Type, response.Type)
-	assert.Equal(original.Source, response.Destination)
-	assert.Equal("testMessageRoutable", response.Source)
-	require.NotNil(response.RequestDeliveryResponse)
-	assert.Equal(int64(1234), *response.RequestDeliveryResponse)
-	assert.Nil(response.Payload)
-}
-
 func testMessageEncode(t *testing.T, f Format, original Message) {
 	var (
 		assert  = assert.New(t)
@@ -137,12 +93,10 @@ func testMessageEncode(t *testing.T, f Format, original Message) {
 func TestMessage(t *testing.T) {
 	t.Run("SetStatus", testMessageSetStatus)
 	t.Run("SetRequestDeliveryResponse", testMessageSetRequestDeliveryResponse)
-	t.Run("SetIncludeSpans", testMessageSetIncludeSpans)
 
 	var (
 		expectedStatus                  int64 = 3471
 		expectedRequestDeliveryResponse int64 = 34
-		expectedIncludeSpans            bool  = true
 
 		messages = []Message{
 			{},
@@ -160,7 +114,6 @@ func TestMessage(t *testing.T) {
 				TransactionUUID:         "123-123-123",
 				Status:                  &expectedStatus,
 				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
-				IncludeSpans:            &expectedIncludeSpans,
 			},
 			{
 				Type:            SimpleRequestResponseMessageType,
@@ -169,7 +122,6 @@ func TestMessage(t *testing.T) {
 				TransactionUUID: "DEADBEEF",
 				Headers:         []string{"Header1", "Header2"},
 				Metadata:        map[string]string{"name": "value"},
-				Spans:           [][]string{{"1", "2"}, {"3"}},
 				Payload:         []byte{1, 2, 3, 4, 0xff, 0xce},
 				PartnerIDs:      []string{"foo"},
 			},
@@ -183,12 +135,6 @@ func TestMessage(t *testing.T) {
 			},
 		}
 	)
-
-	t.Run("Routable", func(t *testing.T) {
-		for _, message := range messages {
-			testMessageRoutable(t, message)
-		}
-	})
 
 	for _, source := range allFormats {
 		t.Run(fmt.Sprintf("Encode%s", source), func(t *testing.T) {
@@ -226,6 +172,32 @@ func TestIsQOSAckPart(t *testing.T) {
 			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSCriticalValue + 1},
 			ack:         true,
 		},
+		{
+			description: "SimpleRequestResponseMessageType ack",
+			msg:         Message{Type: SimpleRequestResponseMessageType, QualityOfService: QOSCriticalValue},
+			ack:         true,
+		},
+		{
+			description: "CreateMessageType ack",
+			msg:         Message{Type: CreateMessageType, QualityOfService: QOSCriticalValue},
+			ack:         true,
+		},
+		{
+			description: "RetrieveMessageType ack",
+			msg:         Message{Type: RetrieveMessageType, QualityOfService: QOSCriticalValue},
+			ack:         true,
+		},
+		{
+			description: "UpdateMessageType ack",
+			msg:         Message{Type: UpdateMessageType, QualityOfService: QOSCriticalValue},
+			ack:         true,
+		},
+		{
+			description: "DeleteMessageType ack",
+			msg:         Message{Type: DeleteMessageType, QualityOfService: QOSCriticalValue},
+			ack:         true,
+		},
+
 		// No ack case
 		{
 			description: "SimpleEventMessageType below QOS range no ack",
@@ -236,32 +208,12 @@ func TestIsQOSAckPart(t *testing.T) {
 			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSLowValue},
 		},
 		{
-			description: "Invalid0MessageType no ack",
-			msg:         Message{Type: Invalid0MessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "SimpleRequestResponseMessageType no ack",
-			msg:         Message{Type: SimpleRequestResponseMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "CreateMessageType no ack",
-			msg:         Message{Type: CreateMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "RetrieveMessageType no ack",
-			msg:         Message{Type: RetrieveMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "UpdateMessageType no ack",
-			msg:         Message{Type: UpdateMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "DeleteMessageType no ack",
-			msg:         Message{Type: DeleteMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
 			description: "ServiceRegistrationMessageType no ack",
 			msg:         Message{Type: ServiceRegistrationMessageType, QualityOfService: QOSCriticalValue},
+		},
+		{
+			description: "Invalid0MessageType no ack",
+			msg:         Message{Type: Invalid0MessageType, QualityOfService: QOSCriticalValue},
 		},
 		{
 			description: "ServiceAliveMessageType no ack",
@@ -374,7 +326,7 @@ func TestEnviron_Message(t *testing.T) {
 			m := msg.ToEnvironForm()
 			assert.NotNil(t, m)
 
-			got, err := MessageFromEnviron(mapToEnviron(m))
+			got, err := NewMessageFromEnviron(mapToEnviron(m))
 
 			if tc.err != nil {
 				require.Error(t, err)
@@ -384,6 +336,67 @@ func TestEnviron_Message(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotNil(t, got)
+			assert.Equal(t, &msg, got)
+		})
+	}
+}
+
+func TestHeaders_Message(t *testing.T) {
+	tests := []struct {
+		description string
+		want        Message
+		err         error
+	}{
+		{
+			description: "simple",
+			want: Message{
+				Type:             SimpleEventMessageType,
+				Source:           "source",
+				Destination:      "destination",
+				TransactionUUID:  "transaction_uuid",
+				QualityOfService: 24,
+				PartnerIDs:       []string{"foo", "bar", "baz"},
+			},
+		}, {
+			description: "simple with payload",
+			want: Message{
+				Type:             SimpleEventMessageType,
+				Source:           "source",
+				Destination:      "destination",
+				TransactionUUID:  "transaction_uuid",
+				QualityOfService: 24,
+				PartnerIDs:       []string{"foo", "bar", "baz"},
+				Payload:          []byte("payload"),
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			msg := tc.want
+			headers, payload := msg.ToHeaderForm()
+			assert.NotNil(t, headers)
+			if tc.want.Payload != nil {
+				assert.NotNil(t, payload)
+				assert.Equal(t, tc.want.Payload, payload)
+			}
+
+			got, err := NewMessageFromHeaders(headers, payload)
+
+			if tc.err != nil {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, got)
+
+			// The content type is set to application/octet-stream if the payload
+			// is not empty and the content type is not set.
+			if got.ContentType != "" && tc.want.ContentType == "" {
+				assert.Equal(t, "application/octet-stream", got.ContentType)
+				got.ContentType = ""
+			}
 			assert.Equal(t, &msg, got)
 		})
 	}

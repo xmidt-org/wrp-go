@@ -175,8 +175,9 @@ type Modifiers []Modifier
 // to the message.  The first Modifier to return an error that is not ErrNotHandled
 // will stop the iteration and return the error.  The modified message prior to
 // the error is returned. If all Modifiers return ErrNotHandled, then the
-// original message is returned.  If the context is canceled, the iteration stops
-// and the modified message prior to the context being closed is returned.
+// latest version of the message is returned along with ErrNotHandled.  If the
+// context is canceled, the iteration stops and the modified message prior to
+// the context being closed is returned.
 func (m Modifiers) ModifyWRP(ctx context.Context, msg Message) (Message, error) {
 	e := ErrNotHandled
 	for _, mod := range m {
@@ -191,6 +192,7 @@ func (m Modifiers) ModifyWRP(ctx context.Context, msg Message) (Message, error) 
 		next, err := mod.ModifyWRP(ctx, msg)
 		if err != nil {
 			if errors.Is(err, ErrNotHandled) {
+				msg = next
 				continue
 			}
 			return msg, err

@@ -44,3 +44,9 @@ func (qv QOSValue) Level() QOSLevel {
 		return QOSCritical
 	}
 }
+
+// Valid determines if the QOSValue is valid.  Valid values are between 0 and 99,
+// inclusive.
+func (qv QOSValue) Valid() bool {
+	return 0 <= qv && qv <= 99
+}
