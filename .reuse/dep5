@@ -35,7 +35,7 @@ Files: format_string.go
 Copyright: SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 License: Apache-2.0
 
-Files: messages_codec.go
+Files: messages_gen.go
 Copyright: SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 License: Apache-2.0
 
