@@ -15,19 +15,18 @@ type MessageType int64
 
 const (
 	Invalid0MessageType MessageType = iota
-
-	Invalid1MessageType              // 1
-	AuthorizationMessageType         // 2
-	SimpleRequestResponseMessageType // 3
-	SimpleEventMessageType           // 4
-	CreateMessageType                // 5
-	RetrieveMessageType              // 6
-	UpdateMessageType                // 7
-	DeleteMessageType                // 8
-	ServiceRegistrationMessageType   // 9
-	ServiceAliveMessageType          // 10
-	UnknownMessageType               // 11
-	LastMessageType                  // 12
+	Invalid1MessageType
+	AuthorizationMessageType
+	SimpleRequestResponseMessageType
+	SimpleEventMessageType
+	CreateMessageType
+	RetrieveMessageType
+	UpdateMessageType
+	DeleteMessageType
+	ServiceRegistrationMessageType
+	ServiceAliveMessageType
+	UnknownMessageType
+	LastMessageType
 )
 
 // RequiresTransaction tests if messages of this type are allowed to participate in transactions.
@@ -35,11 +34,7 @@ const (
 // where applicable). If this method returns true, TransactionUUID must be included in request.
 func (mt MessageType) RequiresTransaction() bool {
 	switch mt {
-	case SimpleRequestResponseMessageType,
-		CreateMessageType,
-		RetrieveMessageType,
-		UpdateMessageType,
-		DeleteMessageType:
+	case SimpleRequestResponseMessageType, CreateMessageType, RetrieveMessageType, UpdateMessageType, DeleteMessageType:
 		return true
 	default:
 		return false
