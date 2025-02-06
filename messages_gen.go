@@ -6,9 +6,9 @@ import (
 	"github.com/tinylib/msgp/msgp"
 )
 
-// MarshalMsg implements msgp.Marshaler
-func (z *Message) MarshalMsg(b []byte) (o []byte, err error) {
-	o = msgp.Require(b, z.Msgsize())
+// marshalMsg implements msgp.Marshaler
+func (z *Message) marshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.msgsize())
 	// check for omitted fields
 	zb0001Len := uint32(17)
 	var zb0001Mask uint32 /* 17 bits */
@@ -181,8 +181,8 @@ func (z *Message) MarshalMsg(b []byte) (o []byte, err error) {
 	return
 }
 
-// UnmarshalMsg implements msgp.Unmarshaler
-func (z *Message) UnmarshalMsg(bts []byte) (o []byte, err error) {
+// unmarshalMsg implements msgp.Unmarshaler
+func (z *Message) unmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0001 uint32
@@ -393,8 +393,8 @@ func (z *Message) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
-// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *Message) Msgsize() (s int) {
+// msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+func (z *Message) msgsize() (s int) {
 	s = 3 + 9 + msgp.Int64Size + 7 + msgp.StringPrefixSize + len(z.Source) + 5 + msgp.StringPrefixSize + len(z.Destination) + 17 + msgp.StringPrefixSize + len(z.TransactionUUID) + 13 + msgp.StringPrefixSize + len(z.ContentType) + 7 + msgp.StringPrefixSize + len(z.Accept) + 7
 	if z.Status == nil {
 		s += msgp.NilSize

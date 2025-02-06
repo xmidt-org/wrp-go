@@ -6,9 +6,10 @@ package wrp
 import (
 	"bytes"
 	"fmt"
+	"reflect"
+	"sort"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,32 +18,6 @@ var (
 	// allFormats enumerates all of the supported formats to use in testing
 	allFormats = []Format{JSON, Msgpack}
 )
-
-func TestFindStringSubMatch(t *testing.T) {
-	events := []string{
-		"event:iot",
-		"mac:112233445566/event/iot",
-		"event:unknown",
-		"mac:112233445566/event/test/extra-stuff",
-		"event:wrp",
-	}
-
-	expected := []string{
-		"iot",
-		"unknown",
-		"unknown",
-		"unknown",
-		"wrp",
-	}
-
-	var result string
-	for i := 0; i < len(events); i++ {
-		result = findEventStringSubMatch(events[i])
-		if result != expected[i] {
-			t.Errorf("\ntesting %v:\ninput: %v\nexpected: %v\ngot: %v\n\n", i, spew.Sprintf(events[i]), spew.Sprintf(expected[i]), spew.Sprintf(result))
-		}
-	}
-}
 
 func testMessageSetStatus(t *testing.T) {
 	var (
@@ -77,6 +52,7 @@ func testMessageSetRequestDeliveryResponse(t *testing.T) {
 func testMessageEncode(t *testing.T, f Format, original Message) {
 	var (
 		assert  = assert.New(t)
+		require = require.New(t)
 		decoded Message
 
 		buffer  bytes.Buffer
@@ -84,9 +60,9 @@ func testMessageEncode(t *testing.T, f Format, original Message) {
 		decoder = NewDecoder(&buffer, f)
 	)
 
-	assert.NoError(encoder.Encode(&original))
-	assert.True(buffer.Len() > 0)
-	assert.NoError(decoder.Decode(&decoded))
+	require.NoError(encoder.Encode(&original))
+	require.True(buffer.Len() > 0)
+	require.NoError(decoder.Decode(&decoded))
 	assert.Equal(original, decoded)
 }
 
@@ -99,7 +75,6 @@ func TestMessage(t *testing.T) {
 		expectedRequestDeliveryResponse int64 = 34
 
 		messages = []Message{
-			{},
 			{
 				Type:             SimpleEventMessageType,
 				Source:           "mac:121234345656",
@@ -126,12 +101,13 @@ func TestMessage(t *testing.T) {
 				PartnerIDs:      []string{"foo"},
 			},
 			{
-				Type:        CreateMessageType,
-				Source:      "wherever.webpa.comcast.net/glorious",
-				Destination: "uuid:1111-11-111111-11111",
-				Path:        "/some/where/over/the/rainbow",
-				Payload:     []byte{1, 2, 3, 4, 0xff, 0xce},
-				PartnerIDs:  []string{"foo", "bar"},
+				Type:            CreateMessageType,
+				Source:          "wherever.webpa.comcast.net/glorious",
+				Destination:     "uuid:1111-11-111111-11111",
+				TransactionUUID: "123-123-123",
+				Path:            "/some/where/over/the/rainbow",
+				Payload:         []byte{1, 2, 3, 4, 0xff, 0xce},
+				PartnerIDs:      []string{"foo", "bar"},
 			},
 		}
 	)
@@ -145,123 +121,6 @@ func TestMessage(t *testing.T) {
 	}
 }
 
-func TestIsQOSAckPart(t *testing.T) {
-	tests := []struct {
-		description string
-		msg         Message
-		ack         bool
-	}{
-		// Ack case
-		{
-			description: "SimpleEventMessageType QOSMediumValue ack",
-			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSMediumValue},
-			ack:         true,
-		},
-		{
-			description: "SimpleEventMessageType QOSHighValue ack",
-			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSHighValue},
-			ack:         true,
-		},
-		{
-			description: "SimpleEventMessageType QOSCriticalValue ack",
-			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSCriticalValue},
-			ack:         true,
-		},
-		{
-			description: "SimpleEventMessageType above QOS range ack",
-			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSCriticalValue + 1},
-			ack:         true,
-		},
-		{
-			description: "SimpleRequestResponseMessageType ack",
-			msg:         Message{Type: SimpleRequestResponseMessageType, QualityOfService: QOSCriticalValue},
-			ack:         true,
-		},
-		{
-			description: "CreateMessageType ack",
-			msg:         Message{Type: CreateMessageType, QualityOfService: QOSCriticalValue},
-			ack:         true,
-		},
-		{
-			description: "RetrieveMessageType ack",
-			msg:         Message{Type: RetrieveMessageType, QualityOfService: QOSCriticalValue},
-			ack:         true,
-		},
-		{
-			description: "UpdateMessageType ack",
-			msg:         Message{Type: UpdateMessageType, QualityOfService: QOSCriticalValue},
-			ack:         true,
-		},
-		{
-			description: "DeleteMessageType ack",
-			msg:         Message{Type: DeleteMessageType, QualityOfService: QOSCriticalValue},
-			ack:         true,
-		},
-
-		// No ack case
-		{
-			description: "SimpleEventMessageType below QOS range no ack",
-			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSLowValue - 1},
-		},
-		{
-			description: "SimpleEventMessageType QOSLowValue no ack",
-			msg:         Message{Type: SimpleEventMessageType, QualityOfService: QOSLowValue},
-		},
-		{
-			description: "ServiceRegistrationMessageType no ack",
-			msg:         Message{Type: ServiceRegistrationMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "Invalid0MessageType no ack",
-			msg:         Message{Type: Invalid0MessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "ServiceAliveMessageType no ack",
-			msg:         Message{Type: ServiceAliveMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "UnknownMessageType no ack",
-			msg:         Message{Type: UnknownMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "AuthorizationMessageType no ack",
-			msg:         Message{Type: AuthorizationMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "Invalid0MessageType no ack",
-			msg:         Message{Type: Invalid0MessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "Invalid1MessageType no ack",
-			msg:         Message{Type: Invalid1MessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "lastMessageType no ack",
-			msg:         Message{Type: LastMessageType, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "Nonexistent negative MessageType no ack",
-			msg:         Message{Type: -10, QualityOfService: QOSCriticalValue},
-		},
-		{
-			description: "Nonexistent positive MessageType no ack",
-			msg:         Message{Type: LastMessageType + 1, QualityOfService: QOSCriticalValue},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			assert := assert.New(t)
-			if tc.ack {
-				assert.True(tc.msg.IsQOSAckPart())
-				return
-			}
-
-			assert.False(tc.msg.IsQOSAckPart())
-		})
-	}
-}
-
 func TestMessage_TrimmedPartnerIDs(t *testing.T) {
 	tests := []struct {
 		description string
@@ -271,7 +130,7 @@ func TestMessage_TrimmedPartnerIDs(t *testing.T) {
 		{
 			description: "empty partner list",
 			partners:    []string{},
-			want:        []string{},
+			want:        []string(nil),
 		}, {
 			description: "normal partner list",
 			partners:    []string{"foo", "bar", "baz"},
@@ -285,119 +144,375 @@ func TestMessage_TrimmedPartnerIDs(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			msg := &Message{
-				PartnerIDs: tc.partners,
-			}
-			assert.Equal(tc.want, msg.TrimmedPartnerIDs())
+			assert.Equal(tc.want, trimPartnerIDs(tc.partners))
 		})
 	}
 }
 
-func mapToEnviron(m map[string]string) []string {
-	result := make([]string, 0, len(m))
-	for k, v := range m {
-		result = append(result, fmt.Sprintf("%s=%s", k, v))
+func TestMessageTrucation(t *testing.T) {
+	msg := Message{
+		Type:             SimpleEventMessageType,
+		Source:           "foo",
+		Destination:      "bar",
+		TransactionUUID:  "foo",
+		ContentType:      "foo",
+		Accept:           "foo",
+		Headers:          []string{"foo", "bar"},
+		Metadata:         map[string]string{"foo": "bar", "baz": "qux"},
+		Path:             "foo",
+		Payload:          []byte("foo"),
+		ServiceName:      "foo",
+		URL:              "foo",
+		PartnerIDs:       []string{"foo", "bar"},
+		SessionID:        "foo",
+		QualityOfService: 1,
 	}
-	return result
+	msg.SetRequestDeliveryResponse(42)
+	msg.SetStatus(42)
+
+	buf, err := msg.marshalMsg(nil)
+	require.NoError(t, err)
+	require.NotNil(t, buf)
+	require.NotEmpty(t, buf)
+
+	_, err = msg.unmarshalMsg(buf)
+	require.NoError(t, err)
+
+	for len(buf) > 0 {
+		// truncate the buffer
+		buf = buf[:len(buf)-1]
+		_, err := msg.unmarshalMsg(buf)
+		require.Error(t, err)
+	}
 }
 
-func TestEnviron_Message(t *testing.T) {
-	tests := []struct {
-		description string
-		want        Message
-		err         error
-	}{
-		{
-			description: "empty",
-		}, {
-			description: "simple",
-			want: Message{
-				Source:           "source",
-				Destination:      "destination",
-				TransactionUUID:  "transaction_uuid",
-				QualityOfService: 24,
-				PartnerIDs:       []string{"foo", "bar", "baz"},
-			},
-		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			msg := tc.want
-			m := msg.ToEnvironForm()
-			assert.NotNil(t, m)
+func TestValidateUTF8(t *testing.T) {
+	msgType := reflect.TypeOf(Message{})
 
-			got, err := NewMessageFromEnviron(mapToEnviron(m))
+	// iterate over all of the fields in the Message struct and check if the
+	// field is a string, []string, or map[string]string.  If it is, then we
+	// want it set the string to a non-utf8 string and ensure that the
+	// ValidateUTF8 method returns an error.
+	for field := 0; field < msgType.NumField(); field++ {
+		this := msgType.Field(field)
+		fieldName := this.Name
+		if fieldName == "Type" {
+			continue
+		}
 
-			if tc.err != nil {
+		switch this.Type.Kind() {
+		case reflect.String:
+			t.Run(fieldName, func(t *testing.T) {
+				msg := Message{}
+				reflect.ValueOf(&msg).Elem().FieldByName(fieldName).SetString(string([]byte{0xbf}))
+				err := validateUTF8(&msg)
 				require.Error(t, err)
-				assert.Nil(t, got)
-				return
+			})
+		case reflect.Slice:
+			if this.Type.Elem().Kind() == reflect.String {
+				t.Run(fieldName, func(t *testing.T) {
+					msg := Message{}
+					reflect.ValueOf(&msg).Elem().FieldByName(fieldName).Set(reflect.ValueOf([]string{string([]byte{0xbf})}))
+					err := validateUTF8(&msg)
+					require.Error(t, err)
+				})
 			}
-
-			require.NoError(t, err)
-			require.NotNil(t, got)
-			assert.Equal(t, &msg, got)
-		})
+		case reflect.Map:
+			if this.Type.Key().Kind() == reflect.String && this.Type.Elem().Kind() == reflect.String {
+				t.Run(fieldName, func(t *testing.T) {
+					msg := Message{}
+					reflect.ValueOf(&msg).Elem().FieldByName(fieldName).Set(reflect.ValueOf(map[string]string{"invalid": string([]byte{0xbf})}))
+					err := validateUTF8(&msg)
+					require.Error(t, err)
+				})
+			}
+		}
 	}
 }
 
-func TestHeaders_Message(t *testing.T) {
-	tests := []struct {
-		description string
-		want        Message
-		err         error
-	}{
-		{
-			description: "simple",
-			want: Message{
-				Type:             SimpleEventMessageType,
-				Source:           "source",
-				Destination:      "destination",
-				TransactionUUID:  "transaction_uuid",
-				QualityOfService: 24,
-				PartnerIDs:       []string{"foo", "bar", "baz"},
-			},
-		}, {
-			description: "simple with payload",
-			want: Message{
-				Type:             SimpleEventMessageType,
-				Source:           "source",
-				Destination:      "destination",
-				TransactionUUID:  "transaction_uuid",
-				QualityOfService: 24,
-				PartnerIDs:       []string{"foo", "bar", "baz"},
-				Payload:          []byte("payload"),
-			},
-		},
+// TestMessageConsistency will test that the Message struct is consistent with
+// the other structs that are used to represent the different message types.
+func TestMessageConsistency(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+	wrpType := reflect.TypeOf(Message{})
+
+	for mt, strct := range mtToStruct {
+		switch mt {
+		case Invalid0MessageType, Invalid1MessageType, LastMessageType:
+			require.Nil(strct)
+			continue
+		default:
+			require.NotNil(strct)
+		}
+
+		strctName := reflect.TypeOf(strct).Name()
+		for field := 0; field < reflect.TypeOf(strct).NumField(); field++ {
+			this := reflect.TypeOf(strct).Field(field)
+			// check if the field exists in wrpType.
+			wrpField, found := wrpType.FieldByName(this.Name)
+			assert.True(found, "Field %v.%v not found in wrp.Message", strctName, this.Name)
+
+			// check if the type is the same in both structs, or if the field is
+			// a pointer, check if the type is the same.
+			wrpFieldType := wrpField.Type
+			thisType := this.Type
+			if wrpFieldType.Kind() == reflect.Ptr {
+				wrpFieldType = wrpFieldType.Elem()
+
+				// the field in wrp.Message is a pointer, but the field in the
+				// other struct may not be a pointer, that's ok.  Example is
+				// the Status field in Message struct vs Authorization struct.
+				if this.Type.Kind() == reflect.Ptr {
+					thisType = this.Type.Elem()
+				}
+			}
+			assert.Equal(wrpFieldType, thisType,
+				"Field '%v.%v' type mismatch", strctName, this.Name)
+		}
 	}
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			msg := tc.want
-			headers, payload := msg.ToHeaderForm()
-			assert.NotNil(t, headers)
-			if tc.want.Payload != nil {
-				assert.NotNil(t, payload)
-				assert.Equal(t, tc.want.Payload, payload)
-			}
+}
 
-			got, err := NewMessageFromHeaders(headers, payload)
+// TestExactCopy will test against all of the MessageType values to ensure that
+// the specific struct can be copied exactly from a Message struct.  This is
+// done by creating a new instance of the specific struct, populating the
+// required fields with non-zero values, and then calling the From method on
+// the specific struct with the Message struct.  The goal is to ensure that
+// if fields are added or removed from the Message struct, that the specific
+// struct will still be able to be copied exactly from the Message struct and
+// unxpected fields will not be copied.
+func TestExactCopy(t *testing.T) {
+	keys := make([]MessageType, 0, len(mtToStruct))
 
-			if tc.err != nil {
-				require.Error(t, err)
-				assert.Nil(t, got)
-				return
-			}
+	for msgType, specificStruct := range mtToStruct {
+		if specificStruct == nil {
+			continue
+		}
 
-			require.NoError(t, err)
-			require.NotNil(t, got)
-
-			// The content type is set to application/octet-stream if the payload
-			// is not empty and the content type is not set.
-			if got.ContentType != "" && tc.want.ContentType == "" {
-				assert.Equal(t, MimeTypeOctetStream, got.ContentType)
-				got.ContentType = ""
-			}
-			assert.Equal(t, &msg, got)
-		})
+		keys = append(keys, msgType)
 	}
+
+	// sort the keys
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+
+	for _, msgType := range keys {
+		specificStruct := mtToStruct[msgType]
+		if specificStruct == nil {
+			continue
+		}
+
+		for i := -1; i < reflect.TypeOf(Message{}).NumField(); i++ {
+			desc := fmt.Sprintf("MessageType %v valid", msgType)
+			if i > 0 {
+				name := reflect.TypeOf(Message{}).Field(i).Name
+				desc = fmt.Sprintf("MessageType %v  field %s", msgType, name)
+			}
+			t.Run(desc, func(t *testing.T) {
+				thing := reflect.New(reflect.TypeOf(specificStruct)).Interface()
+				runTest(t, i, msgType, thing)
+			})
+		}
+	}
+}
+
+func runTest(t *testing.T, index int, mt MessageType, goal any) {
+	msg := &Message{
+		Type: mt,
+	}
+
+	populateRequired(msg, goal)
+
+	runTest := 1
+	if index >= 0 {
+		runTest = changeIndex(msg, goal, index)
+		if runTest == 0 {
+			return
+		}
+	}
+
+	/*
+		fmt.Println("Original:")
+		pp.Println(goal)
+		pp.Println(msg)
+	*/
+
+	if runTest == 1 {
+		// run the test and expect it to pass
+		err := goal.(converter).From(msg)
+		assert.NoError(t, err)
+
+		/*
+			fmt.Println("After:")
+			pp.Println(goal)
+		*/
+
+		// create a new instance of goal
+		back, err := goal.(converter).To()
+		require.NoError(t, err)
+		assert.Equal(t, msg, back)
+
+		buf, err := msg.marshalMsg(nil)
+		require.NoError(t, err)
+		require.NotNil(t, buf)
+		require.NotEmpty(t, buf)
+
+		left, err := msg.unmarshalMsg(buf)
+		require.NoError(t, err)
+		require.Empty(t, left)
+		return
+	}
+
+	// run the test and expect it to fail
+	next := reflect.New(reflect.TypeOf(goal).Elem()).Interface()
+	err := next.(converter).From(msg)
+	require.Error(t, err)
+}
+
+// populateRequired will populate the required fields in the msg with
+// non-zero values.  This is done by looking up the field name in the goal
+// struct and checking for the 'required' tag.  If the field is required,
+// then we want to set the value in the msg to the value of required or 42.
+func populateRequired(msg *Message, goal any) {
+	goalType := reflect.TypeOf(goal).Elem()
+
+	for i := 0; i < goalType.NumField(); i++ {
+		field := goalType.Field(i)
+		fieldName := field.Name
+		if fieldName == "Type" {
+			continue
+		}
+		if _, found := field.Tag.Lookup("required"); found {
+			msgField := reflect.ValueOf(msg).Elem().FieldByName(fieldName)
+			switch msgField.Kind() {
+			case reflect.String:
+				msgField.SetString("required")
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				msgField.SetInt(42)
+			case reflect.Ptr:
+				if msgField.Type().Elem().Kind() == reflect.Int64 {
+					ptrValue := reflect.New(msgField.Type().Elem())
+					ptrValue.Elem().SetInt(42)
+					msgField.Set(ptrValue)
+				}
+			case reflect.Slice:
+				if msgField.Type().Elem().Kind() == reflect.String {
+					msgField.Set(reflect.ValueOf([]string{"required"}))
+				}
+			case reflect.Map:
+				if msgField.Type().Key().Kind() == reflect.String && msgField.Type().Elem().Kind() == reflect.String {
+					msgField.Set(reflect.ValueOf(map[string]string{"key": "value"}))
+				}
+			default:
+				if msgField.Type() == reflect.TypeOf(QOSValue(0)) {
+					msgField.Set(reflect.ValueOf(QOSValue(42)))
+				}
+			}
+		}
+	}
+}
+
+// Check to see of the field index in the msg is required by looking up
+// the name of the field in the goal struct and checking for the 'required'
+// tag.  If the field is not required, then we want to set the value in
+// the msg to a non-zero value, and if there is a field of the same name in
+// the goal struct, we want to set that to the same non-zero value.  The return
+// value of 0 is used to indicate that the test should not be run.  The return
+// value of 1 is used to indicate that the test should be run and should pass.
+// The return value of -1 is used to indicate that the test should be run and
+// should fail.  If the field is required, then we want to set the value in the
+// msg to the zero value of that type to break the test.
+func changeIndex(msg *Message, goal any, index int) int {
+	msgType := reflect.TypeOf(msg).Elem()
+	goalType := reflect.TypeOf(goal).Elem()
+
+	fieldName := msgType.Field(index).Name
+	msgField := reflect.ValueOf(msg).Elem().FieldByName(fieldName)
+
+	if tmp, found := goalType.FieldByName(fieldName); found {
+		if _, required := tmp.Tag.Lookup("required"); required {
+			msgField.Set(reflect.Zero(msgField.Type()))
+			return -1
+		}
+	}
+
+	if fieldName == "Type" {
+		msgField.Set(reflect.Zero(msgField.Type()))
+		return -1
+	}
+
+	switch msgField.Kind() {
+	case reflect.String:
+		msgField.SetString("non-zero")
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		msgField.SetInt(1)
+	case reflect.Ptr:
+		if msgField.Type().Elem().Kind() == reflect.Int64 {
+			ptrValue := reflect.New(msgField.Type().Elem())
+			ptrValue.Elem().SetInt(1)
+			msgField.Set(ptrValue)
+		} else {
+			ptrValue := reflect.New(msgField.Type().Elem())
+			msgField.Set(ptrValue)
+		}
+	case reflect.Slice:
+		switch msgField.Type().Elem().Kind() {
+		case reflect.String:
+			msgField.Set(reflect.ValueOf([]string{"non-zero"}))
+		case reflect.Uint8:
+			msgField.Set(reflect.ValueOf([]byte{1, 2, 3, 4, 0xff, 0xce}))
+		default:
+			panic("Unhandled slice type " + msgField.Type().Elem().Kind().String())
+		}
+	case reflect.Map:
+		if msgField.Type().Key().Kind() == reflect.String && msgField.Type().Elem().Kind() == reflect.String {
+			msgField.Set(reflect.ValueOf(map[string]string{"key": "value"}))
+		}
+	default:
+		if msgField.Type() == reflect.TypeOf(QOSValue(0)) {
+			msgField.Set(reflect.ValueOf(QOSValue(42)))
+		} else {
+			panic("Unhandled type " + msgField.Type().String())
+		}
+	}
+
+	goalField := reflect.ValueOf(goal).Elem().FieldByName(fieldName)
+	if goalField.IsValid() {
+		switch goalField.Kind() {
+		case reflect.String:
+			goalField.SetString("non-zero")
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			goalField.SetInt(1)
+		case reflect.Ptr:
+			if goalField.Type().Elem().Kind() == reflect.Int64 {
+				ptrValue := reflect.New(goalField.Type().Elem())
+				ptrValue.Elem().SetInt(1)
+				goalField.Set(ptrValue)
+			} else {
+				ptrValue := reflect.New(goalField.Type().Elem())
+				goalField.Set(ptrValue)
+			}
+		case reflect.Slice:
+			switch goalField.Type().Elem().Kind() {
+			case reflect.String:
+				goalField.Set(reflect.ValueOf([]string{"non-zero"}))
+			case reflect.Uint8:
+				goalField.Set(reflect.ValueOf([]byte{1, 2, 3, 4, 0xff, 0xce}))
+			default:
+				panic("Unhandled slice type " + msgField.Type().Elem().Kind().String())
+			}
+		case reflect.Map:
+			if goalField.Type().Key().Kind() == reflect.String && goalField.Type().Elem().Kind() == reflect.String {
+				goalField.Set(reflect.ValueOf(map[string]string{"key": "value"}))
+			}
+		default:
+			if goalField.Type() == reflect.TypeOf(QOSValue(0)) {
+				goalField.Set(reflect.ValueOf(QOSValue(42)))
+			}
+		}
+		return 1
+	}
+
+	return -1
 }

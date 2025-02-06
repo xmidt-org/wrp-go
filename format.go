@@ -6,10 +6,7 @@ package wrp
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
-	"strings"
 )
 
 //go:generate go install golang.org/x/tools/cmd/stringer@latest
@@ -26,58 +23,9 @@ const (
 	lastFormat
 )
 
-const (
-	MimeTypeMsgpack     = "application/msgpack"
-	MimeTypeJson        = "application/json"
-	MimeTypeOctetStream = "application/octet-stream"
-
-	// Deprecated: This constant should only be used for backwards compatibility
-	// matching.  Use MimeTypeMsgpack instead.
-	MimeTypeWrp = "application/wrp"
-)
-
 // AllFormats returns a distinct slice of all supported formats.
 func AllFormats() []Format {
 	return []Format{Msgpack, JSON}
-}
-
-// ContentType returns the MIME type associated with this format
-func (f Format) ContentType() string {
-	switch f {
-	case Msgpack:
-		return MimeTypeMsgpack
-	case JSON:
-		return MimeTypeJson
-	default:
-		return MimeTypeOctetStream
-	}
-}
-
-// FormatFromContentType examines the Content-Type value and returns
-// the appropriate Format.  This function returns an error if the given
-// Content-Type did not map to a WRP format.
-//
-// The optional fallback is used if contentType is the empty string.  Only
-// the first fallback value is used.  The rest are ignored.  This approach allows
-// simple usages such as:
-//
-//	FormatFromContentType(header.Get("Content-Type"), wrp.Msgpack)
-func FormatFromContentType(contentType string, fallback ...Format) (Format, error) {
-	if len(contentType) == 0 {
-		if len(fallback) > 0 {
-			return fallback[0], nil
-		}
-
-		return Format(-1), errors.New("Missing content type")
-	}
-
-	if strings.Contains(contentType, "json") {
-		return JSON, nil
-	} else if strings.Contains(contentType, "msgpack") {
-		return Msgpack, nil
-	}
-
-	return Format(-1), fmt.Errorf("invalid WRP content type: %s", contentType)
 }
 
 // Encoder represents the underlying ugorji behavior that WRP supports
@@ -131,7 +79,7 @@ type msgpEncoder struct {
 
 func (e *msgpEncoder) Encode(msg *Message) error {
 	if e.stream != nil {
-		got, err := msg.MarshalMsg(nil)
+		got, err := msg.marshalMsg(nil)
 		if err != nil {
 			return err
 		}
@@ -139,7 +87,7 @@ func (e *msgpEncoder) Encode(msg *Message) error {
 		return err
 	}
 
-	_, err := msg.MarshalMsg(*e.bits)
+	_, err := msg.marshalMsg(*e.bits)
 	return err
 }
 
@@ -176,7 +124,11 @@ type jsonDecoder struct {
 }
 
 func (d *jsonDecoder) Decode(msg *Message) error {
-	return d.dec.Decode(msg)
+	err := d.dec.Decode(msg)
+	if err != nil {
+		return err
+	}
+	return msg.validate()
 }
 
 type msgpDecoder struct {
@@ -192,9 +144,12 @@ func (d *msgpDecoder) Decode(msg *Message) error {
 			return err
 		}
 	}
-	_, err = msg.UnmarshalMsg(d.bits)
+	_, err = msg.unmarshalMsg(d.bits)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return msg.validate()
 }
 
 // TranscodeMessage converts a WRP message of any type from one format into another,

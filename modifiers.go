@@ -7,8 +7,6 @@ import (
 	"context"
 	"strconv"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 func handleSelf(me Locator, target *string) error {
@@ -20,7 +18,7 @@ func handleSelf(me Locator, target *string) error {
 	if err != nil {
 		return err
 	}
-	if l.Scheme == "self" {
+	if l.IsSelf() {
 		l.Scheme = me.Scheme
 		l.Authority = me.Authority
 		*target = l.String()
@@ -66,84 +64,6 @@ func ReplaceAnySelfLocator(me Locator) Modifier {
 		ReplaceSelfDestinationLocator(me),
 		ReplaceSelfSourceLocator(me),
 	}
-}
-
-// EnsureTransactionUUID ensures that the message has a transaction UUID.  If
-// the message does not have a transaction UUID, a new one is generated and
-// added to the message.  ErrNotHandled is returned along with the latest
-// version of the message, unless there was an error generating the transaction
-// UUID, then that error is returned.
-func EnsureTransactionUUID() Modifier {
-	return ModifierFunc(func(_ context.Context, msg Message) (Message, error) {
-		if msg.TransactionUUID == "" {
-			id, err := uuid.NewRandom()
-			if err != nil {
-				return Message{}, err
-			}
-
-			msg.TransactionUUID = id.String()
-		}
-		return msg, ErrNotHandled
-	})
-}
-
-// EnsurePartnerID ensures that the message includes the given partner ID in
-// the list.  If not present, the partner ID is added to the list.  ErrNotHandled
-// is always returned along with the latest version of the message.
-func EnsurePartnerID(partner string) Modifier {
-	return ModifierFunc(func(_ context.Context, msg Message) (Message, error) {
-		if msg.PartnerIDs == nil {
-			msg.PartnerIDs = make([]string, 0, 1)
-		}
-		for _, id := range msg.PartnerIDs {
-			if id == partner {
-				return msg, ErrNotHandled
-			}
-		}
-		msg.PartnerIDs = append(msg.PartnerIDs, partner)
-		return msg, ErrNotHandled
-	})
-}
-
-// SetPartnerID ensures that the message has only the given partner ID.  This
-// will always set the partner ID, replacing any existing partner IDs.
-// ErrNotHandled is always returned along with the updated message.
-func SetPartnerID(partner string) Modifier {
-	return SetPartnerIDs(partner)
-}
-
-// SetPartnerIDs ensures that the message has only the given partner ID list.
-// This will always set the partner ID, replacing any existing partner IDs.
-// ErrNotHandled is always returned along with the updated message.
-func SetPartnerIDs(partners ...string) Modifier {
-	return ModifierFunc(func(_ context.Context, msg Message) (Message, error) {
-		msg.PartnerIDs = partners
-		return msg, ErrNotHandled
-	})
-}
-
-// SetSessionID ensures that the message has the given session ID.  This will
-// always set the session ID, replacing any existing session ID.  ErrNotHandled
-// is always returned along with the updated message.
-func SetSessionID(id string) Modifier {
-	return ModifierFunc(func(_ context.Context, msg Message) (Message, error) {
-		msg.SessionID = id
-		return msg, ErrNotHandled
-	})
-}
-
-// ClampQualityOfService clamps a wrp message's qos value between 0 and 99.
-// ErrNotHandled is always returned along with the updated message.
-func ClampQualityOfService() Modifier {
-	return ModifierFunc(func(_ context.Context, msg Message) (Message, error) {
-		if msg.QualityOfService < 0 {
-			msg.QualityOfService = 0
-		} else if msg.QualityOfService > 99 {
-			msg.QualityOfService = 99
-		}
-
-		return msg, ErrNotHandled
-	})
 }
 
 // MetadataValue is a type constraint that allows only string, int64, and time.Time types.

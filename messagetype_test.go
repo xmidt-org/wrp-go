@@ -4,10 +4,29 @@
 package wrp
 
 import (
+	"reflect"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	mtToStruct = map[MessageType]any{
+		Invalid0MessageType:              nil,
+		Invalid1MessageType:              nil,
+		AuthorizationMessageType:         Authorization{},
+		SimpleRequestResponseMessageType: SimpleRequestResponse{},
+		SimpleEventMessageType:           SimpleEvent{},
+		CreateMessageType:                CRUD{},
+		RetrieveMessageType:              CRUD{},
+		UpdateMessageType:                CRUD{},
+		DeleteMessageType:                CRUD{},
+		ServiceRegistrationMessageType:   ServiceRegistration{},
+		ServiceAliveMessageType:          ServiceAlive{},
+		UnknownMessageType:               Unknown{},
+		LastMessageType:                  nil,
+	}
 )
 
 func TestMessageTypeString(t *testing.T) {
@@ -41,58 +60,6 @@ func TestMessageTypeString(t *testing.T) {
 	}
 
 	assert.Equal(len(messageTypes), len(strings))
-}
-
-func TestMessageTypeSupportsTransaction(t *testing.T) {
-	var (
-		assert                      = assert.New(t)
-		expectedSupportsTransaction = map[MessageType]bool{
-			Invalid0MessageType:              false,
-			Invalid1MessageType:              false,
-			AuthorizationMessageType:         false,
-			SimpleRequestResponseMessageType: true,
-			SimpleEventMessageType:           false,
-			CreateMessageType:                true,
-			RetrieveMessageType:              true,
-			UpdateMessageType:                true,
-			DeleteMessageType:                true,
-			ServiceRegistrationMessageType:   false,
-			ServiceAliveMessageType:          false,
-			UnknownMessageType:               false,
-			LastMessageType:                  false,
-			LastMessageType + 1:              false,
-		}
-	)
-
-	for messageType, expected := range expectedSupportsTransaction {
-		assert.Equal(expected, messageType.RequiresTransaction())
-	}
-}
-
-func TestMessageTypeSupportsQOSAck(t *testing.T) {
-	var (
-		assert                 = assert.New(t)
-		expectedSupportsQOSAck = map[MessageType]bool{
-			Invalid0MessageType:              false,
-			Invalid1MessageType:              false,
-			AuthorizationMessageType:         false,
-			SimpleRequestResponseMessageType: true,
-			SimpleEventMessageType:           true,
-			CreateMessageType:                true,
-			RetrieveMessageType:              true,
-			UpdateMessageType:                true,
-			DeleteMessageType:                true,
-			ServiceRegistrationMessageType:   false,
-			ServiceAliveMessageType:          false,
-			UnknownMessageType:               false,
-			LastMessageType:                  false,
-			LastMessageType + 1:              false,
-		}
-	)
-
-	for messageType, expected := range expectedSupportsQOSAck {
-		assert.Equal(expected, messageType.SupportsQOSAck())
-	}
 }
 
 func testStringToMessageTypeValid(t *testing.T, expected MessageType) {
@@ -130,4 +97,52 @@ func TestStringToMessageType(t *testing.T) {
 			testStringToMessageTypeInvalid(t, v)
 		}
 	})
+}
+
+func TestMtToStructContainsAllMessageTypes(t *testing.T) {
+	for mt := Invalid0MessageType; mt <= LastMessageType; mt++ {
+		_, found := mtToStruct[mt]
+		assert.True(t, found, "mtToStruct should contain MessageType %v", mt)
+	}
+}
+
+func TestSupportsQOSAck(t *testing.T) {
+	for msgType, specificStruct := range mtToStruct {
+		if specificStruct == nil {
+			continue
+		}
+
+		// Check if the struct contains the QualityOfService field
+		structType := reflect.TypeOf(specificStruct)
+		_, found := structType.FieldByName("QualityOfService")
+
+		if found {
+			assert.True(t, msgType.SupportsQOSAck(), "MessageType %v should support QOS Ack", msgType)
+		} else {
+			assert.False(t, msgType.SupportsQOSAck(), "MessageType %v should not support QOS Ack", msgType)
+		}
+	}
+}
+
+func TestMessageTypeSupportsTransaction(t *testing.T) {
+	for msgType, specificStruct := range mtToStruct {
+		if specificStruct == nil {
+			continue
+		}
+
+		// Check if the struct contains the QualityOfService field
+		structType := reflect.TypeOf(specificStruct)
+		field, found := structType.FieldByName("TransactionUUID")
+		if !found {
+			assert.Equal(t, found, msgType.RequiresTransaction(), "MessageType %v should not require a transaction", msgType)
+			continue
+		}
+
+		_, required := field.Tag.Lookup("required")
+		if required {
+			assert.True(t, msgType.RequiresTransaction(), "MessageType %v should require a transaction", msgType)
+		} else {
+			assert.False(t, msgType.RequiresTransaction(), "MessageType %v should not require a transaction", msgType)
+		}
+	}
 }

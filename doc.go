@@ -11,8 +11,8 @@ Some common uses of this package include:
 	var (
 		// the infrastructure automatically fills in the correct Type field
 		message = SimpleRequestResponse{
-			Source: "myserver.com",
-			Destination: "mac:112233445566",
+			Source: "dns:myserver.com",
+			Destination: "mac:112233445566/service",
 			Payload: []byte("here is a lovely little payload that the device understands"),
 		}
 
@@ -20,7 +20,9 @@ Some common uses of this package include:
 		encoder = NewEncoder(&buffer, Msgpack)
 	)
 
-	if err := encoder.Encode(&message); err != nil {
+	// To() returns a *Message, which is the generic, encodable WRP message
+	out, _ := message.To()
+	if err := encoder.Encode(out); err != nil {
 		// deal with the error
 	}
 
@@ -43,33 +45,6 @@ Some common uses of this package include:
 			buffer bytes.Buffer
 			encoder = NewEncoder(&buffer, Msgpack)
 		)
-
-		// TranscodeMessage returns a *Message as its first value, which contains
-		// the generic WRP message data
-		if _, err := TranscodeMessage(encoder, decoder); err != nil {
-			return nil, err
-		}
-
-		return buffer.Bytes(), nil
-	}
-
-(4) Pooling encoders and/or decoders for efficiency:
-
-	// transcoding, using pools:
-	var (
-		decoderPool = NewDecoderPool(100, JSON)
-		encoderPool = NewEncoderPool(100, Msgpack)
-	)
-
-	func jsonToMsgpackUsingPools(source io.Reader) ([]byte, error) {
-		var (
-			decoder = decoderPool.Get()
-			buffer bytes.Buffer
-			encoder = encoderPool.Get()
-		)
-
-		defer decoderPool.Put(decoder)
-		defer encoderPool.Put(encoder)
 
 		// TranscodeMessage returns a *Message as its first value, which contains
 		// the generic WRP message data

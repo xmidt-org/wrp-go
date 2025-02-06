@@ -1,18 +1,16 @@
 // SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package wrp_test
+package wrp
 
 import (
 	"bytes"
 	"testing"
-
-	"github.com/xmidt-org/wrp-go/v4"
 )
 
-func getTestMessage() wrp.Message {
-	return wrp.Message{
-		Type:            wrp.SimpleEventMessageType,
+func getTestMessage() Message {
+	return Message{
+		Type:            SimpleEventMessageType,
 		Source:          "mac:112233445566i/service-name/ignored/12344",
 		Destination:     "event:device-status/foo",
 		TransactionUUID: "60dfdf5b-98c5-4e91-95fd-1fa6cb114cf5",
@@ -33,7 +31,7 @@ func BenchmarkMarshalMsg(b *testing.B) {
 	buf := make([]byte, 0, 1024*32)
 
 	var tmp bytes.Buffer
-	err := wrp.NewEncoder(&tmp, wrp.Msgpack).Encode(&v)
+	err := NewEncoder(&tmp, Msgpack).Encode(&v)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -42,18 +40,35 @@ func BenchmarkMarshalMsg(b *testing.B) {
 	b.SetBytes(int64(tmp.Len()))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = v.MarshalMsg(buf)
+		_, _ = v.marshalMsg(buf)
+	}
+}
+func BenchmarkMarshalSingleMsg(b *testing.B) {
+	v := getTestMessage()
+	buf := make([]byte, 0, 1024*32)
+
+	var tmp bytes.Buffer
+	err := NewEncoder(&tmp, Msgpack).Encode(&v)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ReportAllocs()
+	b.SetBytes(int64(tmp.Len()))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = v.marshalMsg(buf)
 	}
 }
 
 func BenchmarkUnmarshalMsg(b *testing.B) {
 	v := getTestMessage()
-	bts, _ := v.MarshalMsg(nil)
+	bts, _ := v.marshalMsg(nil)
 	b.ReportAllocs()
 	b.SetBytes(int64(len(bts)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := v.UnmarshalMsg(bts)
+		_, err := v.unmarshalMsg(bts)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -64,12 +79,12 @@ func TestMarshalEncodeDecode(t *testing.T) {
 	v := getTestMessage()
 
 	var buf bytes.Buffer
-	err := wrp.NewEncoder(&buf, wrp.Msgpack).Encode(&v)
+	err := NewEncoder(&buf, Msgpack).Encode(&v)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = wrp.NewDecoder(&buf, wrp.Msgpack).Decode(&v)
+	err = NewDecoder(&buf, Msgpack).Decode(&v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +95,7 @@ func BenchmarkNewEncoderBytes(b *testing.B) {
 	buf := make([]byte, 0, 1024*32)
 
 	var tmp bytes.Buffer
-	err := wrp.NewEncoder(&tmp, wrp.Msgpack).Encode(&v)
+	err := NewEncoder(&tmp, Msgpack).Encode(&v)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -89,14 +104,14 @@ func BenchmarkNewEncoderBytes(b *testing.B) {
 	b.SetBytes(int64(tmp.Len()))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = wrp.NewEncoderBytes(&buf, wrp.Msgpack).Encode(&v)
+		_ = NewEncoderBytes(&buf, Msgpack).Encode(&v)
 	}
 }
 
 func BenchmarkNewDecoderBytes(b *testing.B) {
 	v := getTestMessage()
 	var buf bytes.Buffer
-	err := wrp.NewEncoder(&buf, wrp.Msgpack).Encode(&v)
+	err := NewEncoder(&buf, Msgpack).Encode(&v)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -108,7 +123,7 @@ func BenchmarkNewDecoderBytes(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err = wrp.NewDecoderBytes(bits, wrp.Msgpack).Decode(&v)
+		err = NewDecoderBytes(bits, Msgpack).Decode(&v)
 		if err != nil {
 			b.Fatal(err)
 		}

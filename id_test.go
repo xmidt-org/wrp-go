@@ -267,6 +267,30 @@ func TestParseLocator(t *testing.T) {
 			description: "invalid event scheme (no authority and with spaces)",
 			locator:     "event:    /anything",
 			expectedErr: ErrorInvalidLocator,
+		}, {
+			description: "invalid dns scheme (no authority)",
+			locator:     "dns:/anything",
+			expectedErr: ErrorInvalidLocator,
+		}, {
+			description: "invalid dns scheme (no authority and with spaces)",
+			locator:     "dns:      /anything",
+			expectedErr: ErrorInvalidLocator,
+		}, {
+			description: "invalid uuid scheme (no authority)",
+			locator:     "uuid:/anything",
+			expectedErr: ErrorInvalidDeviceName,
+		}, {
+			description: "invalid uuid scheme (no authority and with spaces)",
+			locator:     "uuid:      /anything",
+			expectedErr: ErrorInvalidDeviceName,
+		}, {
+			description: "invalid serial scheme (no authority)",
+			locator:     "serial:/anything",
+			expectedErr: ErrorInvalidDeviceName,
+		}, {
+			description: "invalid serial scheme (no authority and with spaces)",
+			locator:     "serial:      /anything",
+			expectedErr: ErrorInvalidDeviceName,
 		},
 	}
 	for _, tc := range tests {
