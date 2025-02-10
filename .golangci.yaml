@@ -29,3 +29,5 @@ linters-settings:
     errorf: false
   misspell:
     locale: US
+  goconst:
+    min-occurrences: 4

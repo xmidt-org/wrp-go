@@ -8,11 +8,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"reflect"
 	"testing"
 
+	// "github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	// "zappem.net/pub/debug/xxd"
 )
 
 func testPayload(t *testing.T, payload []byte) {
@@ -20,20 +21,21 @@ func testPayload(t *testing.T, payload []byte) {
 		assert   = assert.New(t)
 		require  = require.New(t)
 		original = Message{
-			Payload: payload,
+			Type:        SimpleEventMessageType,
+			Source:      "source",
+			Destination: "destination",
+			Payload:     payload,
 		}
 
 		decoded Message
 
-		output  bytes.Buffer
-		encoder = NewEncoder(nil, Msgpack)
-		decoder = NewDecoder(nil, Msgpack)
+		output bytes.Buffer
 	)
 
-	encoder.Reset(&output)
+	encoder := NewEncoder(&output, Msgpack)
 	require.NoError(encoder.Encode(&original))
 
-	decoder.Reset(&output)
+	decoder := NewDecoder(&output, Msgpack)
 	require.NoError(decoder.Decode(&decoded))
 
 	// don't output the payload if it's a ridiculous size
@@ -95,7 +97,7 @@ func TestSampleMsgpack(t *testing.T) {
 			0x76, 0x65, 0x6c, 0x22, 0x20, 0x5d, 0x20, 0x7d,
 		}
 
-		sampleMessage = SimpleRequestResponse{
+		sampleMessage = Message{
 			Type:            SimpleRequestResponseMessageType,
 			Source:          "dns:webpa.comcast.com/v2-device-config",
 			Destination:     "serial:1234/config",
@@ -112,7 +114,7 @@ func TestSampleMsgpack(t *testing.T) {
 			buffer        bytes.Buffer
 			encoder       = NewEncoder(&buffer, Msgpack)
 			decoder       = NewDecoder(&buffer, Msgpack)
-			actualMessage SimpleRequestResponse
+			actualMessage Message
 		)
 
 		assert.NoError(encoder.Encode(&sampleMessage))
@@ -124,7 +126,7 @@ func TestSampleMsgpack(t *testing.T) {
 		var (
 			assert        = assert.New(t)
 			decoder       = NewDecoder(bytes.NewBuffer(sampleEncoded), Msgpack)
-			actualMessage SimpleRequestResponse
+			actualMessage Message
 		)
 
 		assert.NoError(decoder.Decode(&actualMessage))
@@ -135,70 +137,12 @@ func TestSampleMsgpack(t *testing.T) {
 		var (
 			assert        = assert.New(t)
 			decoder       = NewDecoderBytes(sampleEncoded, Msgpack)
-			actualMessage SimpleRequestResponse
+			actualMessage Message
 		)
 
 		assert.NoError(decoder.Decode(&actualMessage))
 		assert.Equal(sampleMessage, actualMessage)
 	})
-}
-
-func testFormatFromContentTypeInvalid(t *testing.T, contentType string) {
-	assert := assert.New(t)
-
-	_, err := FormatFromContentType(contentType)
-	assert.Error(err)
-
-	// fallback won't matter if the content type is bad
-	_, err = FormatFromContentType(contentType, Msgpack)
-	assert.Error(err)
-
-	_, err = FormatFromContentType(contentType, JSON)
-	assert.Error(err)
-}
-
-func testFormatFromContentTypeValid(t *testing.T, contentType string, expected Format) {
-	assert := assert.New(t)
-
-	actual, err := FormatFromContentType(contentType)
-	assert.Equal(expected, actual)
-	assert.NoError(err)
-
-	// For a valid content type, fallback won't matter
-	actual, err = FormatFromContentType(contentType, Msgpack)
-	assert.Equal(expected, actual)
-	assert.NoError(err)
-
-	actual, err = FormatFromContentType(contentType, JSON)
-	assert.Equal(expected, actual)
-	assert.NoError(err)
-}
-
-func testFormatFromContentTypeFallback(t *testing.T) {
-	assert := assert.New(t)
-
-	actual, err := FormatFromContentType("", Msgpack)
-	assert.Equal(Msgpack, actual)
-	assert.NoError(err)
-
-	actual, err = FormatFromContentType("", JSON)
-	assert.Equal(JSON, actual)
-	assert.NoError(err)
-}
-
-func TestFormatFromContentType(t *testing.T) {
-	t.Run("Invalid", func(t *testing.T) {
-		testFormatFromContentTypeInvalid(t, "text/plain")
-		testFormatFromContentTypeInvalid(t, MimeTypeOctetStream)
-	})
-
-	t.Run("Valid", func(t *testing.T) {
-		testFormatFromContentTypeValid(t, MimeTypeMsgpack, Msgpack)
-		testFormatFromContentTypeValid(t, MimeTypeJson, JSON)
-		testFormatFromContentTypeValid(t, "text/json", JSON)
-	})
-
-	t.Run("Fallback", testFormatFromContentTypeFallback)
 }
 
 func testFormatString(t *testing.T) {
@@ -210,42 +154,14 @@ func testFormatString(t *testing.T) {
 	assert.NotEqual(JSON.String(), Msgpack.String())
 }
 
-func testFormatHandle(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.NotNil(JSON.handle())
-	assert.NotNil(Msgpack.handle())
-	assert.Panics(func() { Format(999).handle() })
-}
-
-func testFormatContentType(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.NotEmpty(JSON.ContentType())
-	assert.NotEmpty(Msgpack.ContentType())
-	assert.NotEqual(JSON.ContentType(), Msgpack.ContentType())
-	assert.Equal(MimeTypeOctetStream, Format(999).ContentType())
-}
-
 func TestFormat(t *testing.T) {
 	t.Run("String", testFormatString)
-	t.Run("Handle", testFormatHandle)
-	t.Run("ContentType", testFormatContentType)
 }
 
 // testTranscodeMessage expects a nonpointer reference to a WRP message struct as the original parameter
-func testTranscodeMessage(t *testing.T, target, source Format, original interface{}) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		originalValue = reflect.ValueOf(original)
-		encodeValue   = reflect.New(originalValue.Type())
-		decodeValue   = reflect.New(originalValue.Type())
-	)
-
-	// encodeValue is now a pointer to a copy of the original
-	encodeValue.Elem().Set(originalValue)
+func testTranscodeMessage(t *testing.T, target, source Format, original Message) {
+	assert := assert.New(t)
+	require := require.New(t)
 
 	var (
 		sourceBuffer  bytes.Buffer
@@ -258,15 +174,16 @@ func testTranscodeMessage(t *testing.T, target, source Format, original interfac
 	)
 
 	// create the input first
-	require.NoError(sourceEncoder.Encode(encodeValue.Interface()))
+	require.NoError(sourceEncoder.Encode(&original))
 
 	// now we can attempt the transcode
 	message, err := TranscodeMessage(targetEncoder, sourceDecoder)
 	assert.NotNil(message)
 	assert.NoError(err)
 
-	assert.NoError(targetDecoder.Decode(decodeValue.Interface()))
-	assert.Equal(encodeValue.Elem().Interface(), decodeValue.Elem().Interface())
+	var got Message
+	assert.NoError(targetDecoder.Decode(&got))
+	assert.Equal(original, got)
 }
 
 func TestTranscodeMessage(t *testing.T) {
@@ -274,35 +191,38 @@ func TestTranscodeMessage(t *testing.T) {
 		expectedStatus                  int64 = 123
 		expectedRequestDeliveryResponse int64 = -1234
 
-		messages = []interface{}{
-			SimpleRequestResponse{},
-			SimpleRequestResponse{
+		messages = []Message{
+			{
+				Type:        SimpleEventMessageType,
 				Source:      "foobar.com",
 				Destination: "mac:FFEEDDCCBBAA",
 				Payload:     []byte("hi!"),
-			},
-			SimpleRequestResponse{
+			}, {
+				Type:                    SimpleRequestResponseMessageType,
 				Source:                  "foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
-				ContentType:             MimeTypeWrp,
-				Accept:                  MimeTypeWrp,
+				TransactionUUID:         "60dfdf5b-98c5-4e91-95fd-1fa6cb114cf5",
+				ContentType:             "application/msgpack",
+				Accept:                  "application/msgpack",
 				Status:                  &expectedStatus,
 				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
 				Headers:                 []string{"X-Header-1", "X-Header-2"},
 				Metadata:                map[string]string{"hi": "there"},
 				Payload:                 []byte("hi!"),
 			},
-			Message{},
-			Message{
+			{
+				Type:        SimpleEventMessageType,
 				Source:      "foobar.com",
 				Destination: "mac:FFEEDDCCBBAA",
 				Payload:     []byte("hi!"),
 			},
-			Message{
+			{
+				Type:                    SimpleRequestResponseMessageType,
 				Source:                  "foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
-				ContentType:             MimeTypeWrp,
-				Accept:                  MimeTypeWrp,
+				TransactionUUID:         "60dfdf5b-98c5-4e91-95fd-1fa6cb114cf5",
+				ContentType:             "text/plain",
+				Accept:                  "text/plain",
 				Status:                  &expectedStatus,
 				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
 				Headers:                 []string{"X-Header-1", "X-Header-2"},
@@ -321,4 +241,31 @@ func TestTranscodeMessage(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestInvalidUtf8Decoding(t *testing.T) {
+	assert := assert.New(t)
+
+	/*
+		"\x85"  - 5 name value pairs
+			"\xa8""msg_type"         : "\x03" // 3
+			"\xa4""dest"             : "\xac""\xed\xbf\xbft-address"
+			"\xa7""payload"          : "\xc4""\x03" - len 3
+											 "123"
+			"\xa6""source"           : "\xae""source-address"
+			"\xb0""transaction_uuid" : "\xd9\x24""c07ee5e1-70be-444c-a156-097c767ad8aa"
+	*/
+	invalid := []byte{
+		0x85,
+		0xa8, 'm', 's', 'g', '_', 't', 'y', 'p', 'e', 0x03,
+		0xa4, 'd', 'e', 's', 't', 0xac /* \xed\xbf\xbf is invalid */, 0xed, 0xbf, 0xbf, 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
+		0xa7, 'p', 'a', 'y', 'l', 'o', 'a', 'd', 0xc4, 0x03, '1', '2', '3',
+		0xa6, 's', 'o', 'u', 'r', 'c', 'e', 0xae, 's', 'o', 'u', 'r', 'c', 'e', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
+		0xb0, 't', 'r', 'a', 'n', 's', 'a', 'c', 't', 'i', 'o', 'n', '_', 'u', 'u', 'i', 'd', 0xd9, 0x24, 'c', '0', '7', 'e', 'e', '5', 'e', '1', '-', '7', '0', 'b', 'e', '-', '4', '4', '4', 'c', '-', 'a', '1', '5', '6', '-', '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'a',
+	}
+
+	decoder := NewDecoderBytes(invalid, Msgpack)
+	msg := new(Message)
+	err := decoder.Decode(msg)
+	assert.ErrorIs(err, ErrNotUTF8)
 }

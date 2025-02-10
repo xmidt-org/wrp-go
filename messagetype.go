@@ -46,7 +46,12 @@ func (mt MessageType) RequiresTransaction() bool {
 // If this method returns false, QOS Ack is foregone.
 func (mt MessageType) SupportsQOSAck() bool {
 	switch mt {
-	case SimpleEventMessageType:
+	case SimpleRequestResponseMessageType,
+		SimpleEventMessageType,
+		CreateMessageType,
+		RetrieveMessageType,
+		UpdateMessageType,
+		DeleteMessageType:
 		return true
 	default:
 		return false
@@ -57,6 +62,12 @@ func (mt MessageType) SupportsQOSAck() bool {
 // This is used in most textual representations, such as HTTP headers.
 func (mt MessageType) FriendlyName() string {
 	return friendlyNames[mt]
+}
+
+// IsInvalid provides a simple way to see if this MessageType is understood by
+// this library and considered valid.
+func (mt MessageType) IsValid() bool {
+	return Invalid1MessageType < mt && mt < LastMessageType
 }
 
 var (
