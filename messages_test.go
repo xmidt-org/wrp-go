@@ -19,7 +19,7 @@ var (
 	allFormats = []Format{JSON, Msgpack}
 )
 
-func testMessageSetStatus(t *testing.T) {
+func TestMessageSetStatus(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		message Message
@@ -34,7 +34,7 @@ func testMessageSetStatus(t *testing.T) {
 	assert.Equal(int64(6), *message.Status)
 }
 
-func testMessageSetRequestDeliveryResponse(t *testing.T) {
+func TestMessageSetRequestDeliveryResponse(t *testing.T) {
 	var (
 		assert  = assert.New(t)
 		message Message
@@ -49,75 +49,226 @@ func testMessageSetRequestDeliveryResponse(t *testing.T) {
 	assert.Equal(int64(456), *message.RequestDeliveryResponse)
 }
 
-func testMessageEncode(t *testing.T, f Format, original Message) {
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-		decoded Message
+type msgTest struct {
+	desc    string // if there is a Source field, put it there, otherwise put it here
+	msg     Message
+	invalid bool
+}
 
-		buffer  bytes.Buffer
-		encoder = NewEncoder(&buffer, f)
-		decoder = NewDecoder(&buffer, f)
-	)
+func int64Ptr(v int64) *int64 {
+	return &v
+}
 
-	require.NoError(encoder.Encode(&original))
-	require.True(buffer.Len() > 0)
-	require.NoError(decoder.Decode(&decoded))
-	assert.Equal(original, decoded)
+var testMessages = []msgTest{
+	// SimpleEventMessageType
+	{
+		msg: Message{
+			Type:             SimpleEventMessageType,
+			Source:           "mac:121234345656",
+			Destination:      "dns:foobar.com/service",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 24,
+		},
+	}, {
+		msg: Message{
+			Type:             SimpleEventMessageType,
+			Source:           "invalid-source",
+			Destination:      "dns:foobar.com/service",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 24,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:             SimpleEventMessageType,
+			Source:           "dns:invalid-dest.com",
+			Destination:      "invalid-dest",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 24,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:             SimpleEventMessageType,
+			Source:           "dns:invalid-qos.com",
+			Destination:      "dns:foobar.com/service",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 109,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:            SimpleEventMessageType,
+			Source:          "dns:invalid-utf8.com",
+			Destination:     "dns:foobar.com/service",
+			TransactionUUID: string([]byte{0xbf}),
+		},
+		invalid: true,
+	},
+
+	// SimpleRequestResponseMessageType
+	{
+		msg: Message{
+			Type:                    SimpleRequestResponseMessageType,
+			Source:                  "dns:somewhere.comcast.net:9090/something",
+			Destination:             "serial:1234/blergh",
+			TransactionUUID:         "123-123-123",
+			Status:                  int64Ptr(3471),
+			RequestDeliveryResponse: int64Ptr(34),
+		},
+	}, {
+		msg: Message{
+			Type:            SimpleRequestResponseMessageType,
+			Source:          "dns:external.com",
+			Destination:     "mac:FFEEAADD44443333",
+			TransactionUUID: "DEADBEEF",
+			Headers:         []string{"Header1", "Header2"},
+			Metadata:        map[string]string{"name": "value"},
+			Payload:         []byte{1, 2, 3, 4, 0xff, 0xce},
+			PartnerIDs:      []string{"foo"},
+		},
+	}, {
+		msg: Message{
+			Type:             SimpleRequestResponseMessageType,
+			Source:           "invalid-source",
+			Destination:      "dns:foobar.com/service",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 24,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:             SimpleRequestResponseMessageType,
+			Source:           "dns:invalid-dest.com",
+			Destination:      "invalid-dest",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 24,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:             SimpleRequestResponseMessageType,
+			Source:           "dns:invalid-qos.com",
+			Destination:      "dns:foobar.com/service",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 109,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:            SimpleRequestResponseMessageType,
+			Source:          "dns:invalid-utf8.com",
+			Destination:     "dns:foobar.com/service",
+			TransactionUUID: string([]byte{0xbf}),
+		},
+		invalid: true,
+	},
+
+	// CRUD message types
+	{
+		msg: Message{
+			Type:            CreateMessageType,
+			Source:          "dns:wherever.webpa.comcast.net/glorious",
+			Destination:     "uuid:1111-11-111111-11111",
+			TransactionUUID: "123-123-123",
+			Path:            "/some/where/over/the/rainbow",
+			Payload:         []byte{1, 2, 3, 4, 0xff, 0xce},
+			PartnerIDs:      []string{"foo", "bar"},
+		},
+	}, {
+		msg: Message{
+			Type:             CreateMessageType,
+			Source:           "invalid-source",
+			Destination:      "dns:foobar.com/service",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 24,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:             CreateMessageType,
+			Source:           "dns:invalid-dest.com",
+			Destination:      "invalid-dest",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 24,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:             CreateMessageType,
+			Source:           "dns:invalid-qos.com",
+			Destination:      "dns:foobar.com/service",
+			TransactionUUID:  "a unique identifier",
+			QualityOfService: 109,
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:            CreateMessageType,
+			Source:          "dns:invalid-utf8.com",
+			Destination:     "dns:foobar.com/service",
+			TransactionUUID: string([]byte{0xbf}),
+		},
+		invalid: true,
+	},
+
+	//ServiceRegistrationMessageType
+	{
+		msg: Message{
+			Type:        ServiceRegistrationMessageType,
+			ServiceName: "service-name",
+			URL:         "http://example.com",
+		},
+	}, {
+		msg: Message{
+			Type:        ServiceRegistrationMessageType,
+			ServiceName: "invalid/service-name",
+			URL:         "http://example.com",
+		},
+		invalid: true,
+	}, {
+		msg: Message{
+			Type:        ServiceRegistrationMessageType,
+			ServiceName: "invalid-utf8-string",
+			URL:         string([]byte{0xbf}),
+		},
+		invalid: true,
+	},
 }
 
 func TestMessage(t *testing.T) {
-	t.Run("SetStatus", testMessageSetStatus)
-	t.Run("SetRequestDeliveryResponse", testMessageSetRequestDeliveryResponse)
-
-	var (
-		expectedStatus                  int64 = 3471
-		expectedRequestDeliveryResponse int64 = 34
-
-		messages = []Message{
-			{
-				Type:             SimpleEventMessageType,
-				Source:           "mac:121234345656",
-				Destination:      "foobar.com/service",
-				TransactionUUID:  "a unique identifier",
-				QualityOfService: 24,
-			},
-			{
-				Type:                    SimpleRequestResponseMessageType,
-				Source:                  "somewhere.comcast.net:9090/something",
-				Destination:             "serial:1234/blergh",
-				TransactionUUID:         "123-123-123",
-				Status:                  &expectedStatus,
-				RequestDeliveryResponse: &expectedRequestDeliveryResponse,
-			},
-			{
-				Type:            SimpleRequestResponseMessageType,
-				Source:          "external.com",
-				Destination:     "mac:FFEEAADD44443333",
-				TransactionUUID: "DEADBEEF",
-				Headers:         []string{"Header1", "Header2"},
-				Metadata:        map[string]string{"name": "value"},
-				Payload:         []byte{1, 2, 3, 4, 0xff, 0xce},
-				PartnerIDs:      []string{"foo"},
-			},
-			{
-				Type:            CreateMessageType,
-				Source:          "wherever.webpa.comcast.net/glorious",
-				Destination:     "uuid:1111-11-111111-11111",
-				TransactionUUID: "123-123-123",
-				Path:            "/some/where/over/the/rainbow",
-				Payload:         []byte{1, 2, 3, 4, 0xff, 0xce},
-				PartnerIDs:      []string{"foo", "bar"},
-			},
+	for _, tc := range testMessages {
+		desc := tc.msg.Source
+		if desc == "" {
+			desc = tc.desc
 		}
-	)
+		desc = fmt.Sprintf("%s %s", tc.msg.Type.FriendlyName(), desc)
+		if tc.invalid {
+			t.Run(fmt.Sprintf("Validate invalid: %s", desc), func(t *testing.T) {
+				assert.Error(t, tc.msg.Validate())
+			})
+			continue
+		}
 
-	for _, source := range allFormats {
-		t.Run(fmt.Sprintf("Encode%s", source), func(t *testing.T) {
-			for _, message := range messages {
-				testMessageEncode(t, source, message)
-			}
-		})
+		for _, format := range allFormats {
+			t.Run(fmt.Sprintf("Validate valid: %s", desc), func(t *testing.T) {
+				assert.NoError(t, tc.msg.Validate())
+			})
+			t.Run(fmt.Sprintf("Encode: %s %s", format, desc), func(t *testing.T) {
+				var decoded Message
+				var buffer bytes.Buffer
+				var encoder = NewEncoder(&buffer, format)
+				var decoder = NewDecoder(&buffer, format)
+
+				tmp := tc.msg
+
+				require.NoError(t, encoder.Encode(&tmp))
+				require.NotZero(t, buffer.Len())
+
+				require.NoError(t, decoder.Decode(&decoded))
+				assert.Equal(t, tc.msg, decoded)
+			})
+		}
 	}
 }
 
@@ -152,8 +303,8 @@ func TestMessage_TrimmedPartnerIDs(t *testing.T) {
 func TestMessageTrucation(t *testing.T) {
 	msg := Message{
 		Type:             SimpleEventMessageType,
-		Source:           "foo",
-		Destination:      "bar",
+		Source:           "dns:foo.example.com",
+		Destination:      "dns:bar.example.com",
 		TransactionUUID:  "foo",
 		ContentType:      "foo",
 		Accept:           "foo",
@@ -186,6 +337,7 @@ func TestMessageTrucation(t *testing.T) {
 	}
 }
 
+/*
 func TestValidateUTF8(t *testing.T) {
 	msgType := reflect.TypeOf(Message{})
 
@@ -229,6 +381,7 @@ func TestValidateUTF8(t *testing.T) {
 		}
 	}
 }
+*/
 
 // TestMessageConsistency will test that the Message struct is consistent with
 // the other structs that are used to represent the different message types.
@@ -387,7 +540,7 @@ func populateRequired(msg *Message, goal any) {
 			msgField := reflect.ValueOf(msg).Elem().FieldByName(fieldName)
 			switch msgField.Kind() {
 			case reflect.String:
-				msgField.SetString("required")
+				msgField.SetString("dns:required.example.com")
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				msgField.SetInt(42)
 			case reflect.Ptr:
@@ -515,4 +668,89 @@ func changeIndex(msg *Message, goal any, index int) int {
 	}
 
 	return -1
+}
+
+func TestMessage_ToAndValidate(t *testing.T) {
+	tests := []struct {
+		desc    string
+		msg     converter
+		invalid bool
+	}{
+		{
+			desc: "SimpleEvent valid",
+			msg: &SimpleEvent{
+				Source:      "dns:foo.example.com",
+				Destination: "dns:bar.example.com",
+			},
+		}, {
+			desc: "SimpleRequestResponse valid",
+			msg: &SimpleRequestResponse{
+				Source:          "dns:foo.example.com",
+				Destination:     "dns:bar.example.com",
+				TransactionUUID: "foo",
+			},
+		}, {
+			desc: "CRUD valid",
+			msg: &CRUD{
+				Type:            CreateMessageType,
+				Source:          "dns:foo.example.com",
+				Destination:     "dns:bar.example.com",
+				TransactionUUID: "foo",
+			},
+		}, {
+			desc: "ServiceRegistration valid",
+			msg: &ServiceRegistration{
+				ServiceName: "service-name",
+				URL:         "http://example.com",
+			},
+		}, {
+			desc: "Authorization valid",
+			msg:  &Authorization{},
+		}, {
+			desc: "ServiceAlive valid",
+			msg:  &ServiceAlive{},
+		}, {
+			desc: "Unknown valid",
+			msg:  &Unknown{},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			assert := assert.New(t)
+			// test To
+			got, err := tc.msg.To()
+			if tc.invalid {
+				assert.Nil(got)
+				assert.Error(err)
+				return
+			}
+
+			assert.NotNil(got)
+			assert.NoError(err)
+
+			// test Validate
+			assert.NoError(got.Validate())
+		})
+	}
+}
+
+func TestMessage_Setters(t *testing.T) {
+	var ssr SimpleRequestResponse
+	var se SimpleEvent
+	var crud CRUD
+
+	ssr.SetStatus(42)
+	assert.Equal(t, int64(42), *ssr.Status)
+	ssr.SetRequestDeliveryResponse(42)
+	assert.Equal(t, int64(42), *ssr.RequestDeliveryResponse)
+
+	se.SetRequestDeliveryResponse(42)
+	assert.Equal(t, int64(42), *se.RequestDeliveryResponse)
+
+	crud.SetStatus(42)
+	assert.Equal(t, int64(42), *crud.Status)
+	crud.SetRequestDeliveryResponse(42)
+	assert.Equal(t, int64(42), *crud.RequestDeliveryResponse)
+
 }

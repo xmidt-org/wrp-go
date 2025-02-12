@@ -5,7 +5,6 @@ package wrp
 
 import (
 	"errors"
-	"unicode/utf8"
 )
 
 //go:generate go install github.com/tinylib/msgp@latest
@@ -33,6 +32,7 @@ var (
 	ErrTransactionRequired  = errors.New("transaction_uuid is required")
 	ErrUnsupportedFieldsSet = errors.New("unsupported fields set")
 	ErrNotUTF8              = errors.New("field contains non-utf-8 characters")
+	ErrInvalidQOSValue      = errors.New("qos value is invalid")
 )
 
 // Message is the union of all WRP fields, made optional (except for Type).  This type is
@@ -135,40 +135,39 @@ func (msg *Message) SetRequestDeliveryResponse(value int64) *Message {
 	return msg
 }
 
-func (msg *Message) validate() error {
-	switch msg.Type {
-	case AuthorizationMessageType:
-		var a Authorization
-		return a.From(msg)
-	case ServiceRegistrationMessageType:
-		var sr ServiceRegistration
-		return sr.From(msg)
-	case ServiceAliveMessageType:
-		var sa ServiceAlive
-		return sa.From(msg)
-	case SimpleRequestResponseMessageType:
-		var srr SimpleRequestResponse
-		return srr.From(msg)
-	case SimpleEventMessageType:
-		var se SimpleEvent
-		return se.From(msg)
-	case CreateMessageType, RetrieveMessageType, UpdateMessageType, DeleteMessageType:
-		var crud CRUD
-		return crud.From(msg)
-	default:
-		var u Unknown
-		return u.From(msg)
-	}
+// Validate checks the message for correctness.  If the message is invalid, an
+// error is returned.
+func (msg *Message) Validate(validators ...Processor) error {
+	return Validate(msg, validators...)
+}
+
+// MessageStructs is a union of all WRP message types.  This type is useful for
+// generics based code that needs to handle multiple message types.
+type MessageStructs interface {
+	Message |
+		Authorization |
+		SimpleRequestResponse |
+		SimpleEvent |
+		CRUD |
+		ServiceRegistration |
+		ServiceAlive |
+		Unknown
 }
 
 // -----------------------------------------------------------------------------
 
 // converter is a compile-time helper interface that ensures all message types
-// implement the From and To methods.  This interface is not intended for use in
-// client code.  It is also used by test code.
+// implement the From, To and Validate methods.  This interface is not intended
+// for use in client code.  It is also used by test code.
 type converter interface {
-	From(*Message) error
-	To() (*Message, error)
+	From(*Message, ...Processor) error
+	To(validators ...Processor) (*Message, error)
+	Validate(...Processor) error
+
+	// to converts the specific struct to a Message struct, with no
+	// error checking.  This allows validateTo to call this function and avoid any
+	// circular loops.
+	to() *Message
 }
 
 // -----------------------------------------------------------------------------
@@ -177,8 +176,8 @@ type converter interface {
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#simple-request-response-definition
 type SimpleRequestResponse struct {
-	Source                  string `required:""`
-	Destination             string `required:""`
+	Source                  string `required:"" locator:""`
+	Destination             string `required:"" locator:""`
 	TransactionUUID         string `required:""`
 	ContentType             string
 	Accept                  string
@@ -197,28 +196,8 @@ var _ converter = (*SimpleRequestResponse)(nil)
 // From converts a Message struct to a SimpleRequestResponse struct.  The
 // Message struct is validated before being converted.  If the Message struct is
 // invalid, an error is returned.
-func (srr *SimpleRequestResponse) From(msg *Message) error {
-	if msg.Type != SimpleRequestResponseMessageType {
-		return ErrInvalidMessageType
-	}
-	if msg.Source == "" {
-		return errors.Join(ErrMessageIsInvalid, ErrSourceRequired)
-	}
-	if msg.Destination == "" {
-		return errors.Join(ErrMessageIsInvalid, ErrDestRequired)
-	}
-	if msg.TransactionUUID == "" {
-		return errors.Join(ErrMessageIsInvalid, ErrTransactionRequired)
-	}
-
-	// Unsupported fields must be empty
-	if msg.Path != "" ||
-		msg.ServiceName != "" ||
-		msg.URL != "" {
-		return errors.Join(ErrMessageIsInvalid, ErrUnsupportedFieldsSet)
-	}
-
-	if err := validateUTF8(msg); err != nil {
+func (srr *SimpleRequestResponse) From(msg *Message, validators ...Processor) error {
+	if err := Validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -241,8 +220,12 @@ func (srr *SimpleRequestResponse) From(msg *Message) error {
 // To converts the SimpleRequestResponse struct to a Message struct.  The
 // Message struct is validated before being returned.  If the Message struct
 // is invalid, an error is returned.
-func (srr *SimpleRequestResponse) To() (*Message, error) {
-	msg := Message{
+func (srr *SimpleRequestResponse) To(validators ...Processor) (*Message, error) {
+	return validateTo(srr, validators...)
+}
+
+func (srr *SimpleRequestResponse) to() *Message {
+	return &Message{
 		Type:                    SimpleRequestResponseMessageType,
 		Source:                  srr.Source,
 		Destination:             srr.Destination,
@@ -258,21 +241,22 @@ func (srr *SimpleRequestResponse) To() (*Message, error) {
 		SessionID:               srr.SessionID,
 		Payload:                 srr.Payload,
 	}
-
-	if err := msg.validate(); err != nil {
-		return nil, err
-	}
-
-	return &msg, nil
 }
 
-// SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
+// Validate checks the SimpleRequestResponse struct for correctness.  If the
+// SimpleRequestResponse struct is invalid, an error is returned.
+func (srr *SimpleRequestResponse) Validate(validators ...Processor) error {
+	return Validate(srr, validators...)
+}
+
+// SetStatus simplifies setting the optional Status field.
 func (srr *SimpleRequestResponse) SetStatus(value int64) *SimpleRequestResponse {
 	srr.Status = &value
 	return srr
 }
 
-// SetRequestDeliveryResponse simplifies setting the optional RequestDeliveryResponse field, which is a pointer type tagged with omitempty.
+// SetRequestDeliveryResponse simplifies setting the optional
+// RequestDeliveryResponse field.
 func (srr *SimpleRequestResponse) SetRequestDeliveryResponse(value int64) *SimpleRequestResponse {
 	srr.RequestDeliveryResponse = &value
 	return srr
@@ -284,8 +268,8 @@ func (srr *SimpleRequestResponse) SetRequestDeliveryResponse(value int64) *Simpl
 //
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#simple-event-definition
 type SimpleEvent struct {
-	Source                  string `required:""`
-	Destination             string `required:""`
+	Source                  string `required:"" locator:""`
+	Destination             string `required:"" locator:""`
 	TransactionUUID         string `suggested:""`
 	ContentType             string
 	RequestDeliveryResponse *int64
@@ -302,27 +286,8 @@ var _ converter = (*SimpleEvent)(nil)
 // From converts a Message struct to a SimpleEvent struct.  The Message struct is
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
-func (se *SimpleEvent) From(msg *Message) error {
-	if msg.Type != SimpleEventMessageType {
-		return ErrInvalidMessageType
-	}
-	if msg.Source == "" {
-		return errors.Join(ErrMessageIsInvalid, ErrSourceRequired)
-	}
-	if msg.Destination == "" {
-		return errors.Join(ErrMessageIsInvalid, ErrDestRequired)
-	}
-
-	// Unsupported fields must be empty
-	if msg.Accept != "" ||
-		msg.Status != nil ||
-		msg.Path != "" ||
-		msg.ServiceName != "" ||
-		msg.URL != "" {
-		return errors.Join(ErrMessageIsInvalid, ErrUnsupportedFieldsSet)
-	}
-
-	if err := validateUTF8(msg); err != nil {
+func (se *SimpleEvent) From(msg *Message, validators ...Processor) error {
+	if err := Validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -343,8 +308,12 @@ func (se *SimpleEvent) From(msg *Message) error {
 // To converts the SimpleEvent struct to a Message struct.  The Message struct is
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
-func (se *SimpleEvent) To() (*Message, error) {
-	msg := Message{
+func (se *SimpleEvent) To(validators ...Processor) (*Message, error) {
+	return validateTo(se, validators...)
+}
+
+func (se *SimpleEvent) to() *Message {
+	return &Message{
 		Type:                    SimpleEventMessageType,
 		Source:                  se.Source,
 		Destination:             se.Destination,
@@ -358,15 +327,16 @@ func (se *SimpleEvent) To() (*Message, error) {
 		QualityOfService:        se.QualityOfService,
 		Payload:                 se.Payload,
 	}
-
-	if err := msg.validate(); err != nil {
-		return nil, err
-	}
-
-	return &msg, nil
 }
 
-// SetRequestDeliveryResponse simplifies setting the optional RequestDeliveryResponse field, which is a pointer type tagged with omitempty.
+// Validate checks the SimpleEvent struct for correctness.  If the SimpleEvent
+// struct is invalid, an error is returned.
+func (se *SimpleEvent) Validate(validators ...Processor) error {
+	return Validate(se, validators...)
+}
+
+// SetRequestDeliveryResponse simplifies setting the optional
+// RequestDeliveryResponse field.
 func (se *SimpleEvent) SetRequestDeliveryResponse(value int64) *SimpleEvent {
 	se.RequestDeliveryResponse = &value
 	return se
@@ -380,8 +350,8 @@ func (se *SimpleEvent) SetRequestDeliveryResponse(value int64) *SimpleEvent {
 // https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol#crud-message-definition
 type CRUD struct {
 	Type                    MessageType `required:""`
-	Source                  string      `required:""`
-	Destination             string      `required:""`
+	Source                  string      `required:"" locator:""`
+	Destination             string      `required:"" locator:""`
 	TransactionUUID         string      `required:""`
 	ContentType             string
 	Accept                  string
@@ -401,29 +371,8 @@ var _ converter = (*CRUD)(nil)
 // From converts a Message struct to a CRUD struct.  The Message struct is
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
-func (c *CRUD) From(msg *Message) error {
-	switch msg.Type {
-	case CreateMessageType, RetrieveMessageType, UpdateMessageType, DeleteMessageType:
-	default:
-		return ErrInvalidMessageType
-	}
-	if msg.Source == "" {
-		return errors.Join(ErrMessageIsInvalid, ErrSourceRequired)
-	}
-	if msg.Destination == "" {
-		return errors.Join(ErrMessageIsInvalid, ErrDestRequired)
-	}
-	if msg.TransactionUUID == "" {
-		return errors.Join(ErrMessageIsInvalid, ErrTransactionRequired)
-	}
-
-	// Unsupported fields must be empty
-	if msg.ServiceName != "" ||
-		msg.URL != "" {
-		return errors.Join(ErrMessageIsInvalid, ErrUnsupportedFieldsSet)
-	}
-
-	if err := validateUTF8(msg); err != nil {
+func (c *CRUD) From(msg *Message, validators ...Processor) error {
+	if err := Validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -448,8 +397,12 @@ func (c *CRUD) From(msg *Message) error {
 // To converts the CRUD struct to a Message struct.  The Message struct is
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
-func (c *CRUD) To() (*Message, error) {
-	msg := Message{
+func (c *CRUD) To(validators ...Processor) (*Message, error) {
+	return validateTo(c, validators...)
+}
+
+func (c *CRUD) to() *Message {
+	return &Message{
 		Type:                    c.Type,
 		Source:                  c.Source,
 		Destination:             c.Destination,
@@ -466,21 +419,22 @@ func (c *CRUD) To() (*Message, error) {
 		SessionID:               c.SessionID,
 		Payload:                 c.Payload,
 	}
-
-	if err := msg.validate(); err != nil {
-		return nil, err
-	}
-
-	return &msg, nil
 }
 
-// SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
+// Validate checks the CRUD struct for correctness.  If the CRUD struct is
+// invalid, an error is returned.
+func (c *CRUD) Validate(validators ...Processor) error {
+	return Validate(c, validators...)
+}
+
+// SetStatus simplifies setting the optional Status field.
 func (c *CRUD) SetStatus(value int64) *CRUD {
 	c.Status = &value
 	return c
 }
 
-// SetRequestDeliveryResponse simplifies setting the optional RequestDeliveryResponse field, which is a pointer type tagged with omitempty.
+// SetRequestDeliveryResponse simplifies setting the optional
+// RequestDeliveryResponse.
 func (c *CRUD) SetRequestDeliveryResponse(value int64) *CRUD {
 	c.RequestDeliveryResponse = &value
 	return c
@@ -501,37 +455,8 @@ var _ converter = (*ServiceRegistration)(nil)
 // From converts a Message struct to a ServiceRegistration struct.  The Message
 // struct is validated before being converted.  If the Message struct is invalid,
 // an error is returned.
-func (sr *ServiceRegistration) From(msg *Message) error {
-	if msg.Type != ServiceRegistrationMessageType {
-		return ErrInvalidMessageType
-	}
-	if msg.ServiceName == "" {
-		return errors.Join(ErrMessageIsInvalid, errors.New("service_name is required"))
-	}
-	if msg.URL == "" {
-		return errors.Join(ErrMessageIsInvalid, errors.New("url is required"))
-	}
-
-	// Unsupported fields must be empty
-	if msg.Source != "" ||
-		msg.Destination != "" ||
-		msg.TransactionUUID != "" ||
-		msg.ContentType != "" ||
-		msg.Accept != "" ||
-		msg.Status != nil ||
-		msg.RequestDeliveryResponse != nil ||
-		len(msg.PartnerIDs) > 0 ||
-		len(msg.Headers) > 0 ||
-		len(msg.Metadata) > 0 ||
-		msg.Path != "" ||
-		len(msg.Payload) > 0 ||
-		msg.SessionID != "" ||
-		msg.QualityOfService != 0 ||
-		msg.Payload != nil {
-		return errors.Join(ErrMessageIsInvalid, ErrUnsupportedFieldsSet)
-	}
-
-	if err := validateUTF8(msg); err != nil {
+func (sr *ServiceRegistration) From(msg *Message, validators ...Processor) error {
+	if err := Validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -543,18 +468,22 @@ func (sr *ServiceRegistration) From(msg *Message) error {
 // To converts the ServiceRegistration struct to a Message struct.  The Message
 // struct is validated before being returned.  If the Message struct is invalid,
 // an error is returned.
-func (sr *ServiceRegistration) To() (*Message, error) {
-	msg := Message{
+func (sr *ServiceRegistration) To(validators ...Processor) (*Message, error) {
+	return validateTo(sr, validators...)
+}
+
+func (sr *ServiceRegistration) to() *Message {
+	return &Message{
 		Type:        ServiceRegistrationMessageType,
 		ServiceName: sr.ServiceName,
 		URL:         sr.URL,
 	}
+}
 
-	if err := msg.validate(); err != nil {
-		return nil, err
-	}
-
-	return &msg, nil
+// Validate checks the ServiceRegistration struct for correctness.  If the
+// ServiceRegistration struct is invalid, an error is returned.
+func (sr *ServiceRegistration) Validate(validators ...Processor) error {
+	return Validate(sr, validators...)
 }
 
 // -----------------------------------------------------------------------------
@@ -569,30 +498,9 @@ var _ converter = (*ServiceAlive)(nil)
 // From converts a Message struct to a ServiceAlive struct.  The Message struct
 // is validated before being converted.  If the Message struct is invalid, an
 // error is returned.
-func (sa *ServiceAlive) From(msg *Message) error {
-	if msg.Type != ServiceAliveMessageType {
-		return ErrInvalidMessageType
-	}
-
-	// Unsupported fields must be empty
-	if msg.Source != "" ||
-		msg.Destination != "" ||
-		msg.TransactionUUID != "" ||
-		msg.ContentType != "" ||
-		msg.Accept != "" ||
-		msg.Status != nil ||
-		msg.RequestDeliveryResponse != nil ||
-		len(msg.PartnerIDs) > 0 ||
-		len(msg.Headers) > 0 ||
-		len(msg.Metadata) > 0 ||
-		msg.Path != "" ||
-		len(msg.Payload) > 0 ||
-		msg.ServiceName != "" ||
-		msg.URL != "" ||
-		msg.SessionID != "" ||
-		msg.QualityOfService != 0 ||
-		msg.Payload != nil {
-		return errors.Join(ErrMessageIsInvalid, ErrUnsupportedFieldsSet)
+func (sa *ServiceAlive) From(msg *Message, validators ...Processor) error {
+	if err := Validate(msg, validators...); err != nil {
+		return err
 	}
 	return nil
 }
@@ -600,16 +508,20 @@ func (sa *ServiceAlive) From(msg *Message) error {
 // To converts the ServiceAlive struct to a Message struct.  The Message struct
 // is validated before being returned.  If the Message struct is invalid, an
 // error is returned.
-func (sa *ServiceAlive) To() (*Message, error) {
-	msg := Message{
+func (sa *ServiceAlive) To(validators ...Processor) (*Message, error) {
+	return validateTo(sa, validators...)
+}
+
+func (sa *ServiceAlive) to() *Message {
+	return &Message{
 		Type: ServiceAliveMessageType,
 	}
+}
 
-	if err := msg.validate(); err != nil {
-		return nil, err
-	}
-
-	return &msg, nil
+// Validate checks the ServiceAlive struct for correctness.  If the ServiceAlive
+// struct is invalid, an error is returned.
+func (sa *ServiceAlive) Validate(validators ...Processor) error {
+	return Validate(sa, validators...)
 }
 
 // -----------------------------------------------------------------------------
@@ -624,30 +536,9 @@ var _ converter = (*Unknown)(nil)
 // From converts a Message struct to an Unknown struct.  The Message struct is
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
-func (u *Unknown) From(msg *Message) error {
-	if msg.Type != UnknownMessageType {
-		return ErrInvalidMessageType
-	}
-
-	// Unsupported fields must be empty
-	if msg.Source != "" ||
-		msg.Destination != "" ||
-		msg.TransactionUUID != "" ||
-		msg.ContentType != "" ||
-		msg.Accept != "" ||
-		msg.Status != nil ||
-		msg.RequestDeliveryResponse != nil ||
-		len(msg.PartnerIDs) > 0 ||
-		len(msg.Headers) > 0 ||
-		len(msg.Metadata) > 0 ||
-		msg.Path != "" ||
-		len(msg.Payload) > 0 ||
-		msg.ServiceName != "" ||
-		msg.URL != "" ||
-		msg.SessionID != "" ||
-		msg.QualityOfService != 0 ||
-		msg.Payload != nil {
-		return errors.Join(ErrMessageIsInvalid, ErrUnsupportedFieldsSet)
+func (u *Unknown) From(msg *Message, validators ...Processor) error {
+	if err := Validate(msg, validators...); err != nil {
+		return err
 	}
 
 	return nil
@@ -656,16 +547,20 @@ func (u *Unknown) From(msg *Message) error {
 // To converts the Unknown struct to a Message struct.  The Message struct is
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
-func (u *Unknown) To() (*Message, error) {
-	msg := Message{
+func (u *Unknown) To(validators ...Processor) (*Message, error) {
+	return validateTo(u, validators...)
+}
+
+func (u *Unknown) to() *Message {
+	return &Message{
 		Type: UnknownMessageType,
 	}
+}
 
-	if err := msg.validate(); err != nil {
-		return nil, err
-	}
-
-	return &msg, nil
+// Validate checks the Unknown struct for correctness.  If the Unknown struct is
+// invalid, an error is returned.
+func (u *Unknown) Validate(validators ...Processor) error {
+	return Validate(u, validators...)
 }
 
 // -----------------------------------------------------------------------------
@@ -680,32 +575,9 @@ var _ converter = (*Authorization)(nil)
 // From converts a Message struct to an Authorization struct.  The Message struct
 // is validated before being converted.  If the Message struct is invalid, an
 // error is returned.
-func (a *Authorization) From(msg *Message) error {
-	if msg.Type != AuthorizationMessageType {
-		return ErrInvalidMessageType
-	}
-	if msg.Status == nil {
-		return errors.Join(ErrMessageIsInvalid, errors.New("status is required"))
-	}
-
-	// Unsupported fields must be empty
-	if msg.Source != "" ||
-		msg.Destination != "" ||
-		msg.TransactionUUID != "" ||
-		msg.ContentType != "" ||
-		msg.Accept != "" ||
-		msg.RequestDeliveryResponse != nil ||
-		len(msg.PartnerIDs) > 0 ||
-		len(msg.Headers) > 0 ||
-		len(msg.Metadata) > 0 ||
-		msg.Path != "" ||
-		len(msg.Payload) > 0 ||
-		msg.ServiceName != "" ||
-		msg.URL != "" ||
-		msg.SessionID != "" ||
-		msg.QualityOfService != 0 ||
-		msg.Payload != nil {
-		return errors.Join(ErrMessageIsInvalid, ErrUnsupportedFieldsSet)
+func (a *Authorization) From(msg *Message, validators ...Processor) error {
+	if err := Validate(msg, validators...); err != nil {
+		return err
 	}
 
 	a.Status = *msg.Status
@@ -715,17 +587,21 @@ func (a *Authorization) From(msg *Message) error {
 // To converts the Authorization struct to a Message struct.  The Message struct
 // is validated before being returned.  If the Message struct is invalid, an
 // error is returned.
-func (a *Authorization) To() (*Message, error) {
-	msg := Message{
+func (a *Authorization) To(validators ...Processor) (*Message, error) {
+	return validateTo(a, validators...)
+}
+
+func (a *Authorization) to() *Message {
+	return &Message{
 		Type:   AuthorizationMessageType,
 		Status: &a.Status,
 	}
+}
 
-	if err := msg.validate(); err != nil {
-		return nil, err
-	}
-
-	return &msg, nil
+// Validate checks the Authorization struct for correctness.  If the
+// Authorization struct is invalid, an error is returned.
+func (a *Authorization) Validate(validators ...Processor) error {
+	return Validate(a, validators...)
 }
 
 // -----------------------------------------------------------------------------
@@ -742,60 +618,4 @@ func trimPartnerIDs(partners []string) []string {
 		return nil
 	}
 	return trimmed
-}
-
-// -----------------------------------------------------------------------------
-
-func validateUTF8(msg *Message) error {
-	var err error
-	strUTF8Vador(msg.Source, "Source", &err)
-	strUTF8Vador(msg.Destination, "Destination", &err)
-	strUTF8Vador(msg.TransactionUUID, "TransactionUUID", &err)
-	strUTF8Vador(msg.ContentType, "ContentType", &err)
-	strUTF8Vador(msg.Accept, "Accept", &err)
-	sArrayUTF8Vador(msg.Headers, "Headers", &err)
-	mapUTF8Vador(msg.Metadata, "Metadata", &err)
-	strUTF8Vador(msg.Path, "Path", &err)
-	strUTF8Vador(msg.ServiceName, "ServiceName", &err)
-	strUTF8Vador(msg.URL, "URL", &err)
-	sArrayUTF8Vador(msg.PartnerIDs, "PartnerIDs", &err)
-	strUTF8Vador(msg.SessionID, "SessionID", &err)
-
-	return err
-}
-
-func strUTF8Vador(s, field string, err *error) {
-	if *err != nil {
-		return
-	}
-
-	if !utf8.ValidString(s) {
-		*err = errors.Join(ErrMessageIsInvalid, ErrNotUTF8, errors.New("invalid "+field))
-	}
-}
-
-func sArrayUTF8Vador(list []string, field string, err *error) {
-	if *err != nil {
-		return
-	}
-
-	for _, s := range list {
-		if !utf8.ValidString(s) {
-			*err = errors.Join(ErrMessageIsInvalid, ErrNotUTF8, errors.New("invalid "+field))
-			return
-		}
-	}
-}
-
-func mapUTF8Vador(m map[string]string, field string, err *error) {
-	if *err != nil {
-		return
-	}
-
-	for k, v := range m {
-		if !utf8.ValidString(k) || !utf8.ValidString(v) {
-			*err = errors.Join(ErrMessageIsInvalid, ErrNotUTF8, errors.New("invalid "+field))
-			return
-		}
-	}
 }

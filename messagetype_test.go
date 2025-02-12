@@ -99,6 +99,16 @@ func TestStringToMessageType(t *testing.T) {
 	})
 }
 
+func TestMessageType_IsValid(t *testing.T) {
+	for v := AuthorizationMessageType; v < LastMessageType; v++ {
+		assert.True(t, v.IsValid())
+	}
+
+	assert.False(t, Invalid0MessageType.IsValid())
+	assert.False(t, Invalid1MessageType.IsValid())
+	assert.False(t, MessageType(-1).IsValid())
+}
+
 func TestMtToStructContainsAllMessageTypes(t *testing.T) {
 	for mt := Invalid0MessageType; mt <= LastMessageType; mt++ {
 		_, found := mtToStruct[mt]

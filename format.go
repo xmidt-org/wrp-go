@@ -5,7 +5,9 @@ package wrp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 )
 
@@ -26,6 +28,26 @@ const (
 // AllFormats returns a distinct slice of all supported formats.
 func AllFormats() []Format {
 	return []Format{Msgpack, JSON}
+}
+
+// Encoder returns an Encoder for the given format.
+func (f *Format) Encoder(output io.Writer) Encoder {
+	return NewEncoder(output, *f)
+}
+
+// EncoderBytes returns an Encoder for the given format.
+func (f *Format) EncoderBytes(output *[]byte) Encoder {
+	return NewEncoderBytes(output, *f)
+}
+
+// Decoder returns a Decoder for the given format.
+func (f *Format) Decoder(input io.Reader) Decoder {
+	return NewDecoder(input, *f)
+}
+
+// DecoderBytes returns a Decoder for the given format.
+func (f *Format) DecoderBytes(input []byte) Decoder {
+	return NewDecoderBytes(input, *f)
 }
 
 // Encoder represents the underlying ugorji behavior that WRP supports
@@ -56,7 +78,12 @@ func NewEncoder(output io.Writer, f Format) Encoder {
 func NewEncoderBytes(output *[]byte, f Format) Encoder {
 	switch f {
 	case JSON:
-		return &jsonEncoder{enc: json.NewEncoder(bytes.NewBuffer(*output))}
+		buffer := bytes.NewBuffer(*output)
+		return &jsonEncoder{
+			buffer: buffer,
+			enc:    json.NewEncoder(buffer),
+			output: output,
+		}
 	case Msgpack:
 		return &msgpEncoder{bits: output}
 	}
@@ -65,11 +92,17 @@ func NewEncoderBytes(output *[]byte, f Format) Encoder {
 }
 
 type jsonEncoder struct {
-	enc *json.Encoder
+	enc    *json.Encoder
+	buffer *bytes.Buffer
+	output *[]byte
 }
 
 func (e *jsonEncoder) Encode(msg *Message) error {
-	return e.enc.Encode(msg)
+	err := e.enc.Encode(msg)
+	if err == nil && e.buffer != nil && e.output != nil {
+		*e.output = e.buffer.Bytes()
+	}
+	return err
 }
 
 type msgpEncoder struct {
@@ -80,14 +113,14 @@ type msgpEncoder struct {
 func (e *msgpEncoder) Encode(msg *Message) error {
 	if e.stream != nil {
 		got, err := msg.marshalMsg(nil)
-		if err != nil {
-			return err
+		if err == nil {
+			_, err = e.stream.Write(got)
 		}
-		_, err = e.stream.Write(got)
 		return err
 	}
 
-	_, err := msg.marshalMsg(*e.bits)
+	var err error
+	*e.bits, err = msg.marshalMsg(*e.bits)
 	return err
 }
 
@@ -124,11 +157,7 @@ type jsonDecoder struct {
 }
 
 func (d *jsonDecoder) Decode(msg *Message) error {
-	err := d.dec.Decode(msg)
-	if err != nil {
-		return err
-	}
-	return msg.validate()
+	return d.dec.Decode(msg)
 }
 
 type msgpDecoder struct {
@@ -145,11 +174,7 @@ func (d *msgpDecoder) Decode(msg *Message) error {
 		}
 	}
 	_, err = msg.unmarshalMsg(d.bits)
-	if err != nil {
-		return err
-	}
-
-	return msg.validate()
+	return err
 }
 
 // TranscodeMessage converts a WRP message of any type from one format into another,
@@ -178,4 +203,134 @@ func MustEncode(message *Message, f Format) []byte {
 	}
 
 	return output.Bytes()
+}
+
+func Decode[T MessageStructs](r io.Reader, f Format) (*T, error) {
+	return DecodeThenValidate[T](r, f, NoStandardValidation())
+}
+
+func DecodeBytes[T MessageStructs](buf []byte, f Format) (*T, error) {
+	return Decode[T](bytes.NewReader(buf), f)
+}
+
+func DecodeThenValidateBytes[T MessageStructs](buf []byte, f Format, validators ...Processor) (*T, error) {
+	return DecodeThenValidate[T](bytes.NewReader(buf), f, validators...)
+}
+
+func DecodeThenValidate[T MessageStructs](r io.Reader, f Format, validators ...Processor) (*T, error) {
+	var msg Message
+	if err := f.Decoder(r).Decode(&msg); err != nil {
+		return nil, err
+	}
+
+	if err := Validate(&msg, validators...); err != nil {
+		return nil, err
+	}
+
+	out := new(T)
+	switch m := any(out).(type) {
+	case *Message:
+		*m = msg
+		return out, nil
+	case *Authorization, *SimpleRequestResponse, *SimpleEvent, *CRUD, *ServiceRegistration, *ServiceAlive, *Unknown:
+		if err := m.(converter).From(&msg); err != nil {
+			return nil, err
+		}
+		return out, nil
+	}
+
+	return nil, ErrNotHandled
+}
+
+func Encode[T MessageStructs](msg *T, w io.Writer, f Format) error {
+	return EncodeAfterValidate(msg, w, f, NoStandardValidation())
+}
+
+func EncodeBytes[T MessageStructs](msg *T, f Format) ([]byte, error) {
+	return EncodeAfterValidateBytes(msg, f, NoStandardValidation())
+}
+
+func EncodeAfterValidateBytes[T MessageStructs](msg *T, f Format, validators ...Processor) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := EncodeAfterValidate(msg, &buf, f, validators...); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// EncodeBytes is a convenience function that encodes a given message into a
+// byte slice.
+func EncodeAfterValidate[T MessageStructs](msg *T, w io.Writer, f Format, validators ...Processor) error {
+	if err := Validate(msg, validators...); err != nil {
+		return err
+	}
+
+	var encoder = NewEncoder(w, f)
+
+	var err error
+	var base *Message
+	switch m := any(msg).(type) {
+	case *Message:
+		base = m
+	case *Authorization, *SimpleRequestResponse, *SimpleEvent, *CRUD, *ServiceRegistration, *ServiceAlive, *Unknown:
+		base, err = m.(converter).To()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := encoder.Encode(base); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Validate performs a set of validations on a message.  If no validators are
+// provided, the default set of standard WRP validators is used.  If the
+// NoStandardValidation() processor is provided, no standard validation is
+// performed.  After standard validation (if applicable) is performed, any
+// additional validators are executed in the order they are provided.  If any
+// validator returns an error excluding ErrNotHandled, the iteration stops and
+// the error is returned.  If a validator return ErrNotHandled, then the
+// validation is considered successful.  Any combination of nil errors and
+// ErrNotHandled is considered a successful validation.  All other errors are
+// considered validation failures and the first encountered error is returned.
+func Validate[T MessageStructs](msg *T, validators ...Processor) error {
+	_, err := validateTo(msg, validators...)
+	return err
+}
+
+func validateTo[T MessageStructs](msg *T, validators ...Processor) (*Message, error) {
+	defaults := []Processor{
+		StdValidator(),
+	}
+	for _, v := range validators {
+		if v == nil {
+			continue
+		}
+		if _, ok := v.(noStandardValidation); ok {
+			defaults = nil
+			break
+		}
+	}
+
+	validators = append(defaults, validators...)
+
+	var base *Message
+	switch m := any(msg).(type) {
+	case *Message:
+		base = m
+	case *Authorization, *SimpleRequestResponse, *SimpleEvent, *CRUD, *ServiceRegistration, *ServiceAlive, *Unknown:
+		base = m.(converter).to()
+	}
+
+	err := Processors(validators).ProcessWRP(context.Background(), *base)
+	if err == nil || errors.Is(err, ErrNotHandled) {
+		return base, nil
+	}
+
+	return base, err
 }

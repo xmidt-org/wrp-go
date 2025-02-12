@@ -22,8 +22,8 @@ func testPayload(t *testing.T, payload []byte) {
 		require  = require.New(t)
 		original = Message{
 			Type:        SimpleEventMessageType,
-			Source:      "source",
-			Destination: "destination",
+			Source:      "dns:source",
+			Destination: "dns:destination",
 			Payload:     payload,
 		}
 
@@ -194,12 +194,12 @@ func TestTranscodeMessage(t *testing.T) {
 		messages = []Message{
 			{
 				Type:        SimpleEventMessageType,
-				Source:      "foobar.com",
+				Source:      "dns:foobar.com",
 				Destination: "mac:FFEEDDCCBBAA",
 				Payload:     []byte("hi!"),
 			}, {
 				Type:                    SimpleRequestResponseMessageType,
-				Source:                  "foobar.com",
+				Source:                  "dns:foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
 				TransactionUUID:         "60dfdf5b-98c5-4e91-95fd-1fa6cb114cf5",
 				ContentType:             "application/msgpack",
@@ -212,13 +212,13 @@ func TestTranscodeMessage(t *testing.T) {
 			},
 			{
 				Type:        SimpleEventMessageType,
-				Source:      "foobar.com",
+				Source:      "dns:foobar.com",
 				Destination: "mac:FFEEDDCCBBAA",
 				Payload:     []byte("hi!"),
 			},
 			{
 				Type:                    SimpleRequestResponseMessageType,
-				Source:                  "foobar.com",
+				Source:                  "dns:foobar.com",
 				Destination:             "mac:FFEEDDCCBBAA",
 				TransactionUUID:         "60dfdf5b-98c5-4e91-95fd-1fa6cb114cf5",
 				ContentType:             "text/plain",
@@ -252,7 +252,7 @@ func TestInvalidUtf8Decoding(t *testing.T) {
 			"\xa4""dest"             : "\xac""\xed\xbf\xbft-address"
 			"\xa7""payload"          : "\xc4""\x03" - len 3
 											 "123"
-			"\xa6""source"           : "\xae""source-address"
+			"\xa6""source"           : "\xae""dns:example.io"
 			"\xb0""transaction_uuid" : "\xd9\x24""c07ee5e1-70be-444c-a156-097c767ad8aa"
 	*/
 	invalid := []byte{
@@ -260,12 +260,108 @@ func TestInvalidUtf8Decoding(t *testing.T) {
 		0xa8, 'm', 's', 'g', '_', 't', 'y', 'p', 'e', 0x03,
 		0xa4, 'd', 'e', 's', 't', 0xac /* \xed\xbf\xbf is invalid */, 0xed, 0xbf, 0xbf, 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
 		0xa7, 'p', 'a', 'y', 'l', 'o', 'a', 'd', 0xc4, 0x03, '1', '2', '3',
-		0xa6, 's', 'o', 'u', 'r', 'c', 'e', 0xae, 's', 'o', 'u', 'r', 'c', 'e', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
+		0xa6, 's', 'o', 'u', 'r', 'c', 'e', 0xae, 'd', 'n', 's', ':', 'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'i', 'o',
 		0xb0, 't', 'r', 'a', 'n', 's', 'a', 'c', 't', 'i', 'o', 'n', '_', 'u', 'u', 'i', 'd', 0xd9, 0x24, 'c', '0', '7', 'e', 'e', '5', 'e', '1', '-', '7', '0', 'b', 'e', '-', '4', '4', '4', 'c', '-', 'a', '1', '5', '6', '-', '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'a',
 	}
 
-	decoder := NewDecoderBytes(invalid, Msgpack)
-	msg := new(Message)
-	err := decoder.Decode(msg)
+	buf, err := DecodeThenValidateBytes[Message](invalid, Msgpack)
 	assert.ErrorIs(err, ErrNotUTF8)
+	assert.Nil(buf)
+}
+
+func TestAllFormats(t *testing.T) {
+	require.NotNil(t, AllFormats())
+	assert.Contains(t, AllFormats(), JSON)
+	assert.Contains(t, AllFormats(), Msgpack)
+}
+
+func TestCodecEndToEnd(t *testing.T) {
+
+	for _, format := range append(AllFormats(), Format(-1)) {
+		if format == Format(-1) {
+			assert.Nil(t, NewEncoder(nil, format))
+			assert.Nil(t, NewDecoder(nil, format))
+			assert.Nil(t, NewEncoderBytes(nil, format))
+			assert.Nil(t, NewDecoderBytes(nil, format))
+			continue
+		}
+
+		t.Run(format.String(), func(t *testing.T) {
+			buf := new(bytes.Buffer)
+			var bts []byte
+			encoder := NewEncoder(buf, format)
+			require.NotNil(t, encoder)
+
+			encoderBytes := NewEncoderBytes(&bts, format)
+			require.NotNil(t, encoderBytes)
+
+			original := Message{Type: UnknownMessageType}
+
+			require.NoError(t, encoder.Encode(&original))
+			require.NoError(t, encoderBytes.Encode(&original))
+
+			assert.Equal(t, buf.Bytes(), bts)
+
+			decoder := NewDecoder(buf, format)
+			require.NotNil(t, decoder)
+
+			decoderBytes := NewDecoderBytes(bts, format)
+			require.NotNil(t, decoderBytes)
+
+			var decoded Message
+			require.NoError(t, decoder.Decode(&decoded))
+			assert.Equal(t, original, decoded)
+
+			var decodedBytes Message
+			require.NoError(t, decoderBytes.Decode(&decodedBytes))
+			assert.Equal(t, original, decodedBytes)
+		})
+	}
+}
+
+func TestJSONDecode(t *testing.T) {
+	// JSON encoded message
+	goodJSON := []byte(`{ "msg_type": 11 }`)
+	invalidJSON := []byte(`{ "msg_type": 11, }`)
+
+	decoder := NewDecoderBytes(goodJSON, JSON)
+	require.NotNil(t, decoder)
+
+	var decoded Message
+	err := decoder.Decode(&decoded)
+	require.NoError(t, err)
+	assert.Equal(t, UnknownMessageType, decoded.Type)
+
+	decoder = NewDecoderBytes(invalidJSON, JSON)
+	require.NotNil(t, decoder)
+
+	err = decoder.Decode(&decoded)
+	require.Error(t, err)
+}
+
+func TestMsgPackDecode(t *testing.T) {
+	// JSON encoded message
+	goodMsgpack := []byte{
+		0x81,                                               // 1 map
+		0xa8, 'm', 's', 'g', '_', 't', 'y', 'p', 'e', 0x0b, // "msg_type": 11
+	}
+
+	decoder := NewDecoderBytes(goodMsgpack, Msgpack)
+	require.NotNil(t, decoder)
+
+	var decoded Message
+	err := decoder.Decode(&decoded)
+	require.NoError(t, err)
+	assert.Equal(t, UnknownMessageType, decoded.Type)
+
+	decoder = NewDecoderBytes(goodMsgpack[:len(goodMsgpack)-2], Msgpack)
+	require.NotNil(t, decoder)
+
+	err = decoder.Decode(&decoded)
+	require.Error(t, err)
+}
+
+func TestMustEncode(t *testing.T) {
+	assert.NotNil(t, MustEncode(&Message{Type: UnknownMessageType}, JSON))
+	assert.NotNil(t, MustEncode(&Message{Type: UnknownMessageType}, Msgpack))
 }

@@ -11,7 +11,7 @@ import (
 func getTestMessage() Message {
 	return Message{
 		Type:            SimpleEventMessageType,
-		Source:          "mac:112233445566i/service-name/ignored/12344",
+		Source:          "mac:112233445566/service-name/ignored/12344",
 		Destination:     "event:device-status/foo",
 		TransactionUUID: "60dfdf5b-98c5-4e91-95fd-1fa6cb114cf5",
 		ContentType:     "application/json",
