@@ -123,6 +123,26 @@ type Message struct {
 	QualityOfService QOSValue `json:"qos"`
 }
 
+func (msg *Message) from(m *Message) {
+	msg.Type = m.Type
+	msg.Source = m.Source
+	msg.Destination = m.Destination
+	msg.TransactionUUID = m.TransactionUUID
+	msg.ContentType = m.ContentType
+	msg.Accept = m.Accept
+	msg.Status = m.Status
+	msg.RequestDeliveryResponse = m.RequestDeliveryResponse
+	msg.Headers = m.Headers
+	msg.Metadata = m.Metadata
+	msg.Path = m.Path
+	msg.Payload = m.Payload
+	msg.ServiceName = m.ServiceName
+	msg.URL = m.URL
+	msg.PartnerIDs = m.PartnerIDs
+	msg.SessionID = m.SessionID
+	msg.QualityOfService = m.QualityOfService
+}
+
 // SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
 func (msg *Message) SetStatus(value int64) *Message {
 	msg.Status = &value
@@ -168,6 +188,7 @@ type converter interface {
 	// error checking.  This allows validateTo to call this function and avoid any
 	// circular loops.
 	to() *Message
+	from(*Message)
 }
 
 // -----------------------------------------------------------------------------
@@ -201,6 +222,11 @@ func (srr *SimpleRequestResponse) From(msg *Message, validators ...Processor) er
 		return err
 	}
 
+	srr.from(msg)
+	return nil
+}
+
+func (srr *SimpleRequestResponse) from(msg *Message) {
 	srr.Source = msg.Source
 	srr.Destination = msg.Destination
 	srr.TransactionUUID = msg.TransactionUUID
@@ -214,7 +240,6 @@ func (srr *SimpleRequestResponse) From(msg *Message, validators ...Processor) er
 	srr.QualityOfService = msg.QualityOfService
 	srr.SessionID = msg.SessionID
 	srr.Payload = msg.Payload
-	return nil
 }
 
 // To converts the SimpleRequestResponse struct to a Message struct.  The
@@ -291,6 +316,11 @@ func (se *SimpleEvent) From(msg *Message, validators ...Processor) error {
 		return err
 	}
 
+	se.from(msg)
+	return nil
+}
+
+func (se *SimpleEvent) from(msg *Message) {
 	se.Source = msg.Source
 	se.Destination = msg.Destination
 	se.TransactionUUID = msg.TransactionUUID
@@ -302,7 +332,6 @@ func (se *SimpleEvent) From(msg *Message, validators ...Processor) error {
 	se.SessionID = msg.SessionID
 	se.QualityOfService = msg.QualityOfService
 	se.Payload = msg.Payload
-	return nil
 }
 
 // To converts the SimpleEvent struct to a Message struct.  The Message struct is
@@ -376,6 +405,11 @@ func (c *CRUD) From(msg *Message, validators ...Processor) error {
 		return err
 	}
 
+	c.from(msg)
+	return nil
+}
+
+func (c *CRUD) from(msg *Message) {
 	c.Type = msg.Type
 	c.Source = msg.Source
 	c.Destination = msg.Destination
@@ -391,7 +425,6 @@ func (c *CRUD) From(msg *Message, validators ...Processor) error {
 	c.QualityOfService = msg.QualityOfService
 	c.SessionID = msg.SessionID
 	c.Payload = msg.Payload
-	return nil
 }
 
 // To converts the CRUD struct to a Message struct.  The Message struct is
@@ -460,9 +493,13 @@ func (sr *ServiceRegistration) From(msg *Message, validators ...Processor) error
 		return err
 	}
 
+	sr.from(msg)
+	return nil
+}
+
+func (sr *ServiceRegistration) from(msg *Message) {
 	sr.ServiceName = msg.ServiceName
 	sr.URL = msg.URL
-	return nil
 }
 
 // To converts the ServiceRegistration struct to a Message struct.  The Message
@@ -505,6 +542,8 @@ func (sa *ServiceAlive) From(msg *Message, validators ...Processor) error {
 	return nil
 }
 
+func (sa *ServiceAlive) from(msg *Message) {}
+
 // To converts the ServiceAlive struct to a Message struct.  The Message struct
 // is validated before being returned.  If the Message struct is invalid, an
 // error is returned.
@@ -544,6 +583,8 @@ func (u *Unknown) From(msg *Message, validators ...Processor) error {
 	return nil
 }
 
+func (u *Unknown) from(msg *Message) {}
+
 // To converts the Unknown struct to a Message struct.  The Message struct is
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
@@ -580,8 +621,12 @@ func (a *Authorization) From(msg *Message, validators ...Processor) error {
 		return err
 	}
 
-	a.Status = *msg.Status
+	a.from(msg)
 	return nil
+}
+
+func (a *Authorization) from(msg *Message) {
+	a.Status = *msg.Status
 }
 
 // To converts the Authorization struct to a Message struct.  The Message struct
