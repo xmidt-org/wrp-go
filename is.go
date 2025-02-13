@@ -60,11 +60,13 @@ func Is(msg *Message, target any, validators ...Processor) bool {
 	// any of them are a Message/*Message or the exact type or *exact type.
 	for i := 0; i < targetType.NumField(); i++ {
 		field := targetType.Field(i)
-		if field.Type == reflect.TypeOf(Message{}) {
-			goto probably
+		if field.Type.Kind() == reflect.Ptr {
+			field.Type = field.Type.Elem()
 		}
-		if field.Type.Kind() == reflect.Ptr && field.Type.Elem() == reflect.TypeOf(Message{}) {
-			goto probably
+		if field.Type.Kind() == reflect.Struct {
+			if Is(msg, reflect.New(field.Type).Interface(), validators...) {
+				return true
+			}
 		}
 	}
 
@@ -80,6 +82,6 @@ probably:
 	return true
 }
 
-func As[T MessageStructs](msg MsgType, target *T, validators ...Processor) bool {
+func As(msg *Message, target any, validators ...Processor) bool {
 	return false
 }

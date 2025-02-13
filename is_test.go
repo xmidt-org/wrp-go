@@ -64,11 +64,52 @@ func TestIs(t *testing.T) {
 			target: &wrp.SimpleEvent{},
 			want:   false,
 		}, {
+			desc:   "msg type target is not a struct",
+			msg:    &wrp.Message{Type: 3},
+			target: func() {},
+			want:   false,
+		}, {
 			desc: "msg type matches a field in the target struct",
 			msg:  &wrp.Message{Type: 3},
 			target: struct {
 				foo string
 				Bar wrp.Message
+			}{},
+			want: true,
+		}, {
+			desc: "msg type matches a field in the nested target struct",
+			msg:  &wrp.Message{Type: 3},
+			target: struct {
+				foo   string
+				thing struct {
+					Bar wrp.Message
+				}
+			}{},
+			want: true,
+		}, {
+			desc: "msg type matches a field in the target struct",
+			msg:  &wrp.Message{Type: 3},
+			target: struct {
+				foo string
+				Bar wrp.SimpleRequestResponse
+			}{},
+			want: true,
+		}, {
+			desc: "msg type embedded aa field in the target struct",
+			msg:  &wrp.Message{Type: 3},
+			target: struct {
+				wrp.SimpleRequestResponse
+				foo string
+			}{},
+			want: true,
+		}, {
+			desc: "msg type matches a field in the nested target struct",
+			msg:  &wrp.Message{Type: 3},
+			target: struct {
+				foo   string
+				thing struct {
+					Bar wrp.SimpleRequestResponse
+				}
 			}{},
 			want: true,
 		},
