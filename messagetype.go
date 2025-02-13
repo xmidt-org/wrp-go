@@ -116,6 +116,22 @@ func StringToMessageType(value string) MessageType {
 	return mt
 }
 
+var mtToStruct = map[MessageType]any{
+	Invalid0MessageType:              nil,
+	Invalid1MessageType:              nil,
+	AuthorizationMessageType:         Authorization{},
+	SimpleRequestResponseMessageType: SimpleRequestResponse{},
+	SimpleEventMessageType:           SimpleEvent{},
+	CreateMessageType:                CRUD{},
+	RetrieveMessageType:              CRUD{},
+	UpdateMessageType:                CRUD{},
+	DeleteMessageType:                CRUD{},
+	ServiceRegistrationMessageType:   ServiceRegistration{},
+	ServiceAliveMessageType:          ServiceAlive{},
+	UnknownMessageType:               Unknown{},
+	LastMessageType:                  nil,
+}
+
 var mtValidatorMap = map[MessageType]Processor{
 	AuthorizationMessageType: &vador{
 		Type:   AuthorizationMessageType,
