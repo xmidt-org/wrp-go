@@ -123,6 +123,46 @@ type Message struct {
 	QualityOfService QOSValue `json:"qos"`
 }
 
+// SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
+func (msg *Message) SetStatus(value int64) *Message {
+	msg.Status = &value
+	return msg
+}
+
+// SetRequestDeliveryResponse simplifies setting the optional RequestDeliveryResponse field, which is a pointer type tagged with omitempty.
+func (msg *Message) SetRequestDeliveryResponse(value int64) *Message {
+	msg.RequestDeliveryResponse = &value
+	return msg
+}
+
+// Validate checks the message for correctness.  If the message is invalid, an
+// error is returned.
+func (msg *Message) Validate(validators ...Processor) error {
+	return Validate(msg, validators...)
+}
+
+func (msg *Message) MsgType() MessageType {
+	return msg.Type
+}
+
+func (msg *Message) To(m *Message, validators ...Processor) error {
+	err := Validate(msg, validators...)
+	if err == nil {
+		m.from(msg)
+	}
+
+	return err
+}
+
+func (msg *Message) From(m *Message, validators ...Processor) error {
+	err := Validate(msg, validators...)
+	if err == nil {
+		msg.from(m)
+	}
+
+	return err
+}
+
 func (msg *Message) from(m *Message) {
 	msg.Type = m.Type
 	msg.Source = m.Source
@@ -143,27 +183,9 @@ func (msg *Message) from(m *Message) {
 	msg.QualityOfService = m.QualityOfService
 }
 
-// SetStatus simplifies setting the optional Status field, which is a pointer type tagged with omitempty.
-func (msg *Message) SetStatus(value int64) *Message {
-	msg.Status = &value
-	return msg
-}
-
-// SetRequestDeliveryResponse simplifies setting the optional RequestDeliveryResponse field, which is a pointer type tagged with omitempty.
-func (msg *Message) SetRequestDeliveryResponse(value int64) *Message {
-	msg.RequestDeliveryResponse = &value
-	return msg
-}
-
-// Validate checks the message for correctness.  If the message is invalid, an
-// error is returned.
-func (msg *Message) Validate(validators ...Processor) error {
-	return Validate(msg, validators...)
-}
-
-// MessageStructs is a union of all WRP message types.  This type is useful for
+// UnionTypes is a union of all WRP message types.  This type is useful for
 // generics based code that needs to handle multiple message types.
-type MessageStructs interface {
+type UnionTypes interface {
 	Message |
 		Authorization |
 		SimpleRequestResponse |
@@ -176,18 +198,53 @@ type MessageStructs interface {
 
 // -----------------------------------------------------------------------------
 
+// Union is an interface that all WRP message types implement.  This interface
+// is used by the Is and As functions to determine the message type and to
+// convert between message types.
+//
+// This interface is designed so consumers of the WRP library can compose their
+// own structs that implement this interface, and then use the Is() and As() to
+// determine the message type and convert between message types.
+type Union interface {
+	// MsgType returns the message type for the struct that implements
+	// this interface.
+	MsgType() MessageType
+
+	// From converts a Message struct to the struct that implements this
+	// interface.  The Message struct is validated before being converted.  If
+	// the Message struct is invalid, an error is returned.  If all of the
+	// Processors return ErrNotHandled, the resulting message is considered
+	// valid, and no error is returned.  Otherwise the first error encountered
+	// is returned, or nil is returned.
+	From(*Message, ...Processor) error
+
+	// To converts the struct that implements this interface to a Message
+	// struct.  The Message struct is validated before being returned.  If the
+	// Message struct is invalid, an error is returned.  If all of the
+	// Processors return ErrNotHandled, the resulting message is considered
+	// valid, and no error is returned.  Otherwise the first error encountered
+	// is returned, or nil is returned.
+	To(*Message, ...Processor) error
+
+	// Validate checks the struct that implements this interface for correctness.
+	// The check is performed on the *Message form of the struct using the
+	// provided validators.  If the struct is invalid, an error is returned.  If
+	// all of the Processors return ErrNotHandled, the resulting message is
+	// considered valid, and no error is returned.  Otherwise the first error
+	// encountered is returned, or nil is returned.
+	Validate(...Processor) error
+}
+
 // converter is a compile-time helper interface that ensures all message types
 // implement the From, To and Validate methods.  This interface is not intended
 // for use in client code.  It is also used by test code.
 type converter interface {
-	From(*Message, ...Processor) error
-	To(validators ...Processor) (*Message, error)
-	Validate(...Processor) error
+	Union
 
 	// to converts the specific struct to a Message struct, with no
 	// error checking.  This allows validateTo to call this function and avoid any
 	// circular loops.
-	to() *Message
+	to(*Message)
 	from(*Message)
 }
 
@@ -213,6 +270,11 @@ type SimpleRequestResponse struct {
 }
 
 var _ converter = (*SimpleRequestResponse)(nil)
+
+// MsgType returns the message type for the SimpleRequestResponse struct.
+func (srr *SimpleRequestResponse) MsgType() MessageType {
+	return SimpleRequestResponseMessageType
+}
 
 // From converts a Message struct to a SimpleRequestResponse struct.  The
 // Message struct is validated before being converted.  If the Message struct is
@@ -245,27 +307,25 @@ func (srr *SimpleRequestResponse) from(msg *Message) {
 // To converts the SimpleRequestResponse struct to a Message struct.  The
 // Message struct is validated before being returned.  If the Message struct
 // is invalid, an error is returned.
-func (srr *SimpleRequestResponse) To(validators ...Processor) (*Message, error) {
-	return validateTo(srr, validators...)
+func (srr *SimpleRequestResponse) To(msg *Message, validators ...Processor) error {
+	return validateTo(srr, msg, validators...)
 }
 
-func (srr *SimpleRequestResponse) to() *Message {
-	return &Message{
-		Type:                    SimpleRequestResponseMessageType,
-		Source:                  srr.Source,
-		Destination:             srr.Destination,
-		TransactionUUID:         srr.TransactionUUID,
-		ContentType:             srr.ContentType,
-		Accept:                  srr.Accept,
-		Status:                  srr.Status,
-		RequestDeliveryResponse: srr.RequestDeliveryResponse,
-		PartnerIDs:              trimPartnerIDs(srr.PartnerIDs),
-		Headers:                 srr.Headers,
-		Metadata:                srr.Metadata,
-		QualityOfService:        srr.QualityOfService,
-		SessionID:               srr.SessionID,
-		Payload:                 srr.Payload,
-	}
+func (srr *SimpleRequestResponse) to(msg *Message) {
+	msg.Type = SimpleRequestResponseMessageType
+	msg.Source = srr.Source
+	msg.Destination = srr.Destination
+	msg.TransactionUUID = srr.TransactionUUID
+	msg.ContentType = srr.ContentType
+	msg.Accept = srr.Accept
+	msg.Status = srr.Status
+	msg.RequestDeliveryResponse = srr.RequestDeliveryResponse
+	msg.PartnerIDs = trimPartnerIDs(srr.PartnerIDs)
+	msg.Headers = srr.Headers
+	msg.Metadata = srr.Metadata
+	msg.QualityOfService = srr.QualityOfService
+	msg.SessionID = srr.SessionID
+	msg.Payload = srr.Payload
 }
 
 // Validate checks the SimpleRequestResponse struct for correctness.  If the
@@ -308,6 +368,11 @@ type SimpleEvent struct {
 
 var _ converter = (*SimpleEvent)(nil)
 
+// MsgType returns the message type for the SimpleEvent struct.
+func (se *SimpleEvent) MsgType() MessageType {
+	return SimpleEventMessageType
+}
+
 // From converts a Message struct to a SimpleEvent struct.  The Message struct is
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
@@ -337,25 +402,23 @@ func (se *SimpleEvent) from(msg *Message) {
 // To converts the SimpleEvent struct to a Message struct.  The Message struct is
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
-func (se *SimpleEvent) To(validators ...Processor) (*Message, error) {
-	return validateTo(se, validators...)
+func (se *SimpleEvent) To(msg *Message, validators ...Processor) error {
+	return validateTo(se, msg, validators...)
 }
 
-func (se *SimpleEvent) to() *Message {
-	return &Message{
-		Type:                    SimpleEventMessageType,
-		Source:                  se.Source,
-		Destination:             se.Destination,
-		TransactionUUID:         se.TransactionUUID,
-		ContentType:             se.ContentType,
-		RequestDeliveryResponse: se.RequestDeliveryResponse,
-		PartnerIDs:              trimPartnerIDs(se.PartnerIDs),
-		Headers:                 se.Headers,
-		Metadata:                se.Metadata,
-		SessionID:               se.SessionID,
-		QualityOfService:        se.QualityOfService,
-		Payload:                 se.Payload,
-	}
+func (se *SimpleEvent) to(msg *Message) {
+	msg.Type = SimpleEventMessageType
+	msg.Source = se.Source
+	msg.Destination = se.Destination
+	msg.TransactionUUID = se.TransactionUUID
+	msg.ContentType = se.ContentType
+	msg.RequestDeliveryResponse = se.RequestDeliveryResponse
+	msg.PartnerIDs = trimPartnerIDs(se.PartnerIDs)
+	msg.Headers = se.Headers
+	msg.Metadata = se.Metadata
+	msg.SessionID = se.SessionID
+	msg.QualityOfService = se.QualityOfService
+	msg.Payload = se.Payload
 }
 
 // Validate checks the SimpleEvent struct for correctness.  If the SimpleEvent
@@ -397,6 +460,11 @@ type CRUD struct {
 
 var _ converter = (*CRUD)(nil)
 
+// MsgType returns the message type for the CRUD struct.
+func (c *CRUD) MsgType() MessageType {
+	return c.Type
+}
+
 // From converts a Message struct to a CRUD struct.  The Message struct is
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
@@ -430,28 +498,26 @@ func (c *CRUD) from(msg *Message) {
 // To converts the CRUD struct to a Message struct.  The Message struct is
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
-func (c *CRUD) To(validators ...Processor) (*Message, error) {
-	return validateTo(c, validators...)
+func (c *CRUD) To(msg *Message, validators ...Processor) error {
+	return validateTo(c, msg, validators...)
 }
 
-func (c *CRUD) to() *Message {
-	return &Message{
-		Type:                    c.Type,
-		Source:                  c.Source,
-		Destination:             c.Destination,
-		TransactionUUID:         c.TransactionUUID,
-		ContentType:             c.ContentType,
-		Accept:                  c.Accept,
-		Status:                  c.Status,
-		Path:                    c.Path,
-		RequestDeliveryResponse: c.RequestDeliveryResponse,
-		PartnerIDs:              trimPartnerIDs(c.PartnerIDs),
-		Headers:                 c.Headers,
-		Metadata:                c.Metadata,
-		QualityOfService:        c.QualityOfService,
-		SessionID:               c.SessionID,
-		Payload:                 c.Payload,
-	}
+func (c *CRUD) to(msg *Message) {
+	msg.Type = c.Type
+	msg.Source = c.Source
+	msg.Destination = c.Destination
+	msg.TransactionUUID = c.TransactionUUID
+	msg.ContentType = c.ContentType
+	msg.Accept = c.Accept
+	msg.Status = c.Status
+	msg.Path = c.Path
+	msg.RequestDeliveryResponse = c.RequestDeliveryResponse
+	msg.PartnerIDs = trimPartnerIDs(c.PartnerIDs)
+	msg.Headers = c.Headers
+	msg.Metadata = c.Metadata
+	msg.QualityOfService = c.QualityOfService
+	msg.SessionID = c.SessionID
+	msg.Payload = c.Payload
 }
 
 // Validate checks the CRUD struct for correctness.  If the CRUD struct is
@@ -485,6 +551,11 @@ type ServiceRegistration struct {
 
 var _ converter = (*ServiceRegistration)(nil)
 
+// MsgType returns the message type for the ServiceRegistration struct.
+func (sr *ServiceRegistration) MsgType() MessageType {
+	return ServiceRegistrationMessageType
+}
+
 // From converts a Message struct to a ServiceRegistration struct.  The Message
 // struct is validated before being converted.  If the Message struct is invalid,
 // an error is returned.
@@ -505,16 +576,14 @@ func (sr *ServiceRegistration) from(msg *Message) {
 // To converts the ServiceRegistration struct to a Message struct.  The Message
 // struct is validated before being returned.  If the Message struct is invalid,
 // an error is returned.
-func (sr *ServiceRegistration) To(validators ...Processor) (*Message, error) {
-	return validateTo(sr, validators...)
+func (sr *ServiceRegistration) To(msg *Message, validators ...Processor) error {
+	return validateTo(sr, msg, validators...)
 }
 
-func (sr *ServiceRegistration) to() *Message {
-	return &Message{
-		Type:        ServiceRegistrationMessageType,
-		ServiceName: sr.ServiceName,
-		URL:         sr.URL,
-	}
+func (sr *ServiceRegistration) to(msg *Message) {
+	msg.Type = ServiceRegistrationMessageType
+	msg.ServiceName = sr.ServiceName
+	msg.URL = sr.URL
 }
 
 // Validate checks the ServiceRegistration struct for correctness.  If the
@@ -532,6 +601,11 @@ type ServiceAlive struct{}
 
 var _ converter = (*ServiceAlive)(nil)
 
+// MsgType returns the message type for the ServiceAlive struct.
+func (sa *ServiceAlive) MsgType() MessageType {
+	return ServiceAliveMessageType
+}
+
 // From converts a Message struct to a ServiceAlive struct.  The Message struct
 // is validated before being converted.  If the Message struct is invalid, an
 // error is returned.
@@ -547,14 +621,12 @@ func (sa *ServiceAlive) from(msg *Message) {}
 // To converts the ServiceAlive struct to a Message struct.  The Message struct
 // is validated before being returned.  If the Message struct is invalid, an
 // error is returned.
-func (sa *ServiceAlive) To(validators ...Processor) (*Message, error) {
-	return validateTo(sa, validators...)
+func (sa *ServiceAlive) To(msg *Message, validators ...Processor) error {
+	return validateTo(sa, msg, validators...)
 }
 
-func (sa *ServiceAlive) to() *Message {
-	return &Message{
-		Type: ServiceAliveMessageType,
-	}
+func (sa *ServiceAlive) to(msg *Message) {
+	msg.Type = ServiceAliveMessageType
 }
 
 // Validate checks the ServiceAlive struct for correctness.  If the ServiceAlive
@@ -572,6 +644,11 @@ type Unknown struct{}
 
 var _ converter = (*Unknown)(nil)
 
+// MsgType returns the message type for the Unknown struct.
+func (u *Unknown) MsgType() MessageType {
+	return UnknownMessageType
+}
+
 // From converts a Message struct to an Unknown struct.  The Message struct is
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
@@ -588,14 +665,12 @@ func (u *Unknown) from(msg *Message) {}
 // To converts the Unknown struct to a Message struct.  The Message struct is
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
-func (u *Unknown) To(validators ...Processor) (*Message, error) {
-	return validateTo(u, validators...)
+func (u *Unknown) To(msg *Message, validators ...Processor) error {
+	return validateTo(u, msg, validators...)
 }
 
-func (u *Unknown) to() *Message {
-	return &Message{
-		Type: UnknownMessageType,
-	}
+func (u *Unknown) to(msg *Message) {
+	msg.Type = UnknownMessageType
 }
 
 // Validate checks the Unknown struct for correctness.  If the Unknown struct is
@@ -612,6 +687,11 @@ type Authorization struct {
 }
 
 var _ converter = (*Authorization)(nil)
+
+// MsgType returns the message type for the Authorization struct.
+func (a *Authorization) MsgType() MessageType {
+	return AuthorizationMessageType
+}
 
 // From converts a Message struct to an Authorization struct.  The Message struct
 // is validated before being converted.  If the Message struct is invalid, an
@@ -632,15 +712,13 @@ func (a *Authorization) from(msg *Message) {
 // To converts the Authorization struct to a Message struct.  The Message struct
 // is validated before being returned.  If the Message struct is invalid, an
 // error is returned.
-func (a *Authorization) To(validators ...Processor) (*Message, error) {
-	return validateTo(a, validators...)
+func (a *Authorization) To(msg *Message, validators ...Processor) error {
+	return validateTo(a, msg, validators...)
 }
 
-func (a *Authorization) to() *Message {
-	return &Message{
-		Type:   AuthorizationMessageType,
-		Status: &a.Status,
-	}
+func (a *Authorization) to(msg *Message) {
+	msg.Type = AuthorizationMessageType
+	msg.Status = &a.Status
 }
 
 // Validate checks the Authorization struct for correctness.  If the

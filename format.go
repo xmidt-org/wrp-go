@@ -205,19 +205,19 @@ func MustEncode(message *Message, f Format) []byte {
 	return output.Bytes()
 }
 
-func Decode[T MessageStructs](r io.Reader, f Format) (*T, error) {
+func Decode[T UnionTypes](r io.Reader, f Format) (*T, error) {
 	return DecodeThenValidate[T](r, f, NoStandardValidation())
 }
 
-func DecodeBytes[T MessageStructs](buf []byte, f Format) (*T, error) {
+func DecodeBytes[T UnionTypes](buf []byte, f Format) (*T, error) {
 	return Decode[T](bytes.NewReader(buf), f)
 }
 
-func DecodeThenValidateBytes[T MessageStructs](buf []byte, f Format, validators ...Processor) (*T, error) {
+func DecodeThenValidateBytes[T UnionTypes](buf []byte, f Format, validators ...Processor) (*T, error) {
 	return DecodeThenValidate[T](bytes.NewReader(buf), f, validators...)
 }
 
-func DecodeThenValidate[T MessageStructs](r io.Reader, f Format, validators ...Processor) (*T, error) {
+func DecodeThenValidate[T UnionTypes](r io.Reader, f Format, validators ...Processor) (*T, error) {
 	var msg Message
 	if err := f.Decoder(r).Decode(&msg); err != nil {
 		return nil, err
@@ -242,15 +242,15 @@ func DecodeThenValidate[T MessageStructs](r io.Reader, f Format, validators ...P
 	return nil, ErrNotHandled
 }
 
-func Encode[T MessageStructs](msg *T, w io.Writer, f Format) error {
+func Encode[T UnionTypes](msg *T, w io.Writer, f Format) error {
 	return EncodeAfterValidate(msg, w, f, NoStandardValidation())
 }
 
-func EncodeBytes[T MessageStructs](msg *T, f Format) ([]byte, error) {
+func EncodeBytes[T UnionTypes](msg *T, f Format) ([]byte, error) {
 	return EncodeAfterValidateBytes(msg, f, NoStandardValidation())
 }
 
-func EncodeAfterValidateBytes[T MessageStructs](msg *T, f Format, validators ...Processor) ([]byte, error) {
+func EncodeAfterValidateBytes[T UnionTypes](msg *T, f Format, validators ...Processor) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := EncodeAfterValidate(msg, &buf, f, validators...); err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ func EncodeAfterValidateBytes[T MessageStructs](msg *T, f Format, validators ...
 
 // EncodeBytes is a convenience function that encodes a given message into a
 // byte slice.
-func EncodeAfterValidate[T MessageStructs](msg *T, w io.Writer, f Format, validators ...Processor) error {
+func EncodeAfterValidate[T UnionTypes](msg *T, w io.Writer, f Format, validators ...Processor) error {
 	if err := Validate(msg, validators...); err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func EncodeAfterValidate[T MessageStructs](msg *T, w io.Writer, f Format, valida
 	case *Message:
 		base = m
 	case *Authorization, *SimpleRequestResponse, *SimpleEvent, *CRUD, *ServiceRegistration, *ServiceAlive, *Unknown:
-		base, err = m.(converter).To()
+		err = m.(converter).To(base)
 	}
 
 	if err != nil {
@@ -298,12 +298,11 @@ func EncodeAfterValidate[T MessageStructs](msg *T, w io.Writer, f Format, valida
 // validation is considered successful.  Any combination of nil errors and
 // ErrNotHandled is considered a successful validation.  All other errors are
 // considered validation failures and the first encountered error is returned.
-func Validate[T MessageStructs](msg *T, validators ...Processor) error {
-	_, err := validateTo(msg, validators...)
-	return err
+func Validate[T UnionTypes](msg *T, validators ...Processor) error {
+	return validateTo(msg, nil, validators...)
 }
 
-func validateTo[T MessageStructs](msg *T, validators ...Processor) (*Message, error) {
+func validateTo[T UnionTypes](msg *T, base *Message, validators ...Processor) error {
 	defaults := []Processor{
 		StdValidator(),
 	}
@@ -319,18 +318,17 @@ func validateTo[T MessageStructs](msg *T, validators ...Processor) (*Message, er
 
 	validators = append(defaults, validators...)
 
-	var base *Message
 	switch m := any(msg).(type) {
 	case *Message:
 		base = m
 	case *Authorization, *SimpleRequestResponse, *SimpleEvent, *CRUD, *ServiceRegistration, *ServiceAlive, *Unknown:
-		base = m.(converter).to()
+		m.(converter).to(base)
 	}
 
 	err := Processors(validators).ProcessWRP(context.Background(), *base)
 	if err == nil || errors.Is(err, ErrNotHandled) {
-		return base, nil
+		return nil
 	}
 
-	return base, err
+	return err
 }

@@ -502,9 +502,10 @@ func runTest(t *testing.T, index int, mt MessageType, goal any) {
 		*/
 
 		// create a new instance of goal
-		back, err := goal.(converter).To()
+		var back Message
+		err = goal.(converter).To(&back)
 		require.NoError(t, err)
-		assert.Equal(t, msg, back)
+		assert.Equal(t, msg, &back)
 
 		buf, err := msg.marshalMsg(nil)
 		require.NoError(t, err)
@@ -719,7 +720,8 @@ func TestMessage_ToAndValidate(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			assert := assert.New(t)
 			// test To
-			got, err := tc.msg.To()
+			var got Message
+			err := tc.msg.To(&got)
 			if tc.invalid {
 				assert.Nil(got)
 				assert.Error(err)
