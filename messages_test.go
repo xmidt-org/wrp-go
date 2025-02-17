@@ -55,8 +55,8 @@ type msgTest struct {
 	invalid bool
 }
 
-func int64Ptr(v int64) *int64 {
-	return &v
+func int64Ptr(value int64) *int64 {
+	return &value
 }
 
 var testMessages = []msgTest{

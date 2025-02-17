@@ -116,40 +116,6 @@ func StringToMessageType(value string) MessageType {
 	return mt
 }
 
-func calcMsgType(msg any) MessageType {
-	switch m := msg.(type) {
-	case *Message:
-		if m == nil {
-			return Invalid0MessageType
-		}
-		return m.Type
-	case Message:
-		return m.Type
-	case *Authorization, Authorization:
-		return AuthorizationMessageType
-	case *SimpleRequestResponse, SimpleRequestResponse:
-		return SimpleRequestResponseMessageType
-	case *SimpleEvent, SimpleEvent:
-		return SimpleEventMessageType
-	case *CRUD:
-		if m == nil {
-			return Invalid0MessageType
-		}
-		return m.Type
-	case CRUD:
-		return m.Type
-	case *ServiceRegistration, ServiceRegistration:
-		return ServiceRegistrationMessageType
-	case *ServiceAlive, ServiceAlive:
-		return ServiceAliveMessageType
-	case *Unknown, Unknown:
-		return UnknownMessageType
-	default:
-	}
-
-	return Invalid0MessageType
-}
-
 var mtToStruct = map[MessageType]any{
 	Invalid0MessageType:              nil,
 	Invalid1MessageType:              nil,

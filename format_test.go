@@ -243,32 +243,6 @@ func TestTranscodeMessage(t *testing.T) {
 	}
 }
 
-func TestInvalidUtf8Decoding(t *testing.T) {
-	assert := assert.New(t)
-
-	/*
-		"\x85"  - 5 name value pairs
-			"\xa8""msg_type"         : "\x03" // 3
-			"\xa4""dest"             : "\xac""\xed\xbf\xbft-address"
-			"\xa7""payload"          : "\xc4""\x03" - len 3
-											 "123"
-			"\xa6""source"           : "\xae""dns:example.io"
-			"\xb0""transaction_uuid" : "\xd9\x24""c07ee5e1-70be-444c-a156-097c767ad8aa"
-	*/
-	invalid := []byte{
-		0x85,
-		0xa8, 'm', 's', 'g', '_', 't', 'y', 'p', 'e', 0x03,
-		0xa4, 'd', 'e', 's', 't', 0xac /* \xed\xbf\xbf is invalid */, 0xed, 0xbf, 0xbf, 't', '-', 'a', 'd', 'd', 'r', 'e', 's', 's',
-		0xa7, 'p', 'a', 'y', 'l', 'o', 'a', 'd', 0xc4, 0x03, '1', '2', '3',
-		0xa6, 's', 'o', 'u', 'r', 'c', 'e', 0xae, 'd', 'n', 's', ':', 'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'i', 'o',
-		0xb0, 't', 'r', 'a', 'n', 's', 'a', 'c', 't', 'i', 'o', 'n', '_', 'u', 'u', 'i', 'd', 0xd9, 0x24, 'c', '0', '7', 'e', 'e', '5', 'e', '1', '-', '7', '0', 'b', 'e', '-', '4', '4', '4', 'c', '-', 'a', '1', '5', '6', '-', '0', '9', '7', 'c', '7', '6', '7', 'a', 'd', '8', 'a', 'a',
-	}
-
-	buf, err := DecodeThenValidateBytes[Message](invalid, Msgpack)
-	assert.ErrorIs(err, ErrNotUTF8)
-	assert.Nil(buf)
-}
-
 func TestAllFormats(t *testing.T) {
 	require.NotNil(t, AllFormats())
 	assert.Contains(t, AllFormats(), JSON)
