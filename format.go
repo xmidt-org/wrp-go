@@ -206,7 +206,7 @@ func MustEncode(message *Message, f Format) []byte {
 }
 
 func Decode[T UnionTypes](r io.Reader, f Format) (*T, error) {
-	return DecodeThenValidate[T](r, f, NoStandardValidation())
+	return DecodeThenValidate[T](r, f, NoStdValidation())
 }
 
 func DecodeBytes[T UnionTypes](buf []byte, f Format) (*T, error) {
@@ -243,11 +243,11 @@ func DecodeThenValidate[T UnionTypes](r io.Reader, f Format, validators ...Proce
 }
 
 func Encode[T UnionTypes](msg *T, w io.Writer, f Format) error {
-	return EncodeAfterValidate(msg, w, f, NoStandardValidation())
+	return EncodeAfterValidate(msg, w, f, NoStdValidation())
 }
 
 func EncodeBytes[T UnionTypes](msg *T, f Format) ([]byte, error) {
-	return EncodeAfterValidateBytes(msg, f, NoStandardValidation())
+	return EncodeAfterValidateBytes(msg, f, NoStdValidation())
 }
 
 func EncodeAfterValidateBytes[T UnionTypes](msg *T, f Format, validators ...Processor) ([]byte, error) {
@@ -304,7 +304,7 @@ func Validate[T UnionTypes](msg *T, validators ...Processor) error {
 
 func validateTo[T UnionTypes](msg *T, base *Message, validators ...Processor) error {
 	defaults := []Processor{
-		StdValidator(),
+		StandardValidator(),
 	}
 	for _, v := range validators {
 		if v == nil {

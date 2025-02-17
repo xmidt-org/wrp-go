@@ -19,11 +19,11 @@ func (noStandardValidation) ProcessWRP(context.Context, Message) error {
 	return nil
 }
 
-// StdValidator returns a Processor that validates messages based on their type.
+// StandardValidator returns a Processor that validates messages based on their type.
 // If the message type is not recognized, it will return ErrInvalidMessageType.
 // If the message type is recognized, it will return an error if the message is
 // invalid, or nil if the message is valid.
-func StdValidator() Processor {
+func StandardValidator() Processor {
 	return ProcessorFunc(func(ctx context.Context, msg Message) error {
 		err := ErrInvalidMessageType
 
