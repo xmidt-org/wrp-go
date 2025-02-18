@@ -6,8 +6,6 @@ package wrp
 // Is reports whether the msg is the same type as the target, or is convertible
 // to the target.
 //
-// If the msg parameter is a *Message, it will be validated against the provided
-// validators.  If the msg is not a *Message, the validators will be ignored.
 // If the validators are not provided, the msg will be validated against the
 // default validators.  To skip validation, provide the NoStandardValidation()
 // as a validator.
@@ -29,7 +27,7 @@ func Is(msg, target Union, validators ...Processor) bool {
 		}
 	}
 
-	return true
+	return msg.To(&Message{}, validators...) == nil
 }
 
 // As converts the src into the dest, if possible.

@@ -44,6 +44,16 @@ func TestIs(t *testing.T) {
 			target: &wrp.Message{Type: wrp.UnknownMessageType},
 			want:   true,
 		}, {
+			desc:   "same msg and target type, using specific type",
+			msg:    &wrp.Message{Type: wrp.UnknownMessageType},
+			target: &wrp.Unknown{},
+			want:   true,
+		}, {
+			desc:   "same msg and target type, using specific type, inverse",
+			msg:    &wrp.Unknown{},
+			target: &wrp.Message{Type: wrp.UnknownMessageType},
+			want:   true,
+		}, {
 			desc:   "different msg and target type",
 			msg:    &wrp.Message{Type: 3},
 			target: &wrp.Message{Type: 4},
@@ -69,10 +79,27 @@ func TestIs(t *testing.T) {
 			target: &wrp.Message{Type: wrp.UnknownMessageType},
 			want:   false,
 		}, {
-			desc:   "msg type is not valid",
+			desc:   "msg types match, but validation fails",
 			msg:    &wrp.Message{Type: wrp.SimpleRequestResponseMessageType},
 			target: &wrp.SimpleRequestResponse{},
 			want:   false,
+		}, {
+			desc:   "msg types match, but validation fails, inverse",
+			msg:    &wrp.SimpleRequestResponse{},
+			target: &wrp.Message{Type: wrp.SimpleRequestResponseMessageType},
+			want:   false,
+		}, {
+			desc:       "msg types match, but validation is skipped",
+			msg:        &wrp.Message{Type: wrp.SimpleRequestResponseMessageType},
+			target:     &wrp.SimpleRequestResponse{},
+			validators: []wrp.Processor{wrp.NoStandardValidation()},
+			want:       true,
+		}, {
+			desc:       "msg types match, but validation is skipped, inverse",
+			msg:        &wrp.SimpleRequestResponse{},
+			target:     &wrp.Message{Type: wrp.SimpleRequestResponseMessageType},
+			validators: []wrp.Processor{wrp.NoStandardValidation()},
+			want:       true,
 		},
 	}
 
