@@ -74,7 +74,7 @@ func As(src, dst Union, validators ...Processor) error {
 	}
 
 	var tmp Message
-	_ = src.To(&tmp, NoStdValidation())
+	_ = src.To(&tmp, NoStandardValidation())
 
 	return dst.From(&tmp, validators...)
 }

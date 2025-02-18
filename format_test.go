@@ -253,10 +253,10 @@ func TestCodecEndToEnd(t *testing.T) {
 
 	for _, format := range append(AllFormats(), Format(-1)) {
 		if format == Format(-1) {
-			assert.Nil(t, NewEncoder(nil, format))
-			assert.Nil(t, NewDecoder(nil, format))
-			assert.Nil(t, NewEncoderBytes(nil, format))
-			assert.Nil(t, NewDecoderBytes(nil, format))
+			assert.Nil(t, format.Encoder(nil))
+			assert.Nil(t, format.Decoder(nil))
+			assert.Nil(t, format.EncoderBytes(nil))
+			assert.Nil(t, format.DecoderBytes(nil))
 			continue
 		}
 
@@ -271,6 +271,7 @@ func TestCodecEndToEnd(t *testing.T) {
 
 			original := Message{Type: UnknownMessageType}
 
+			require.Error(t, encoder.Encode(nil))
 			require.NoError(t, encoder.Encode(&original))
 			require.NoError(t, encoderBytes.Encode(&original))
 
@@ -281,6 +282,8 @@ func TestCodecEndToEnd(t *testing.T) {
 
 			decoderBytes := NewDecoderBytes(bts, format)
 			require.NotNil(t, decoderBytes)
+
+			require.Error(t, decoder.Decode(nil))
 
 			var decoded Message
 			require.NoError(t, decoder.Decode(&decoded))

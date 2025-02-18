@@ -138,7 +138,7 @@ func (msg *Message) SetRequestDeliveryResponse(value int64) *Message {
 // Validate checks the message for correctness.  If the message is invalid, an
 // error is returned.
 func (msg *Message) Validate(validators ...Processor) error {
-	return Validate(msg, validators...)
+	return validate(msg, validators...)
 }
 
 func (msg *Message) MsgType() MessageType {
@@ -146,7 +146,7 @@ func (msg *Message) MsgType() MessageType {
 }
 
 func (msg *Message) To(m *Message, validators ...Processor) error {
-	err := Validate(msg, validators...)
+	err := validate(msg, validators...)
 	if err == nil {
 		m.from(msg)
 	}
@@ -155,7 +155,7 @@ func (msg *Message) To(m *Message, validators ...Processor) error {
 }
 
 func (msg *Message) From(m *Message, validators ...Processor) error {
-	err := Validate(msg, validators...)
+	err := validate(m, validators...)
 	if err == nil {
 		msg.from(m)
 	}
@@ -181,19 +181,6 @@ func (msg *Message) from(m *Message) {
 	msg.PartnerIDs = m.PartnerIDs
 	msg.SessionID = m.SessionID
 	msg.QualityOfService = m.QualityOfService
-}
-
-// UnionTypes is a union of all WRP message types.  This type is useful for
-// generics based code that needs to handle multiple message types.
-type UnionTypes interface {
-	Message |
-		Authorization |
-		SimpleRequestResponse |
-		SimpleEvent |
-		CRUD |
-		ServiceRegistration |
-		ServiceAlive |
-		Unknown
 }
 
 // -----------------------------------------------------------------------------
@@ -280,7 +267,7 @@ func (srr *SimpleRequestResponse) MsgType() MessageType {
 // Message struct is validated before being converted.  If the Message struct is
 // invalid, an error is returned.
 func (srr *SimpleRequestResponse) From(msg *Message, validators ...Processor) error {
-	if err := Validate(msg, validators...); err != nil {
+	if err := validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -308,7 +295,14 @@ func (srr *SimpleRequestResponse) from(msg *Message) {
 // Message struct is validated before being returned.  If the Message struct
 // is invalid, an error is returned.
 func (srr *SimpleRequestResponse) To(msg *Message, validators ...Processor) error {
-	return validateTo(srr, msg, validators...)
+	var tmp Message
+	srr.to(&tmp)
+	if err := validate(&tmp, validators...); err != nil {
+		return err
+	}
+
+	srr.to(msg)
+	return nil
 }
 
 func (srr *SimpleRequestResponse) to(msg *Message) {
@@ -331,7 +325,9 @@ func (srr *SimpleRequestResponse) to(msg *Message) {
 // Validate checks the SimpleRequestResponse struct for correctness.  If the
 // SimpleRequestResponse struct is invalid, an error is returned.
 func (srr *SimpleRequestResponse) Validate(validators ...Processor) error {
-	return Validate(srr, validators...)
+	var msg Message
+	srr.to(&msg)
+	return validate(&msg, validators...)
 }
 
 // SetStatus simplifies setting the optional Status field.
@@ -377,7 +373,7 @@ func (se *SimpleEvent) MsgType() MessageType {
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
 func (se *SimpleEvent) From(msg *Message, validators ...Processor) error {
-	if err := Validate(msg, validators...); err != nil {
+	if err := validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -403,7 +399,14 @@ func (se *SimpleEvent) from(msg *Message) {
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
 func (se *SimpleEvent) To(msg *Message, validators ...Processor) error {
-	return validateTo(se, msg, validators...)
+	var tmp Message
+	se.to(&tmp)
+	if err := validate(&tmp, validators...); err != nil {
+		return err
+	}
+
+	se.to(msg)
+	return nil
 }
 
 func (se *SimpleEvent) to(msg *Message) {
@@ -424,7 +427,9 @@ func (se *SimpleEvent) to(msg *Message) {
 // Validate checks the SimpleEvent struct for correctness.  If the SimpleEvent
 // struct is invalid, an error is returned.
 func (se *SimpleEvent) Validate(validators ...Processor) error {
-	return Validate(se, validators...)
+	var msg Message
+	se.to(&msg)
+	return validate(&msg, validators...)
 }
 
 // SetRequestDeliveryResponse simplifies setting the optional
@@ -469,7 +474,7 @@ func (c *CRUD) MsgType() MessageType {
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
 func (c *CRUD) From(msg *Message, validators ...Processor) error {
-	if err := Validate(msg, validators...); err != nil {
+	if err := validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -499,7 +504,14 @@ func (c *CRUD) from(msg *Message) {
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
 func (c *CRUD) To(msg *Message, validators ...Processor) error {
-	return validateTo(c, msg, validators...)
+	var tmp Message
+	c.to(&tmp)
+	if err := validate(&tmp, validators...); err != nil {
+		return err
+	}
+
+	c.to(msg)
+	return nil
 }
 
 func (c *CRUD) to(msg *Message) {
@@ -523,7 +535,9 @@ func (c *CRUD) to(msg *Message) {
 // Validate checks the CRUD struct for correctness.  If the CRUD struct is
 // invalid, an error is returned.
 func (c *CRUD) Validate(validators ...Processor) error {
-	return Validate(c, validators...)
+	var msg Message
+	c.to(&msg)
+	return validate(&msg, validators...)
 }
 
 // SetStatus simplifies setting the optional Status field.
@@ -560,7 +574,7 @@ func (sr *ServiceRegistration) MsgType() MessageType {
 // struct is validated before being converted.  If the Message struct is invalid,
 // an error is returned.
 func (sr *ServiceRegistration) From(msg *Message, validators ...Processor) error {
-	if err := Validate(msg, validators...); err != nil {
+	if err := validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -577,7 +591,13 @@ func (sr *ServiceRegistration) from(msg *Message) {
 // struct is validated before being returned.  If the Message struct is invalid,
 // an error is returned.
 func (sr *ServiceRegistration) To(msg *Message, validators ...Processor) error {
-	return validateTo(sr, msg, validators...)
+	var tmp Message
+	sr.to(&tmp)
+	if err := validate(&tmp, validators...); err != nil {
+		return err
+	}
+	sr.to(msg)
+	return nil
 }
 
 func (sr *ServiceRegistration) to(msg *Message) {
@@ -589,7 +609,9 @@ func (sr *ServiceRegistration) to(msg *Message) {
 // Validate checks the ServiceRegistration struct for correctness.  If the
 // ServiceRegistration struct is invalid, an error is returned.
 func (sr *ServiceRegistration) Validate(validators ...Processor) error {
-	return Validate(sr, validators...)
+	var msg Message
+	sr.to(&msg)
+	return validate(&msg, validators...)
 }
 
 // -----------------------------------------------------------------------------
@@ -610,7 +632,7 @@ func (sa *ServiceAlive) MsgType() MessageType {
 // is validated before being converted.  If the Message struct is invalid, an
 // error is returned.
 func (sa *ServiceAlive) From(msg *Message, validators ...Processor) error {
-	if err := Validate(msg, validators...); err != nil {
+	if err := validate(msg, validators...); err != nil {
 		return err
 	}
 	return nil
@@ -622,7 +644,14 @@ func (sa *ServiceAlive) from(msg *Message) {}
 // is validated before being returned.  If the Message struct is invalid, an
 // error is returned.
 func (sa *ServiceAlive) To(msg *Message, validators ...Processor) error {
-	return validateTo(sa, msg, validators...)
+	var tmp Message
+	sa.to(&tmp)
+	if err := validate(&tmp, validators...); err != nil {
+		return err
+	}
+
+	sa.to(msg)
+	return nil
 }
 
 func (sa *ServiceAlive) to(msg *Message) {
@@ -632,7 +661,9 @@ func (sa *ServiceAlive) to(msg *Message) {
 // Validate checks the ServiceAlive struct for correctness.  If the ServiceAlive
 // struct is invalid, an error is returned.
 func (sa *ServiceAlive) Validate(validators ...Processor) error {
-	return Validate(sa, validators...)
+	var msg Message
+	sa.to(&msg)
+	return validate(&msg, validators...)
 }
 
 // -----------------------------------------------------------------------------
@@ -653,7 +684,7 @@ func (u *Unknown) MsgType() MessageType {
 // validated before being converted.  If the Message struct is invalid, an error
 // is returned.
 func (u *Unknown) From(msg *Message, validators ...Processor) error {
-	if err := Validate(msg, validators...); err != nil {
+	if err := validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -666,7 +697,14 @@ func (u *Unknown) from(msg *Message) {}
 // validated before being returned.  If the Message struct is invalid, an error
 // is returned.
 func (u *Unknown) To(msg *Message, validators ...Processor) error {
-	return validateTo(u, msg, validators...)
+	var tmp Message
+	u.to(&tmp)
+	if err := validate(&tmp, validators...); err != nil {
+		return err
+	}
+
+	u.to(msg)
+	return nil
 }
 
 func (u *Unknown) to(msg *Message) {
@@ -676,7 +714,9 @@ func (u *Unknown) to(msg *Message) {
 // Validate checks the Unknown struct for correctness.  If the Unknown struct is
 // invalid, an error is returned.
 func (u *Unknown) Validate(validators ...Processor) error {
-	return Validate(u, validators...)
+	var msg Message
+	u.to(&msg)
+	return validate(&msg, validators...)
 }
 
 // -----------------------------------------------------------------------------
@@ -697,7 +737,7 @@ func (a *Authorization) MsgType() MessageType {
 // is validated before being converted.  If the Message struct is invalid, an
 // error is returned.
 func (a *Authorization) From(msg *Message, validators ...Processor) error {
-	if err := Validate(msg, validators...); err != nil {
+	if err := validate(msg, validators...); err != nil {
 		return err
 	}
 
@@ -713,7 +753,14 @@ func (a *Authorization) from(msg *Message) {
 // is validated before being returned.  If the Message struct is invalid, an
 // error is returned.
 func (a *Authorization) To(msg *Message, validators ...Processor) error {
-	return validateTo(a, msg, validators...)
+	var tmp Message
+	a.to(&tmp)
+	if err := validate(&tmp, validators...); err != nil {
+		return err
+	}
+
+	a.to(msg)
+	return nil
 }
 
 func (a *Authorization) to(msg *Message) {
@@ -724,7 +771,9 @@ func (a *Authorization) to(msg *Message) {
 // Validate checks the Authorization struct for correctness.  If the
 // Authorization struct is invalid, an error is returned.
 func (a *Authorization) Validate(validators ...Processor) error {
-	return Validate(a, validators...)
+	var msg Message
+	a.to(&msg)
+	return validate(&msg, validators...)
 }
 
 // -----------------------------------------------------------------------------

@@ -50,14 +50,21 @@ func (f *Format) DecoderBytes(input []byte) Decoder {
 	return NewDecoderBytes(input, *f)
 }
 
-// Encoder represents the underlying ugorji behavior that WRP supports
+// Encoder is the interface for encoding WRP messages.
 type Encoder interface {
-	Encode(*Message) error
+	// Encode writes the WRP message to the output stream after validating it.
+	// To skip validation, pass NoStandardValidation().  Custom validators can be
+	// provided as additional arguments.
+	Encode(src Union, validators ...Processor) error
 }
 
-// Decoder represents the underlying ugorji behavior that WRP supports
+// Decoder is the interface for decoding WRP messages.
 type Decoder interface {
-	Decode(*Message) error
+	// Decode reads the next WRP message from the input stream and stores it in the
+	// provided Union.  The message is validated before being stored.  To skip
+	// validation, pass NoStandardValidation().  Custom validators can be provided
+	// as additional arguments.
+	Decode(dest Union, validators ...Processor) error
 }
 
 // NewEncoder produces an Encoder using the appropriate WRP configuration for
@@ -97,8 +104,26 @@ type jsonEncoder struct {
 	output *[]byte
 }
 
-func (e *jsonEncoder) Encode(msg *Message) error {
-	err := e.enc.Encode(msg)
+func (e *jsonEncoder) Encode(msg Union, validators ...Processor) error {
+	var m *Message
+	var err error
+
+	if msg == nil {
+		return ErrMessageIsInvalid
+	}
+
+	if tmp, ok := msg.(*Message); ok {
+		m = tmp
+		err = validate(m, validators...)
+	} else {
+		m = new(Message)
+		err = msg.To(m, validators...)
+	}
+	if err != nil {
+		return err
+	}
+
+	err = e.enc.Encode(msg)
 	if err == nil && e.buffer != nil && e.output != nil {
 		*e.output = e.buffer.Bytes()
 	}
@@ -110,17 +135,34 @@ type msgpEncoder struct {
 	stream io.Writer
 }
 
-func (e *msgpEncoder) Encode(msg *Message) error {
+func (e *msgpEncoder) Encode(msg Union, validators ...Processor) error {
+	var m *Message
+	var err error
+
+	if msg == nil {
+		return ErrMessageIsInvalid
+	}
+
+	if tmp, ok := msg.(*Message); ok {
+		m = tmp
+		err = validate(m, validators...)
+	} else {
+		m = new(Message)
+		err = msg.To(m, validators...)
+	}
+	if err != nil {
+		return err
+	}
+
 	if e.stream != nil {
-		got, err := msg.marshalMsg(nil)
+		got, err := m.marshalMsg(nil)
 		if err == nil {
 			_, err = e.stream.Write(got)
 		}
 		return err
 	}
 
-	var err error
-	*e.bits, err = msg.marshalMsg(*e.bits)
+	*e.bits, err = m.marshalMsg(*e.bits)
 	return err
 }
 
@@ -156,8 +198,18 @@ type jsonDecoder struct {
 	dec *json.Decoder
 }
 
-func (d *jsonDecoder) Decode(msg *Message) error {
-	return d.dec.Decode(msg)
+func (d *jsonDecoder) Decode(msg Union, validators ...Processor) error {
+	if msg == nil {
+		return ErrMessageIsInvalid
+	}
+
+	var m Message
+	err := d.dec.Decode(&m)
+	if err != nil {
+		return err
+	}
+
+	return msg.From(&m, validators...)
 }
 
 type msgpDecoder struct {
@@ -165,7 +217,11 @@ type msgpDecoder struct {
 	stream io.Reader
 }
 
-func (d *msgpDecoder) Decode(msg *Message) error {
+func (d *msgpDecoder) Decode(msg Union, validators ...Processor) error {
+	if msg == nil {
+		return ErrMessageIsInvalid
+	}
+
 	var err error
 	if d.stream != nil {
 		d.bits, err = io.ReadAll(d.stream)
@@ -173,8 +229,12 @@ func (d *msgpDecoder) Decode(msg *Message) error {
 			return err
 		}
 	}
-	_, err = msg.unmarshalMsg(d.bits)
-	return err
+	var tmp Message
+	if _, err := tmp.unmarshalMsg(d.bits); err != nil {
+		return err
+	}
+
+	return msg.From(&tmp, validators...)
 }
 
 // TranscodeMessage converts a WRP message of any type from one format into another,
@@ -205,89 +265,6 @@ func MustEncode(message *Message, f Format) []byte {
 	return output.Bytes()
 }
 
-func Decode[T UnionTypes](r io.Reader, f Format) (*T, error) {
-	return DecodeThenValidate[T](r, f, NoStdValidation())
-}
-
-func DecodeBytes[T UnionTypes](buf []byte, f Format) (*T, error) {
-	return Decode[T](bytes.NewReader(buf), f)
-}
-
-func DecodeThenValidateBytes[T UnionTypes](buf []byte, f Format, validators ...Processor) (*T, error) {
-	return DecodeThenValidate[T](bytes.NewReader(buf), f, validators...)
-}
-
-func DecodeThenValidate[T UnionTypes](r io.Reader, f Format, validators ...Processor) (*T, error) {
-	var msg Message
-	if err := f.Decoder(r).Decode(&msg); err != nil {
-		return nil, err
-	}
-
-	if err := Validate(&msg, validators...); err != nil {
-		return nil, err
-	}
-
-	out := new(T)
-	switch m := any(out).(type) {
-	case *Message:
-		*m = msg
-		return out, nil
-	case *Authorization, *SimpleRequestResponse, *SimpleEvent, *CRUD, *ServiceRegistration, *ServiceAlive, *Unknown:
-		if err := m.(converter).From(&msg); err != nil {
-			return nil, err
-		}
-		return out, nil
-	}
-
-	return nil, ErrNotHandled
-}
-
-func Encode[T UnionTypes](msg *T, w io.Writer, f Format) error {
-	return EncodeAfterValidate(msg, w, f, NoStdValidation())
-}
-
-func EncodeBytes[T UnionTypes](msg *T, f Format) ([]byte, error) {
-	return EncodeAfterValidateBytes(msg, f, NoStdValidation())
-}
-
-func EncodeAfterValidateBytes[T UnionTypes](msg *T, f Format, validators ...Processor) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := EncodeAfterValidate(msg, &buf, f, validators...); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-// EncodeBytes is a convenience function that encodes a given message into a
-// byte slice.
-func EncodeAfterValidate[T UnionTypes](msg *T, w io.Writer, f Format, validators ...Processor) error {
-	if err := Validate(msg, validators...); err != nil {
-		return err
-	}
-
-	var encoder = NewEncoder(w, f)
-
-	var err error
-	var base *Message
-	switch m := any(msg).(type) {
-	case *Message:
-		base = m
-	case *Authorization, *SimpleRequestResponse, *SimpleEvent, *CRUD, *ServiceRegistration, *ServiceAlive, *Unknown:
-		err = m.(converter).To(base)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	if err := encoder.Encode(base); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Validate performs a set of validations on a message.  If no validators are
 // provided, the default set of standard WRP validators is used.  If the
 // NoStandardValidation() processor is provided, no standard validation is
@@ -298,11 +275,19 @@ func EncodeAfterValidate[T UnionTypes](msg *T, w io.Writer, f Format, validators
 // validation is considered successful.  Any combination of nil errors and
 // ErrNotHandled is considered a successful validation.  All other errors are
 // considered validation failures and the first encountered error is returned.
-func Validate[T UnionTypes](msg *T, validators ...Processor) error {
-	return validateTo(msg, nil, validators...)
+func Validate(msg Union, validators ...Processor) error {
+	if msg == nil {
+		return ErrMessageIsInvalid
+	}
+
+	if m, ok := msg.(*Message); ok {
+		return validate(m, validators...)
+	}
+
+	return msg.To(&Message{}, validators...)
 }
 
-func validateTo[T UnionTypes](msg *T, base *Message, validators ...Processor) error {
+func validate(msg *Message, validators ...Processor) error {
 	defaults := []Processor{
 		StandardValidator(),
 	}
@@ -318,14 +303,7 @@ func validateTo[T UnionTypes](msg *T, base *Message, validators ...Processor) er
 
 	validators = append(defaults, validators...)
 
-	switch m := any(msg).(type) {
-	case *Message:
-		base = m
-	case *Authorization, *SimpleRequestResponse, *SimpleEvent, *CRUD, *ServiceRegistration, *ServiceAlive, *Unknown:
-		m.(converter).to(base)
-	}
-
-	err := Processors(validators).ProcessWRP(context.Background(), *base)
+	err := Processors(validators).ProcessWRP(context.Background(), *msg)
 	if err == nil || errors.Is(err, ErrNotHandled) {
 		return nil
 	}

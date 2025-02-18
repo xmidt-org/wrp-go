@@ -119,7 +119,7 @@ func TestAs(t *testing.T) {
 				Destination:     "event:device-status",
 				TransactionUUID: "12345678-1234-1234-1234-123456789012",
 			},
-			Processor: wrp.NoStdValidation(),
+			Processor: wrp.NoStandardValidation(),
 		}, {
 			desc: "msg type matches exact type, inverse",
 			src: &wrp.SimpleRequestResponse{
@@ -134,7 +134,7 @@ func TestAs(t *testing.T) {
 				Destination:     "event:device-status",
 				TransactionUUID: "12345678-1234-1234-1234-123456789012",
 			},
-			Processor: wrp.NoStdValidation(),
+			Processor: wrp.NoStandardValidation(),
 		}, {
 			desc:      "msg type is not the same type",
 			src:       &wrp.Message{Type: wrp.SimpleRequestResponseMessageType},
