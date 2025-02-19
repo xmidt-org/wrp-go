@@ -5,6 +5,7 @@ package wrp
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -464,13 +465,17 @@ func TestExactCopy(t *testing.T) {
 			}
 			t.Run(desc, func(t *testing.T) {
 				thing := reflect.New(reflect.TypeOf(specificStruct)).Interface()
-				runTest(t, i, msgType, thing)
+				switch thing := thing.(type) {
+				case *CRUD:
+					thing.Type = msgType
+				}
+				runTest(t, i, msgType, thing.(Union))
 			})
 		}
 	}
 }
 
-func runTest(t *testing.T, index int, mt MessageType, goal any) {
+func runTest(t *testing.T, index int, mt MessageType, goal Union) {
 	msg := &Message{
 		Type: mt,
 	}
@@ -493,7 +498,7 @@ func runTest(t *testing.T, index int, mt MessageType, goal any) {
 
 	if runTest == 1 {
 		// run the test and expect it to pass
-		err := goal.(converter).From(msg)
+		err := goal.From(msg)
 		assert.NoError(t, err)
 
 		/*
@@ -501,11 +506,19 @@ func runTest(t *testing.T, index int, mt MessageType, goal any) {
 			pp.Println(goal)
 		*/
 
+		assert.Equal(t, goal.MsgType(), msg.MsgType())
+
 		// create a new instance of goal
 		var back Message
-		err = goal.(converter).To(&back)
+		err = goal.To(&back)
 		require.NoError(t, err)
 		assert.Equal(t, msg, &back)
+
+		// Always error
+		err = goal.To(&back, ProcessorFunc(func(_ context.Context, m Message) error {
+			return fmt.Errorf("this is an error")
+		}))
+		require.Error(t, err)
 
 		buf, err := msg.marshalMsg(nil)
 		require.NoError(t, err)
@@ -519,8 +532,8 @@ func runTest(t *testing.T, index int, mt MessageType, goal any) {
 	}
 
 	// run the test and expect it to fail
-	next := reflect.New(reflect.TypeOf(goal).Elem()).Interface()
-	err := next.(converter).From(msg)
+	next := reflect.New(reflect.TypeOf(goal).Elem()).Interface().(Union)
+	err := next.From(msg)
 	require.Error(t, err)
 }
 
@@ -674,7 +687,7 @@ func changeIndex(msg *Message, goal any, index int) int {
 func TestMessage_ToAndValidate(t *testing.T) {
 	tests := []struct {
 		desc    string
-		msg     converter
+		msg     Union
 		invalid bool
 	}{
 		{
@@ -713,17 +726,51 @@ func TestMessage_ToAndValidate(t *testing.T) {
 		}, {
 			desc: "Unknown valid",
 			msg:  &Unknown{},
+		}, {
+			desc: "SimpleEvent invalid",
+			msg: &SimpleEvent{
+				Source: "dns:foo.example.com",
+			},
+			invalid: true,
+		}, {
+			desc: "SimpleRequestResponse invalid",
+			msg: &SimpleRequestResponse{
+				Source:          "dns:foo.example.com",
+				TransactionUUID: "foo",
+			},
+			invalid: true,
+		}, {
+			desc: "CRUD invalid",
+			msg: &CRUD{
+				Type:            CreateMessageType,
+				Source:          "dns:foo.example.com",
+				TransactionUUID: "foo",
+			},
+			invalid: true,
+		}, {
+			desc: "ServiceRegistration invalid",
+			msg: &ServiceRegistration{
+				URL: "http://example.com",
+			},
+			invalid: true,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			assert := assert.New(t)
+
+			if tc.invalid {
+				assert.Error(tc.msg.Validate())
+			} else {
+				assert.Nil(tc.msg.Validate())
+			}
+
 			// test To
 			var got Message
 			err := tc.msg.To(&got)
 			if tc.invalid {
-				assert.Nil(got)
+				assert.Zero(got)
 				assert.Error(err)
 				return
 			}
