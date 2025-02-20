@@ -6,7 +6,7 @@ linters:
     - bodyclose
     - dupl
     - errorlint
-    # - funlen
+    - funlen
     - goconst
     - gosec
     - misspell
@@ -21,7 +21,7 @@ issues:
     - path: _test.go
       linters:
         - dupl
-        # - funlen
+        - funlen
 
 linters-settings:
   errorlint:
