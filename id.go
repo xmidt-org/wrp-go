@@ -39,14 +39,14 @@ var (
 	//  If the scheme is "event" then the authority is the event name.
 	//  If the scheme is "self" then the authority is the empty string.
 
-	// DevicIDPattern is the precompiled regular expression that all device identifiers must match.
+	// devicIDPattern is the precompiled regular expression that all device identifiers must match.
 	// Matching is partial, as everything after the service is ignored.
-	DeviceIDPattern = regexp.MustCompile(
+	deviceIDPattern = regexp.MustCompile(
 		`^(?P<prefix>(?i)mac|uuid|dns|serial|self):(?P<id>[^/]+)(?P<service>/[^/]+)?`,
 	)
 
-	// LocatorPattern is the precompiled regular expression that all locators must match.
-	LocatorPattern = regexp.MustCompile(
+	// locatorPattern is the precompiled regular expression that all locators must match.
+	locatorPattern = regexp.MustCompile(
 		`^(?P<scheme>(?i)mac|uuid|dns|serial|event|self):(?P<authority>[^/]+)?(?P<service>/[^/]+)?(?P<ignored>.+)?`,
 	)
 )
@@ -84,7 +84,7 @@ func (id DeviceID) split() (prefix, idPart string) {
 
 // ParseID parses a raw device name into a canonicalized identifier.
 func ParseDeviceID(deviceName string) (DeviceID, error) {
-	match := DeviceIDPattern.FindStringSubmatch(deviceName)
+	match := deviceIDPattern.FindStringSubmatch(deviceName)
 	if match == nil {
 		return invalidDeviceID, ErrorInvalidDeviceName
 	}
@@ -134,7 +134,7 @@ type Locator struct {
 
 // ParseLocator parses a raw locator string into a canonicalized locator.
 func ParseLocator(locator string) (Locator, error) {
-	match := LocatorPattern.FindStringSubmatch(locator)
+	match := locatorPattern.FindStringSubmatch(locator)
 	if match == nil {
 		return Locator{}, fmt.Errorf("%w: `%s` does not match expected locator pattern", ErrorInvalidLocator, locator)
 	}
