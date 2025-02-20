@@ -11,24 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	mtToStruct = map[MessageType]any{
-		Invalid0MessageType:              nil,
-		Invalid1MessageType:              nil,
-		AuthorizationMessageType:         Authorization{},
-		SimpleRequestResponseMessageType: SimpleRequestResponse{},
-		SimpleEventMessageType:           SimpleEvent{},
-		CreateMessageType:                CRUD{},
-		RetrieveMessageType:              CRUD{},
-		UpdateMessageType:                CRUD{},
-		DeleteMessageType:                CRUD{},
-		ServiceRegistrationMessageType:   ServiceRegistration{},
-		ServiceAliveMessageType:          ServiceAlive{},
-		UnknownMessageType:               Unknown{},
-		LastMessageType:                  nil,
-	}
-)
-
 func TestMessageTypeString(t *testing.T) {
 	var (
 		assert       = assert.New(t)
@@ -97,6 +79,16 @@ func TestStringToMessageType(t *testing.T) {
 			testStringToMessageTypeInvalid(t, v)
 		}
 	})
+}
+
+func TestMessageType_IsValid(t *testing.T) {
+	for v := AuthorizationMessageType; v < LastMessageType; v++ {
+		assert.True(t, v.IsValid())
+	}
+
+	assert.False(t, Invalid0MessageType.IsValid())
+	assert.False(t, Invalid1MessageType.IsValid())
+	assert.False(t, MessageType(-1).IsValid())
 }
 
 func TestMtToStructContainsAllMessageTypes(t *testing.T) {

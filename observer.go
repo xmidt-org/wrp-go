@@ -143,7 +143,8 @@ type Processors []Processor
 
 // ProcessWRP iterates over the Processors, sequentially calling each Processor
 // of the message.  The first Processor to return an error that is not ErrNotHandled
-// will stop the iteration and return the error.  If all Processors return ErrNotHandled,
+// will stop the iteration and return the error.  When a processor returns nil,
+// the iteration continues.  If all Processors return ErrNotHandled,
 // then ErrNotHandled is returned.  If the context is canceled, the iteration stops
 // and the error value is returned.
 func (p Processors) ProcessWRP(ctx context.Context, msg Message) error {

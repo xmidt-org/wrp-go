@@ -4,8 +4,6 @@
 package wrp
 
 import (
-	"bytes"
-	"encoding/json"
 	"io"
 )
 
@@ -28,128 +26,24 @@ func AllFormats() []Format {
 	return []Format{Msgpack, JSON}
 }
 
-// Encoder represents the underlying ugorji behavior that WRP supports
-type Encoder interface {
-	Encode(*Message) error
+// Encoder returns an Encoder for the given format.
+func (f Format) Encoder(output io.Writer) Encoder {
+	return NewEncoder(output, f)
 }
 
-// Decoder represents the underlying ugorji behavior that WRP supports
-type Decoder interface {
-	Decode(*Message) error
+// EncoderBytes returns an Encoder for the given format.
+func (f Format) EncoderBytes(output *[]byte) Encoder {
+	return NewEncoderBytes(output, f)
 }
 
-// NewEncoder produces an Encoder using the appropriate WRP configuration for
-// the given format.
-func NewEncoder(output io.Writer, f Format) Encoder {
-	switch f {
-	case JSON:
-		return &jsonEncoder{enc: json.NewEncoder(output)}
-	case Msgpack:
-		return &msgpEncoder{stream: output}
-	}
-
-	return nil
+// Decoder returns a Decoder for the given format.
+func (f Format) Decoder(input io.Reader) Decoder {
+	return NewDecoder(input, f)
 }
 
-// NewEncoderBytes produces an Encoder using the appropriate WRP configuration
-// for the given format.
-func NewEncoderBytes(output *[]byte, f Format) Encoder {
-	switch f {
-	case JSON:
-		return &jsonEncoder{enc: json.NewEncoder(bytes.NewBuffer(*output))}
-	case Msgpack:
-		return &msgpEncoder{bits: output}
-	}
-
-	return nil
-}
-
-type jsonEncoder struct {
-	enc *json.Encoder
-}
-
-func (e *jsonEncoder) Encode(msg *Message) error {
-	return e.enc.Encode(msg)
-}
-
-type msgpEncoder struct {
-	bits   *[]byte
-	stream io.Writer
-}
-
-func (e *msgpEncoder) Encode(msg *Message) error {
-	if e.stream != nil {
-		got, err := msg.marshalMsg(nil)
-		if err != nil {
-			return err
-		}
-		_, err = e.stream.Write(got)
-		return err
-	}
-
-	_, err := msg.marshalMsg(*e.bits)
-	return err
-}
-
-// NewDecoder produces a ugorji Decoder using the appropriate WRP configuration
-// for the given format
-func NewDecoder(input io.Reader, f Format) Decoder {
-	switch f {
-	case JSON:
-		d := json.NewDecoder(input)
-		d.UseNumber()
-		return &jsonDecoder{dec: d}
-	case Msgpack:
-		return &msgpDecoder{stream: input}
-	}
-
-	return nil
-}
-
-// NewDecoderBytes produces a ugorji Decoder using the appropriate WRP configuration
-// for the given format
-func NewDecoderBytes(input []byte, f Format) Decoder {
-	switch f {
-	case JSON:
-		return &jsonDecoder{dec: json.NewDecoder(bytes.NewReader(input))}
-	case Msgpack:
-		return &msgpDecoder{bits: input}
-	}
-
-	return nil
-}
-
-type jsonDecoder struct {
-	dec *json.Decoder
-}
-
-func (d *jsonDecoder) Decode(msg *Message) error {
-	err := d.dec.Decode(msg)
-	if err != nil {
-		return err
-	}
-	return msg.validate()
-}
-
-type msgpDecoder struct {
-	bits   []byte
-	stream io.Reader
-}
-
-func (d *msgpDecoder) Decode(msg *Message) error {
-	var err error
-	if d.stream != nil {
-		d.bits, err = io.ReadAll(d.stream)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = msg.unmarshalMsg(d.bits)
-	if err != nil {
-		return err
-	}
-
-	return msg.validate()
+// DecoderBytes returns a Decoder for the given format.
+func (f Format) DecoderBytes(input []byte) Decoder {
+	return NewDecoderBytes(input, f)
 }
 
 // TranscodeMessage converts a WRP message of any type from one format into another,
@@ -163,19 +57,4 @@ func TranscodeMessage(target Encoder, source Decoder) (msg *Message, err error) 
 	}
 
 	return
-}
-
-// MustEncode is a convenience function that attempts to encode a given message.  A panic
-// is raised on any error.  This function is handy for package initialization.
-func MustEncode(message *Message, f Format) []byte {
-	var (
-		output  bytes.Buffer
-		encoder = NewEncoder(&output, f)
-	)
-
-	if err := encoder.Encode(message); err != nil {
-		panic(err)
-	}
-
-	return output.Bytes()
 }
