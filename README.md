@@ -8,7 +8,7 @@ structures and supporting utilities.
 [![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-go/blob/main/LICENSE)
 [![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](CHANGELOG.md)
-[![GoDoc](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-go/v4)](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v4)
+[![GoDoc](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-go/v5)](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v5)
 
 ## Table of Contents
 
@@ -21,25 +21,6 @@ structures and supporting utilities.
 
 This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
 By participating, you agree to this Code.
-
-## Validators
-
-To setup application wrp validators, visit the example `ExampleMetaValidator` [GoDoc](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v3/wrpvalidator#example-MetaValidator).
-
-Application config example:
-```yaml
-# wrpValidators defines the wrp validators used to validate incoming wrp messages.
-# (Optional)
-# Available validator types: always_invalid, always_valid, utf8, msg_type, source, destination, simple_res_req, simple_event, spans
-# Available validator levels: info, warning, error
-# Validators can be disabled with `disable: true`, it is false by default
-wrpValidators:
-  - type: utf8
-    level: warning
-    disable: true
-  - type: source
-    level: error
-```
 
 ## Examples 
 
