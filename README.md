@@ -13,7 +13,6 @@ structures and supporting utilities.
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
-- [Validators](#validators)
 - [Examples](#examples)
 - [Contributing](#contributing)
 
