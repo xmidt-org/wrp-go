@@ -147,8 +147,7 @@ func TestParseLocator(t *testing.T) {
 			want: Locator{
 				Scheme:    SchemeDNS,
 				Authority: "foo.bar.com",
-				Service:   "service",
-				Ignored:   "/ignored/really/really/ignored",
+				Ignored:   "/service/ignored/really/really/ignored",
 			},
 		}, {
 			description: "locator with service everything",
@@ -317,5 +316,211 @@ func TestLocatorDeviceID(t *testing.T) {
 	assert.NoError(err)
 
 	assert.True(l.HasDeviceID())
-	assert.NotEqual(l.ID, "")
+	assert.Equal(l.ID, DeviceID("mac:112233445566"))
+
+	alt := l.ID.AsLocator()
+	assert.Equal(l, alt)
+}
+
+func TestLocatorIs(t *testing.T) {
+	self := DeviceID("self:")
+
+	tests := []struct {
+		description string
+		target      DeviceID
+		list        []DeviceID
+		expected    bool
+	}{
+		{
+			description: "self",
+			target:      self,
+			list: []DeviceID{
+				self,
+				DeviceID("mac:112233445566"),
+			},
+			expected: true,
+		}, {
+			description: "self, not in list",
+			target:      self,
+			list: []DeviceID{
+				DeviceID("mac:112233445566"),
+			},
+			expected: false,
+		}, {
+			description: "not self",
+			target:      DeviceID("mac:112233445566"),
+			list: []DeviceID{
+				self,
+				DeviceID("mac:112233445566"),
+			},
+			expected: true,
+		}, {
+			description: "not self, not in list",
+			target:      DeviceID("mac:112233445566"),
+			list: []DeviceID{
+				DeviceID("dns:example.com"),
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			assert.Equal(tc.expected, tc.target.Is(tc.list...))
+
+			l := tc.target.AsLocator()
+			assert.Equal(tc.expected, l.Is(tc.list...))
+		})
+	}
+}
+
+func TestValidateLocator(t *testing.T) {
+	tests := []struct {
+		description string
+		in          Locator
+		err         bool
+	}{
+		{
+			description: "valid mac",
+			in: Locator{
+				Scheme:    SchemeMAC,
+				Authority: "112233445566",
+				ID:        DeviceID("mac:112233445566"),
+			},
+		}, {
+			description: "valid dns",
+			in: Locator{
+				Scheme:    SchemeDNS,
+				Authority: "example.com",
+			},
+		}, {
+			description: "valid event",
+			in: Locator{
+				Scheme:    SchemeEvent,
+				Authority: "event_name",
+			},
+		}, {
+			description: "valid uuid",
+			in: Locator{
+				Scheme:    SchemeUUID,
+				Authority: "bbee1f69-2f64-4aa9-a422-27d68b40b152",
+				ID:        DeviceID("uuid:bbee1f69-2f64-4aa9-a422-27d68b40b152"),
+			},
+		}, {
+			description: "valid serial",
+			in: Locator{
+				Scheme:    SchemeSerial,
+				Authority: "AsdfSerial",
+				ID:        DeviceID("serial:AsdfSerial"),
+			},
+		}, {
+			description: "valid self",
+			in: Locator{
+				Scheme:  SchemeSelf,
+				ID:      DeviceID("self:"),
+				Service: "service",
+			},
+		}, {
+			description: "invalid self",
+			in: Locator{
+				Scheme:    SchemeSelf,
+				Authority: "example.com",
+				ID:        DeviceID("self:"),
+			},
+			err: true,
+		}, {
+			description: "invalid self",
+			in: Locator{
+				Scheme: SchemeSelf,
+			},
+			err: true,
+		}, {
+			description: "invalid scheme",
+			in: Locator{
+				Scheme: "invalid",
+			},
+			err: true,
+		}, {
+			description: "invalid mac",
+			in: Locator{
+				Scheme:    SchemeMAC,
+				Authority: "112invalid66",
+				ID:        DeviceID("mac:112invalid66"),
+			},
+			err: true,
+		}, {
+			description: "invalid mac id",
+			in: Locator{
+				Scheme:    SchemeMAC,
+				Authority: "112233445566",
+				ID:        DeviceID("mac:665544332211"),
+			},
+			err: true,
+		}, {
+			description: "invalid mac no authority",
+			in: Locator{
+				Scheme: SchemeMAC,
+				ID:     DeviceID("mac:665544332211"),
+			},
+			err: true,
+		}, {
+			description: "invalid event no authority",
+			in: Locator{
+				Scheme: SchemeEvent,
+			},
+			err: true,
+		}, {
+			description: "invalid event service is set",
+			in: Locator{
+				Scheme:    SchemeEvent,
+				Authority: "event_name",
+				Service:   "service",
+			},
+			err: true,
+		}, {
+			description: "invalid event id is set",
+			in: Locator{
+				Scheme:    SchemeEvent,
+				Authority: "event_name",
+				ID:        DeviceID("event:event_name"),
+			},
+			err: true,
+		}, {
+			description: "invalid dns id is set",
+			in: Locator{
+				Scheme:    SchemeDNS,
+				Authority: "example.com",
+				ID:        DeviceID("dns:example.com"),
+			},
+			err: true,
+		}, {
+			description: "invalid dns service is set",
+			in: Locator{
+				Scheme:    SchemeDNS,
+				Authority: "example.com",
+				Service:   "service",
+			},
+			err: true,
+		}, {
+			description: "invalid service contains /",
+			in: Locator{
+				Scheme:    SchemeSerial,
+				Authority: "AsdfSerial",
+				Service:   "service/with/slashes",
+				ID:        DeviceID("serial:AsdfSerial"),
+			},
+			err: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			err := tc.in.Validate()
+			assert.Equal(tc.err, err != nil)
+		})
+	}
 }

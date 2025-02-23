@@ -82,6 +82,29 @@ func (id DeviceID) split() (prefix, idPart string) {
 	return parts[0], parts[1]
 }
 
+// AsLocator converts a device identifier into a locator.
+func (id DeviceID) AsLocator() Locator {
+	prefix, idPart := id.split()
+	return Locator{
+		Scheme:    prefix,
+		Authority: idPart,
+		ID:        id,
+	}
+}
+
+// Is returns true if the device identifier is one of the provided device identifiers.
+// This is a convenience function to avoid having to compare the ID field directly
+// & makes code more readable.
+func (id DeviceID) Is(oneOf ...DeviceID) bool {
+	for _, v := range oneOf {
+		if id == v {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ParseID parses a raw device name into a canonicalized identifier.
 func ParseDeviceID(deviceName string) (DeviceID, error) {
 	match := deviceIDPattern.FindStringSubmatch(deviceName)
@@ -132,6 +155,61 @@ type Locator struct {
 	ID DeviceID
 }
 
+// Validate ensures that the locator is well-formed and adheres to the WRP
+// specification.
+func (l Locator) Validate() error {
+	switch l.Scheme {
+	case SchemeSelf:
+		if l.Authority != "" {
+			return fmt.Errorf("%w: authority `%s` is not allowed for self locators", ErrorInvalidLocator, l.Authority)
+		}
+		if l.ID != DeviceID("self:") {
+			return fmt.Errorf("%w: ID `%s` does not match scheme `self`", ErrorInvalidLocator, l.ID)
+		}
+	case SchemeMAC, SchemeUUID, SchemeSerial:
+		if l.Authority == "" {
+			return fmt.Errorf("%w: empty authority", ErrorInvalidLocator)
+		}
+		id, err := makeDeviceID(l.Scheme, l.Authority)
+		if err != nil {
+			return err
+		}
+
+		if l.ID != id {
+			return fmt.Errorf("%w: ID `%s` does not match scheme `%s` and authority `%s`", ErrorInvalidLocator, l.ID, l.Scheme, l.Authority)
+		}
+	case SchemeEvent:
+		if l.Authority == "" {
+			return fmt.Errorf("%w: empty authority", ErrorInvalidLocator)
+		}
+		if l.Service != "" {
+			return fmt.Errorf("%w: service `%s` is not allowed for event locators", ErrorInvalidLocator, l.Service)
+		}
+		if l.ID != DeviceID("") {
+			return fmt.Errorf("%w: ID `%s` is not allowed for event locators", ErrorInvalidLocator, l.ID)
+		}
+
+	case SchemeDNS:
+		if l.Authority == "" {
+			return fmt.Errorf("%w: empty authority", ErrorInvalidLocator)
+		}
+		if l.Service != "" {
+			return fmt.Errorf("%w: service `%s` is not allowed for dns locators", ErrorInvalidLocator, l.Service)
+		}
+		if l.ID != DeviceID("") {
+			return fmt.Errorf("%w: ID `%s` is not allowed for dns locators", ErrorInvalidLocator, l.ID)
+		}
+	default:
+		return fmt.Errorf("%w: unknown scheme `%s`", ErrorInvalidLocator, l.Scheme)
+	}
+
+	if strings.Contains(l.Service, "/") {
+		return fmt.Errorf("%w: service `%s` contains a `/` character", ErrorInvalidLocator, l.Service)
+	}
+
+	return nil
+}
+
 // ParseLocator parses a raw locator string into a canonicalized locator.
 func ParseLocator(locator string) (Locator, error) {
 	match := locatorPattern.FindStringSubmatch(locator)
@@ -152,14 +230,7 @@ func ParseLocator(locator string) (Locator, error) {
 
 	// If the locator is a device identifier, then we need to parse it.
 	switch l.Scheme {
-	case SchemeDNS:
-		if l.Authority == "" {
-			return Locator{}, fmt.Errorf("%w: empty authority", ErrorInvalidLocator)
-		}
-	case SchemeEvent:
-		if l.Authority == "" {
-			return Locator{}, fmt.Errorf("%w: empty authority", ErrorInvalidLocator)
-		}
+	case SchemeEvent, SchemeDNS:
 		if l.Service != "" {
 			l.Ignored = "/" + l.Service + l.Ignored
 			l.Service = ""
@@ -170,7 +241,10 @@ func ParseLocator(locator string) (Locator, error) {
 			return Locator{}, fmt.Errorf("%w: unable to make a device ID with scheme `%s` and authority `%s`", err, l.Scheme, l.Authority)
 		}
 		l.ID = id
-	default:
+	}
+
+	if err := l.Validate(); err != nil {
+		return Locator{}, err
 	}
 
 	return l, nil
@@ -204,6 +278,13 @@ func (l Locator) String() string {
 	return buf.String()
 }
 
+// Is returns true if the locator is one of the provided device identifiers.
+// This is a convenience function to avoid having to compare the ID field
+// directly & makes code more readable.
+func (l Locator) Is(oneOf ...DeviceID) bool {
+	return l.ID.Is(oneOf...)
+}
+
 func makeDeviceID(prefix, idPart string) (DeviceID, error) {
 	prefix = strings.ToLower(prefix)
 	switch prefix {
@@ -211,7 +292,7 @@ func makeDeviceID(prefix, idPart string) (DeviceID, error) {
 		if idPart != "" {
 			return invalidDeviceID, ErrorInvalidDeviceName
 		}
-	case SchemeUUID, SchemeSerial:
+	case SchemeUUID, SchemeSerial, SchemeDNS, SchemeEvent:
 		if idPart == "" {
 			return invalidDeviceID, ErrorInvalidDeviceName
 		}
@@ -236,7 +317,6 @@ func makeDeviceID(prefix, idPart string) (DeviceID, error) {
 			((len(idPart) != 12) && (len(idPart) != 16) && (len(idPart) != 40)) {
 			return invalidDeviceID, ErrorInvalidDeviceName
 		}
-	default:
 	}
 
 	return DeviceID(fmt.Sprintf("%s:%s", prefix, idPart)), nil
