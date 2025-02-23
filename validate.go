@@ -31,18 +31,23 @@ func Validate(msg Union, validators ...Processor) error {
 	return msg.To(&Message{}, validators...)
 }
 
+// SkipStandardValidation returns true if the provided processors contain
+// the NoStandardValidation() provided processor.
+func SkipStandardValidation(p []Processor) bool {
+	for _, v := range p {
+		if _, ok := v.(noStandardValidation); ok {
+			return true
+		}
+	}
+	return false
+}
+
 func validate(msg *Message, validators ...Processor) error {
 	defaults := []Processor{
 		StandardValidator(),
 	}
-	for _, v := range validators {
-		if v == nil {
-			continue
-		}
-		if _, ok := v.(noStandardValidation); ok {
-			defaults = nil
-			break
-		}
+	if SkipStandardValidation(validators) {
+		defaults = nil
 	}
 
 	validators = append(defaults, validators...)
