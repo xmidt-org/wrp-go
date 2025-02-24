@@ -9,6 +9,14 @@ package wrp
 // If the validators are not provided, the msg will be validated against the
 // default validators.  To skip validation, provide the NoStandardValidation()
 // as a validator.
+//
+// If the target implements the Is(Union) bool method, that method will be
+// called to determine if the msg is the same type as the target.  If the target
+// does not implement the Is(Union) method, the msg will be converted into a
+// *Message and validated against the validators.
+//
+// Is() is valuable for determining if the type matches, even if the message
+// doesn't validate.
 func Is(msg, target Union, validators ...Processor) bool {
 	if msg == nil || target == nil {
 		return msg == nil && target == nil
@@ -19,6 +27,10 @@ func Is(msg, target Union, validators ...Processor) bool {
 
 	if !msgType.IsValid() || !targetType.IsValid() || msgType != targetType {
 		return false
+	}
+
+	if t, ok := target.(interface{ Is(Union) bool }); ok {
+		return t.Is(msg)
 	}
 
 	if m, ok := msg.(*Message); ok {
