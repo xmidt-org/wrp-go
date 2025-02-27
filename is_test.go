@@ -10,6 +10,38 @@ import (
 	"github.com/xmidt-org/wrp-go/v5"
 )
 
+// This type is here to show that a type that implements the wrp.Union interface
+// can be used in the wrp.Is function.  The Is() function is beyond the scope of
+// of the wrp.Union interface, but it is a useful function to have when working
+// with the wrp.Union interface as it allows the caller to determine if the
+// message is of a specific type - even if it doesn't validate..
+type isTest struct {
+	is bool
+}
+
+var _ wrp.Union = (*isTest)(nil)
+
+func (i *isTest) MsgType() wrp.MessageType {
+	return wrp.UnknownMessageType
+}
+
+func (i *isTest) To(msg *wrp.Message, v ...wrp.Processor) error {
+	msg.Type = wrp.UnknownMessageType
+	return nil
+}
+
+func (i *isTest) From(msg *wrp.Message, v ...wrp.Processor) error {
+	return nil
+}
+
+func (i *isTest) Validate(v ...wrp.Processor) error {
+	return nil
+}
+
+func (i *isTest) Is(msg wrp.Union) bool {
+	return i.is
+}
+
 func TestIs(t *testing.T) {
 	tests := []struct {
 		desc       string
@@ -67,6 +99,11 @@ func TestIs(t *testing.T) {
 			desc:   "msg type matches exact type, inverse",
 			msg:    &wrp.Unknown{},
 			target: &wrp.Message{Type: wrp.UnknownMessageType},
+			want:   true,
+		}, {
+			desc:   "msg type matches exact type",
+			msg:    &wrp.Message{Type: wrp.UnknownMessageType},
+			target: &isTest{is: true},
 			want:   true,
 		}, {
 			desc:   "msg type is not the same type",
