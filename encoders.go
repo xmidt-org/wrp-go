@@ -119,10 +119,10 @@ func (e *msgpEncoder) Encode(msg Union, validators ...Processor) error {
 
 // MustEncode is a convenience function that attempts to encode a given message.  A panic
 // is raised on any error.  This function is handy for package initialization.
-func MustEncode(message *Message, f Format) []byte {
+func MustEncode(message *Message, f Format, validators ...Processor) []byte {
 	var out bytes.Buffer
 
-	if err := f.Encoder(&out).Encode(message); err != nil {
+	if err := f.Encoder(&out).Encode(message, validators...); err != nil {
 		panic(err)
 	}
 
