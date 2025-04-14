@@ -117,12 +117,14 @@ func (e *msgpEncoder) Encode(msg Union, validators ...Processor) error {
 	return err
 }
 
-// MustEncode is a convenience function that attempts to encode a given message.  A panic
-// is raised on any error.  This function is handy for package initialization.
-func MustEncode(message *Message, f Format) []byte {
+// MustEncode is a convenience function that attempts to encode a given message.
+// A panic is raised on any error.  To skip validation, pass NoStandardValidation().
+// Custom validators can be provided as additional arguments.  This function is
+// handy for package initialization.
+func MustEncode(message *Message, f Format, validators ...Processor) []byte {
 	var out bytes.Buffer
 
-	if err := f.Encoder(&out).Encode(message); err != nil {
+	if err := f.Encoder(&out).Encode(message, validators...); err != nil {
 		panic(err)
 	}
 
