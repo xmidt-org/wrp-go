@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/stretchr/testify v1.10.0
-	github.com/tinylib/msgp v1.2.5
+	github.com/tinylib/msgp v1.3.0
 )
 
 require (
