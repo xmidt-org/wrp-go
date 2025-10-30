@@ -164,7 +164,7 @@ func (vador) payload(err *error, msg *Message, m modality) {
 	switch m {
 	case required:
 		if len(msg.Payload) == 0 {
-			*err = errors.Join(ErrMessageIsInvalid, errors.New("Payload is required"))
+			*err = errors.Join(ErrMessageIsInvalid, errors.New("Payload is required")) // nolint:staticcheck
 			return
 		}
 	case optional:
@@ -211,7 +211,7 @@ func (vador) metadata(err *error, msg *Message, m modality) {
 	switch m {
 	case required:
 		if len(msg.Metadata) == 0 {
-			*err = errors.Join(ErrMessageIsInvalid, errors.New("Metadata is required"))
+			*err = errors.Join(ErrMessageIsInvalid, errors.New("Payload is required")) // nolint:staticcheck
 			return
 		}
 	case optional:

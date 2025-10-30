@@ -24,7 +24,7 @@ func (e *Extended) MsgType() wrp.MessageType {
 
 // Implement the wrp.Union interface for the Extended type.
 func (e *Extended) To(msg *wrp.Message, v ...wrp.Processor) error {
-	e.SimpleEvent.Headers = []string{"extra: " + e.Extra}
+	e.Headers = []string{"extra: " + e.Extra}
 	return e.SimpleEvent.To(msg, v...)
 }
 
@@ -36,8 +36,8 @@ func (e *Extended) From(msg *wrp.Message, v ...wrp.Processor) error {
 	}
 
 	e.Extra = ""
-	if len(e.SimpleEvent.Headers) > 0 {
-		after, found := strings.CutPrefix(e.SimpleEvent.Headers[0], "extra: ")
+	if len(e.Headers) > 0 {
+		after, found := strings.CutPrefix(e.Headers[0], "extra: ")
 		if found {
 			e.Extra = after
 		}
