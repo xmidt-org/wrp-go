@@ -1,5 +1,12 @@
 # wrp-go
 
+[![Build Status](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml/badge.svg)](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/xmidt-org/wrp-go/branch/main/graph/badge.svg?token=tWY4sd44iI)](https://codecov.io/gh/xmidt-org/wrp-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go)
+[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-go/blob/main/LICENSE)
+[![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](CHANGELOG.md)
+[![GoDoc](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-go/v5)](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v5)
+
 wrp-go provides a Go library implementing the [Web Routing Protocol](https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol)
 structures and supporting utilities.
 
@@ -17,13 +24,6 @@ structures and supporting utilities.
 - **Zero-Copy Parsing**: Efficient string handling for device identifiers and locators
 - **Validation**: Built-in validation for messages and locators
 - **Transcoding**: Easy conversion between different encoding formats
-
-[![Build Status](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml/badge.svg)](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/xmidt-org/wrp-go/branch/main/graph/badge.svg?token=tWY4sd44iI)](https://codecov.io/gh/xmidt-org/wrp-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go)
-[![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-go/blob/main/LICENSE)
-[![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](CHANGELOG.md)
-[![GoDoc](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-go/v5)](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v5)
 
 ## Table of Contents
 
