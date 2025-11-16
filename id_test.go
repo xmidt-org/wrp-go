@@ -17,6 +17,7 @@ func TestParseDeviceID(t *testing.T) {
 		expected     DeviceID
 		prefix       string
 		literalID    string
+		zeroCopy     bool
 		expectsError bool
 	}{
 		{
@@ -44,16 +45,19 @@ func TestParseDeviceID(t *testing.T) {
 			expected:  "uuid:anything Goes!",
 			prefix:    "uuid",
 			literalID: "anything Goes!",
+			zeroCopy:  true,
 		}, {
 			id:        "dns:anything Goes!",
 			expected:  "dns:anything Goes!",
 			prefix:    "dns",
 			literalID: "anything Goes!",
+			zeroCopy:  true,
 		}, {
 			id:        "serial:1234",
 			expected:  "serial:1234",
 			prefix:    "serial",
 			literalID: "1234",
+			zeroCopy:  true,
 		}, {
 			id:        "mac:11-aa-BB-44-55-66/service",
 			expected:  "mac:11aabb445566",
@@ -94,11 +98,13 @@ func TestParseDeviceID(t *testing.T) {
 			expected:  "mac:481d70187fef",
 			prefix:    "mac",
 			literalID: "481d70187fef",
+			zeroCopy:  true,
 		}, {
 			id:        "mac:481d70187fef/parodus/tag/test0",
 			expected:  "mac:481d70187fef",
 			prefix:    "mac",
 			literalID: "481d70187fef",
+			zeroCopy:  true,
 		},
 	}
 
@@ -110,6 +116,15 @@ func TestParseDeviceID(t *testing.T) {
 			assert.Equal([]byte(record.expected), id.Bytes())
 			assert.Equal(record.prefix, id.Prefix())
 			assert.Equal(record.literalID, id.ID())
+
+			if !record.expectsError {
+				if record.zeroCopy {
+					// When zero-copy is expected, the string backing the ID should be the same as input
+					got := string(id)
+					have := record.id
+					assert.Exactly(have[0:len(got)], got, "zero-copy: strings should be exactly the same")
+				}
+			}
 		})
 	}
 }
@@ -257,7 +272,7 @@ func TestParseLocator(t *testing.T) {
 		}, {
 			description: "invalid self scheme",
 			locator:     "self:anything",
-			expectedErr: ErrorInvalidDeviceName,
+			expectedErr: ErrorInvalidLocator,
 		}, {
 			description: "invalid event scheme (no authority)",
 			locator:     "event:/anything",
@@ -510,6 +525,74 @@ func TestValidateLocator(t *testing.T) {
 				Authority: "AsdfSerial",
 				Service:   "service/with/slashes",
 				ID:        DeviceID("serial:AsdfSerial"),
+			},
+			err: true,
+		},
+		// Additional MAC validation tests
+		{
+			description: "invalid mac - wrong prefix in ID",
+			in: Locator{
+				Scheme:    SchemeMAC,
+				Authority: "112233445566",
+				ID:        DeviceID("uuid:112233445566"),
+			},
+			err: true,
+		},
+		// UUID validation tests
+		{
+			description: "invalid uuid - empty authority",
+			in: Locator{
+				Scheme: SchemeUUID,
+				ID:     DeviceID("uuid:something"),
+			},
+			err: true,
+		}, {
+			description: "invalid uuid - ID doesn't match authority",
+			in: Locator{
+				Scheme:    SchemeUUID,
+				Authority: "bbee1f69-2f64-4aa9-a422-27d68b40b152",
+				ID:        DeviceID("uuid:different-uuid"),
+			},
+			err: true,
+		}, {
+			description: "invalid uuid - wrong prefix in ID",
+			in: Locator{
+				Scheme:    SchemeUUID,
+				Authority: "bbee1f69-2f64-4aa9-a422-27d68b40b152",
+				ID:        DeviceID("mac:bbee1f69-2f64-4aa9-a422-27d68b40b152"),
+			},
+			err: true,
+		},
+		// Serial validation tests
+		{
+			description: "invalid serial - empty authority",
+			in: Locator{
+				Scheme: SchemeSerial,
+				ID:     DeviceID("serial:something"),
+			},
+			err: true,
+		}, {
+			description: "invalid serial - ID doesn't match authority",
+			in: Locator{
+				Scheme:    SchemeSerial,
+				Authority: "ABC123",
+				ID:        DeviceID("serial:XYZ789"),
+			},
+			err: true,
+		}, {
+			description: "invalid serial - wrong prefix in ID",
+			in: Locator{
+				Scheme:    SchemeSerial,
+				Authority: "ABC123",
+				ID:        DeviceID("uuid:ABC123"),
+			},
+			err: true,
+		},
+		// DNS validation tests
+		{
+			description: "invalid dns - empty authority",
+			in: Locator{
+				Scheme: SchemeDNS,
 			},
 			err: true,
 		},

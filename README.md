@@ -1,7 +1,22 @@
 # wrp-go
 
-wrp-go provides a library implementing the [Web Routing Protocol](https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol) 
+wrp-go provides a Go library implementing the [Web Routing Protocol](https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol)
 structures and supporting utilities.
+
+## Features
+
+- **WRP Message Types**: Complete implementation of all WRP message structures
+- **Multiple Encodings**: Support for JSON and MessagePack serialization formats
+- **Device Identifiers**: Parsing and validation of device IDs and locators with support for:
+  - MAC addresses (with automatic normalization)
+  - UUIDs
+  - Serial numbers
+  - DNS names
+  - Event names
+  - Self-referencing locators
+- **Zero-Copy Parsing**: Efficient string handling for device identifiers and locators
+- **Validation**: Built-in validation for messages and locators
+- **Transcoding**: Easy conversion between different encoding formats
 
 [![Build Status](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml/badge.svg)](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/xmidt-org/wrp-go/branch/main/graph/badge.svg?token=tWY4sd44iI)](https://codecov.io/gh/xmidt-org/wrp-go)
@@ -21,10 +36,10 @@ structures and supporting utilities.
 This project and everyone participating in it are governed by the [XMiDT Code Of Conduct](https://xmidt.io/code_of_conduct/). 
 By participating, you agree to this Code.
 
-## Examples 
+## Examples
 
 To use the wrp-go library, it first should be added as an import in the file you plan to use it.
-Examples can be found at the top of the [GoDoc](https://godoc.org/github.com/xmidt-org/wrp-go).
+Examples can be found in the [GoDoc](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v5).
 
 ## Contributing
 

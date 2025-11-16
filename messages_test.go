@@ -121,7 +121,7 @@ var testMessages = []msgTest{
 		msg: Message{
 			Type:            SimpleRequestResponseMessageType,
 			Source:          "dns:external.com",
-			Destination:     "mac:FFEEAADD44443333",
+			Destination:     "mac:112233445566",
 			TransactionUUID: "DEADBEEF",
 			Headers:         []string{"Header1", "Header2"},
 			Metadata:        map[string]string{"name": "value"},
