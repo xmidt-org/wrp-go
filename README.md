@@ -1,8 +1,8 @@
 # wrp-go
 
 [![Build Status](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml/badge.svg)](https://github.com/xmidt-org/wrp-go/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/xmidt-org/wrp-go/branch/main/graph/badge.svg?token=tWY4sd44iI)](https://codecov.io/gh/xmidt-org/wrp-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go)
+[![codecov](https://codecov.io/gh/xmidt-org/wrp-go/branch/main/graph/badge.svg?token=tWY4sd44iI)](https://codecov.io/gh/xmidt-org/wrp-go/tree/main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go/v5)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go/v5)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-go/blob/main/LICENSE)
 [![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](https://github.com/xmidt-org/wrp-go/releases)
 [![GoDoc](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-go/v5)](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v5)
