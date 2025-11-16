@@ -843,7 +843,7 @@ func TestMessage_EncodeMsgpack(t *testing.T) {
 				Source:      "serial:ABC123",
 				Destination: "dns:target.example.com",
 				Metadata: map[string]string{
-					"boot-time":            "1234567890",
+					"boot-time":             "1234567890",
 					"last-reconnect-reason": "power cycle",
 				},
 				Payload: []byte("test payload"),
