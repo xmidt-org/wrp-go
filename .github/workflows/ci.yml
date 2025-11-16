@@ -19,7 +19,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # Allows Releases
+  pull-requests: read
+  contents:      write
+  packages:      write
 
 jobs:
   ci:

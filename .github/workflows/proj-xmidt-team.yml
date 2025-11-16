@@ -11,9 +11,7 @@ on:
     types:
       - opened
 
-# Only need to use a secret and update a project board.
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   package:
