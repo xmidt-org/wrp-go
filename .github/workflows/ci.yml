@@ -18,21 +18,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write # Allows Releases
+
 jobs:
   ci:
     uses: xmidt-org/shared-go/.github/workflows/ci.yml@a98d20363e6225b37af9aa8d2b3c4bdfedbe8020 # v4.8.7
     with:
       release-type:   library
-      release-arch-arm64:    true
-      release-arch-amd64:    true
-      release-docker:        true
-      release-docker-latest: true
-      release-docker-major:  true
-      release-docker-minor:  true
-      release-docker-extras: |
-        .release/docker
-        LICENSE
-        NOTICE
-
       yaml-lint-skip: false
     secrets: inherit
