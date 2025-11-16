@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/xmidt-org/wrp-go/branch/main/graph/badge.svg?token=tWY4sd44iI)](https://codecov.io/gh/xmidt-org/wrp-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xmidt-org/wrp-go)](https://goreportcard.com/report/github.com/xmidt-org/wrp-go)
 [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/xmidt-org/wrp-go/blob/main/LICENSE)
-[![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](CHANGELOG.md)
+[![GitHub Release](https://img.shields.io/github/release/xmidt-org/wrp-go.svg)](https://github.com/xmidt-org/wrp-go/releases)
 [![GoDoc](https://pkg.go.dev/badge/github.com/xmidt-org/wrp-go/v5)](https://pkg.go.dev/github.com/xmidt-org/wrp-go/v5)
 
 wrp-go provides a Go library implementing the [Web Routing Protocol](https://github.com/xmidt-org/wrp-c/wiki/Web-Routing-Protocol)
