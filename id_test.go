@@ -305,6 +305,10 @@ func TestParseLocator(t *testing.T) {
 			description: "invalid serial scheme (no authority and with spaces)",
 			locator:     "serial:      /anything",
 			expectedErr: ErrorInvalidDeviceName,
+		}, {
+			description: "invalid event scheme (no service)",
+			locator:     "event:/invalid",
+			expectedErr: ErrorInvalidDeviceName,
 		},
 	}
 	for _, tc := range tests {

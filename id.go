@@ -211,7 +211,7 @@ func (l Locator) validateSchemeDNS() error {
 		return fmt.Errorf("%w: empty authority", ErrorInvalidLocator)
 	}
 	if l.Service != "" {
-		return fmt.Errorf("%w: service `%s` is not allowed for event locators", ErrorInvalidLocator, l.Service)
+		return fmt.Errorf("%w: service `%s` is not allowed for dns locators", ErrorInvalidLocator, l.Service)
 	}
 	if l.ID != DeviceID("") {
 		return fmt.Errorf("%w: ID `%s` is not allowed for dns locators", ErrorInvalidLocator, l.ID)
@@ -306,10 +306,6 @@ func ParseLocator(locator string) (Locator, error) {
 
 		rest = strings.TrimPrefix(rest, l.Service)
 		l.Ignored = rest
-	}
-
-	if err := l.Validate(); err != nil {
-		return Locator{}, err
 	}
 
 	return l, nil

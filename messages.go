@@ -219,8 +219,7 @@ func (msg *Message) from(m *Message) {
 // The buffer is reused and may be grown if needed. Returns the encoded data,
 // which may be a different slice if the buffer was grown (1 allocation).
 //
-// For validated encoding, use NewEncoder() or the package-level EncodeMsgpackDirect()
-// function instead.
+// For validated encoding, use NewEncoder() instead.
 //
 // Performance characteristics:
 //   - 0 allocations if buffer has sufficient capacity (typical case)
@@ -254,8 +253,7 @@ func (msg *Message) EncodeMsgpack(buf []byte) ([]byte, error) {
 // Returns the remaining bytes after decoding, which is useful for stream
 // processing or handling multiple concatenated messages.
 //
-// For validated decoding, use NewDecoder() or the package-level DecodeMsgpackDirect()
-// function instead.
+// For validated decoding, use NewDecoder() instead.
 //
 // Performance characteristics:
 //   - 13 allocations (for message fields, unavoidable during unmarshaling)

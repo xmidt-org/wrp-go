@@ -803,3 +803,378 @@ func TestMessage_Setters(t *testing.T) {
 	assert.Equal(t, int64(42), *crud.RequestDeliveryResponse)
 
 }
+
+func TestMessage_EncodeMsgpack(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         Message
+		bufSize     int
+		expectErr   bool
+	}{
+		{
+			description: "simple event message",
+			msg: Message{
+				Type:             SimpleEventMessageType,
+				Source:           "mac:112233445566",
+				Destination:      "event:device-status",
+				TransactionUUID:  "test-uuid-123",
+				Payload:          []byte("hello world"),
+				QualityOfService: QOSValue(1),
+			},
+			bufSize: 1024,
+		},
+		{
+			description: "request response message",
+			msg: Message{
+				Type:            SimpleRequestResponseMessageType,
+				Source:          "dns:server.example.com",
+				Destination:     "mac:aabbccddeeff",
+				TransactionUUID: "req-uuid-456",
+				ContentType:     "application/json",
+				Accept:          "application/json",
+				Payload:         []byte(`{"key":"value"}`),
+			},
+			bufSize: 1024,
+		},
+		{
+			description: "message with metadata",
+			msg: Message{
+				Type:        SimpleEventMessageType,
+				Source:      "serial:ABC123",
+				Destination: "dns:target.example.com",
+				Metadata: map[string]string{
+					"boot-time":            "1234567890",
+					"last-reconnect-reason": "power cycle",
+				},
+				Payload: []byte("test payload"),
+			},
+			bufSize: 1024,
+		},
+		{
+			description: "message with headers",
+			msg: Message{
+				Type:        SimpleEventMessageType,
+				Source:      "uuid:550e8400-e29b-41d4-a716-446655440000",
+				Destination: "event:test",
+				Headers: []string{
+					"X-Custom-Header: value1",
+					"X-Another-Header: value2",
+				},
+				Payload: []byte("payload"),
+			},
+			bufSize: 1024,
+		},
+		{
+			description: "small buffer (should grow)",
+			msg: Message{
+				Type:        SimpleEventMessageType,
+				Source:      "mac:112233445566",
+				Destination: "event:test",
+				Payload:     []byte("data"),
+			},
+			bufSize: 10, // Intentionally small to test buffer growth
+		},
+		{
+			description: "zero-length buffer",
+			msg: Message{
+				Type:        SimpleEventMessageType,
+				Source:      "self:",
+				Destination: "event:test",
+			},
+			bufSize: 0,
+		},
+		{
+			description: "message with status",
+			msg: Message{
+				Type:        SimpleRequestResponseMessageType,
+				Source:      "dns:server.com",
+				Destination: "mac:112233445566",
+				Status:      int64Ptr(200),
+				Payload:     []byte("response"),
+			},
+			bufSize: 512,
+		},
+		{
+			description: "message with rdr",
+			msg: Message{
+				Type:                    SimpleRequestResponseMessageType,
+				Source:                  "dns:server.com",
+				Destination:             "mac:112233445566",
+				RequestDeliveryResponse: int64Ptr(1),
+				Payload:                 []byte("ack"),
+			},
+			bufSize: 512,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Create buffer
+			buf := make([]byte, 0, tc.bufSize)
+
+			// Encode
+			encoded, err := tc.msg.EncodeMsgpack(buf)
+
+			if tc.expectErr {
+				assert.Error(err)
+				return
+			}
+
+			assert.NoError(err)
+			assert.NotEmpty(encoded)
+
+			// Verify we can decode it back
+			var decoded Message
+			remaining, err := decoded.DecodeMsgpack(encoded)
+			assert.NoError(err)
+			assert.Empty(remaining, "should consume all bytes")
+
+			// Verify fields match
+			assert.Equal(tc.msg.Type, decoded.Type)
+			assert.Equal(tc.msg.Source, decoded.Source)
+			assert.Equal(tc.msg.Destination, decoded.Destination)
+			assert.Equal(tc.msg.TransactionUUID, decoded.TransactionUUID)
+			assert.Equal(tc.msg.ContentType, decoded.ContentType)
+			assert.Equal(tc.msg.Accept, decoded.Accept)
+			assert.Equal(tc.msg.Payload, decoded.Payload)
+			assert.Equal(tc.msg.Headers, decoded.Headers)
+			assert.Equal(tc.msg.Metadata, decoded.Metadata)
+			assert.Equal(tc.msg.QualityOfService, decoded.QualityOfService)
+
+			if tc.msg.Status != nil {
+				assert.NotNil(decoded.Status)
+				assert.Equal(*tc.msg.Status, *decoded.Status)
+			} else {
+				assert.Nil(decoded.Status)
+			}
+
+			if tc.msg.RequestDeliveryResponse != nil {
+				assert.NotNil(decoded.RequestDeliveryResponse)
+				assert.Equal(*tc.msg.RequestDeliveryResponse, *decoded.RequestDeliveryResponse)
+			} else {
+				assert.Nil(decoded.RequestDeliveryResponse)
+			}
+		})
+	}
+}
+
+func TestMessage_DecodeMsgpack(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         Message
+		expectErr   bool
+	}{
+		{
+			description: "valid simple event",
+			msg: Message{
+				Type:             SimpleEventMessageType,
+				Source:           "mac:112233445566",
+				Destination:      "event:device-status",
+				TransactionUUID:  "test-uuid",
+				Payload:          []byte("test data"),
+				QualityOfService: QOSValue(1),
+			},
+		},
+		{
+			description: "valid request response",
+			msg: Message{
+				Type:            SimpleRequestResponseMessageType,
+				Source:          "dns:server.example.com",
+				Destination:     "mac:aabbccddeeff",
+				TransactionUUID: "req-123",
+				ContentType:     "text/plain",
+				Status:          int64Ptr(200),
+				Payload:         []byte("OK"),
+			},
+		},
+		{
+			description: "message with all optional fields",
+			msg: Message{
+				Type:                    SimpleEventMessageType,
+				Source:                  "uuid:12345678-1234-1234-1234-123456789012",
+				Destination:             "dns:target.com",
+				TransactionUUID:         "tx-uuid",
+				ContentType:             "application/octet-stream",
+				Accept:                  "application/json",
+				Status:                  int64Ptr(201),
+				RequestDeliveryResponse: int64Ptr(1),
+				Headers:                 []string{"X-Test: value"},
+				Metadata: map[string]string{
+					"key1": "value1",
+					"key2": "value2",
+				},
+				Payload:          []byte("payload data"),
+				QualityOfService: QOSValue(2),
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// First encode the message
+			buf := make([]byte, 0, 1024)
+			encoded, err := tc.msg.EncodeMsgpack(buf)
+			assert.NoError(err)
+
+			// Now decode it
+			var decoded Message
+			remaining, err := decoded.DecodeMsgpack(encoded)
+
+			if tc.expectErr {
+				assert.Error(err)
+				return
+			}
+
+			assert.NoError(err)
+			assert.Empty(remaining)
+
+			// Verify all fields
+			assert.Equal(tc.msg.Type, decoded.Type)
+			assert.Equal(tc.msg.Source, decoded.Source)
+			assert.Equal(tc.msg.Destination, decoded.Destination)
+			assert.Equal(tc.msg.TransactionUUID, decoded.TransactionUUID)
+			assert.Equal(tc.msg.ContentType, decoded.ContentType)
+			assert.Equal(tc.msg.Accept, decoded.Accept)
+			assert.Equal(tc.msg.Payload, decoded.Payload)
+			assert.Equal(tc.msg.Headers, decoded.Headers)
+			assert.Equal(tc.msg.Metadata, decoded.Metadata)
+			assert.Equal(tc.msg.QualityOfService, decoded.QualityOfService)
+
+			if tc.msg.Status != nil {
+				assert.NotNil(decoded.Status)
+				assert.Equal(*tc.msg.Status, *decoded.Status)
+			}
+
+			if tc.msg.RequestDeliveryResponse != nil {
+				assert.NotNil(decoded.RequestDeliveryResponse)
+				assert.Equal(*tc.msg.RequestDeliveryResponse, *decoded.RequestDeliveryResponse)
+			}
+		})
+	}
+}
+
+func TestMessage_DecodeMsgpack_InvalidData(t *testing.T) {
+	tests := []struct {
+		description string
+		data        []byte
+	}{
+		{
+			description: "empty data",
+			data:        []byte{},
+		},
+		{
+			description: "invalid msgpack",
+			data:        []byte{0xFF, 0xFF, 0xFF},
+		},
+		{
+			description: "truncated data",
+			data:        []byte{0x81, 0xA4}, // Incomplete msgpack
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			var msg Message
+			_, err := msg.DecodeMsgpack(tc.data)
+			assert.Error(err, "should fail to decode invalid data")
+		})
+	}
+}
+
+func TestMessage_EncodeMsgpack_BufferReuse(t *testing.T) {
+	assert := assert.New(t)
+
+	// Pre-allocate a buffer
+	buf := make([]byte, 0, 2048)
+
+	messages := []Message{
+		{
+			Type:        SimpleEventMessageType,
+			Source:      "mac:111111111111",
+			Destination: "event:test1",
+			Payload:     []byte("message 1"),
+		},
+		{
+			Type:        SimpleEventMessageType,
+			Source:      "mac:222222222222",
+			Destination: "event:test2",
+			Payload:     []byte("message 2"),
+		},
+		{
+			Type:        SimpleEventMessageType,
+			Source:      "mac:333333333333",
+			Destination: "event:test3",
+			Payload:     []byte("message 3"),
+		},
+	}
+
+	// Encode multiple messages reusing the buffer
+	for i, msg := range messages {
+		buf = buf[:0] // Reset buffer without deallocating
+
+		encoded, err := msg.EncodeMsgpack(buf)
+		assert.NoError(err)
+		assert.NotEmpty(encoded)
+
+		// Verify encoding is correct
+		var decoded Message
+		_, err = decoded.DecodeMsgpack(encoded)
+		assert.NoError(err)
+		assert.Equal(msg.Source, decoded.Source, "message %d source mismatch", i)
+		assert.Equal(msg.Destination, decoded.Destination, "message %d destination mismatch", i)
+		assert.Equal(msg.Payload, decoded.Payload, "message %d payload mismatch", i)
+	}
+}
+
+func TestMessage_DecodeMsgpack_RemainingBytes(t *testing.T) {
+	assert := assert.New(t)
+
+	// Create a message
+	msg1 := Message{
+		Type:        SimpleEventMessageType,
+		Source:      "mac:112233445566",
+		Destination: "event:test",
+		Payload:     []byte("first"),
+	}
+
+	msg2 := Message{
+		Type:        SimpleEventMessageType,
+		Source:      "mac:aabbccddeeff",
+		Destination: "event:test2",
+		Payload:     []byte("second"),
+	}
+
+	// Encode both messages separately
+	buf1 := make([]byte, 0, 1024)
+	encoded1, err := msg1.EncodeMsgpack(buf1)
+	assert.NoError(err)
+
+	buf2 := make([]byte, 0, 1024)
+	encoded2, err := msg2.EncodeMsgpack(buf2)
+	assert.NoError(err)
+
+	// Concatenate the encoded messages
+	combined := append(encoded1, encoded2...)
+
+	// Decode first message
+	var decoded1 Message
+	remaining, err := decoded1.DecodeMsgpack(combined)
+	assert.NoError(err)
+	assert.Equal(msg1.Source, decoded1.Source)
+	assert.Equal(msg1.Payload, decoded1.Payload)
+	assert.NotEmpty(remaining, "should have remaining bytes for second message")
+
+	// Decode second message from remaining bytes
+	var decoded2 Message
+	remaining, err = decoded2.DecodeMsgpack(remaining)
+	assert.NoError(err)
+	assert.Equal(msg2.Source, decoded2.Source)
+	assert.Equal(msg2.Payload, decoded2.Payload)
+	assert.Empty(remaining, "should have consumed all bytes")
+}
