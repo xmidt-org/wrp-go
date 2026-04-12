@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
+# SPDX-License-Identifier: Apache-2.0
+---
+name: 'Auto Releaser'
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    uses: xmidt-org/shared-go/.github/workflows/auto-releaser.yml@aff0471aa7e2f96ddb059beb178f63747a7cc57e # v4.3.4
+    secrets: inherit
