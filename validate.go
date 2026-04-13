@@ -43,7 +43,7 @@ func SkipStandardValidation(p []Processor) bool {
 }
 
 func validate(msg *Message, validators ...Processor) error {
-	defaults := []Processor{
+	defaults := []Processor{ // nolint:prealloc
 		StandardValidator(),
 	}
 	if SkipStandardValidation(validators) {
