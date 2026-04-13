@@ -1,16 +1,17 @@
-# SPDX-FileCopyrightText: 2022 Comcast Cable Communications Management, LLC
+# SPDX-FileCopyrightText: 2023 Comcast Cable Communications Management, LLC
 # SPDX-License-Identifier: Apache-2.0
 ---
 name: 'Dependabot auto approval'
 
 on:
-  pull_request_target
+  pull_request_target:
 
 permissions:
   pull-requests: write
-  contents:      write
+  contents: write
 
 jobs:
-  package:
-    uses: xmidt-org/shared-go/.github/workflows/approve-dependabot.yml@aff0471aa7e2f96ddb059beb178f63747a7cc57e # v4.3.4
+  approve:
+    # yamllint disable-line
+    uses: xmidt-org/shared-go/.github/workflows/approve-dependabot.yml@aff0471aa7e2f96ddb059beb178f63747a7cc57e # v4.9.41
     secrets: inherit
