@@ -411,13 +411,13 @@ func TestMessageConsistency(t *testing.T) {
 			// a pointer, check if the type is the same.
 			wrpFieldType := wrpField.Type
 			thisType := this.Type
-			if wrpFieldType.Kind() == reflect.Ptr {
+			if wrpFieldType.Kind() == reflect.Pointer {
 				wrpFieldType = wrpFieldType.Elem()
 
 				// the field in wrp.Message is a pointer, but the field in the
 				// other struct may not be a pointer, that's ok.  Example is
 				// the Status field in Message struct vs Authorization struct.
-				if this.Type.Kind() == reflect.Ptr {
+				if this.Type.Kind() == reflect.Pointer {
 					thisType = this.Type.Elem()
 				}
 			}
@@ -557,7 +557,7 @@ func populateRequired(msg *Message, goal any) {
 				msgField.SetString("dns:required.example.com")
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				msgField.SetInt(42)
-			case reflect.Ptr:
+			case reflect.Pointer:
 				if msgField.Type().Elem().Kind() == reflect.Int64 {
 					ptrValue := reflect.New(msgField.Type().Elem())
 					ptrValue.Elem().SetInt(42)
@@ -614,7 +614,7 @@ func changeIndex(msg *Message, goal any, index int) int {
 		msgField.SetString("non-zero")
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		msgField.SetInt(1)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if msgField.Type().Elem().Kind() == reflect.Int64 {
 			ptrValue := reflect.New(msgField.Type().Elem())
 			ptrValue.Elem().SetInt(1)
@@ -651,7 +651,7 @@ func changeIndex(msg *Message, goal any, index int) int {
 			goalField.SetString("non-zero")
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			goalField.SetInt(1)
-		case reflect.Ptr:
+		case reflect.Pointer:
 			if goalField.Type().Elem().Kind() == reflect.Int64 {
 				ptrValue := reflect.New(goalField.Type().Elem())
 				ptrValue.Elem().SetInt(1)
