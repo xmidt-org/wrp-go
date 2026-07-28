@@ -27,3 +27,4 @@ report.json
 # VSCode
 *.code-workspace
 .vscode/*
+/.dev
