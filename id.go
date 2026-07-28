@@ -28,6 +28,11 @@ var (
 // DeviceID represents a normalized identifier for a device.
 type DeviceID string
 
+// String is a convenience function to obtain the String representation of a DeviceID.
+func (id DeviceID) String() string {
+	return string(id)
+}
+
 // Bytes is a convenience function to obtain the []byte representation of a DeviceID.
 func (id DeviceID) Bytes() []byte {
 	return []byte(id)

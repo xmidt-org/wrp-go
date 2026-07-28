@@ -114,6 +114,7 @@ func TestParseDeviceID(t *testing.T) {
 			assert.Equal(record.expected, id)
 			assert.Equal(record.expectsError, err != nil)
 			assert.Equal([]byte(record.expected), id.Bytes())
+			assert.Equal(string(record.expected), id.String())
 			assert.Equal(record.prefix, id.Prefix())
 			assert.Equal(record.literalID, id.ID())
 
